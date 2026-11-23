@@ -9,7 +9,7 @@ Pour chaque jour termine (service_date <= avant-hier, heure de Paris) :
 Variables : DATABASE_URL ; SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (sans elles : resume seulement, ni archive ni purge) ;
 KEEP_DAYS (defaut 2). N'affiche que des compteurs (journaux publics).
 """
-import datetime, gzip, io, json, os, time, urllib.request
+import datetime, gzip, io, json, os, time, urllib.parse, urllib.request
 from zoneinfo import ZoneInfo
 import psycopg
 from sncf_common import apply_schema
@@ -68,7 +68,8 @@ ON CONFLICT (service_date, source, line_id) DO UPDATE SET n_trains = EXCLUDED.n_
 
 
 def storage(method, path, body=None, ctype="application/json"):
-    url = os.environ["SUPABASE_URL"].rstrip("/") + "/storage/v1/" + path
+    u = urllib.parse.urlparse(os.environ["SUPABASE_URL"].strip())
+    url = f"{u.scheme}://{u.netloc}/storage/v1/" + path  # on ignore un eventuel chemin colle apres l'adresse (/rest/v1/...)
     key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
     headers = {"apikey": key, "Content-Type": ctype, "x-upsert": "true"}
     if not key.startswith("sb_secret_"):  # ancienne cle « service_role » (JWT) : aussi dans Authorization
