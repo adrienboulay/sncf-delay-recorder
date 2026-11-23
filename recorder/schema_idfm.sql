@@ -121,6 +121,43 @@ SELECT t.*, l.short_name AS line_code, l.long_name AS line_name, l.mode AS line_
             WHEN t.arrival_delay_s < 3600 THEN '30-59' ELSE '60+' END AS delay_tier
 FROM idfm_trains t LEFT JOIN idfm_ref_lines l ON l.line_id = t.line_id;
 
+-- Probabilite de chaque palier de retard par ligne francilienne (meme principe que v_delay_tiers pour la SNCF) : sert aux prix.
+DROP VIEW IF EXISTS v_idfm_delay_tiers CASCADE;
+CREATE VIEW v_idfm_delay_tiers WITH (security_invoker = true) AS
+SELECT line_id, line_code, line_name, line_mode, COUNT(*) AS n_trains,
+       AVG((COALESCE(arrival_delay_s, 0) >= 300)::int)  AS p_5,
+       AVG((COALESCE(arrival_delay_s, 0) >= 600)::int)  AS p_10,
+       AVG((COALESCE(arrival_delay_s, 0) >= 900)::int)  AS p_15,
+       AVG((COALESCE(arrival_delay_s, 0) >= 1800)::int) AS p_30,
+       AVG((COALESCE(arrival_delay_s, 0) >= 3600)::int) AS p_60,
+       AVG(cancelled::int) AS p_cancelled
+FROM v_idfm_trains GROUP BY line_id, line_code, line_name, line_mode;
+
+-- Frequence PREVUE du metro et des trams sans horaire temps reel (GTFS IDFM, rechargee chaque nuit, 8 jours a venir) :
+-- nombre de courses qui partent de leur terminus, par ligne, jour et heure (heure de Paris), tous sens confondus.
+CREATE TABLE IF NOT EXISTS idfm_planned_frequency (
+  line_id TEXT, service_date TEXT, hour SMALLINT, n_trips INTEGER,
+  PRIMARY KEY (line_id, service_date, hour));
+ALTER TABLE idfm_planned_frequency ENABLE ROW LEVEL SECURITY;
+
+-- Regularite du metro : attente mesuree (ecart moyen entre rames) comparee a l'intervalle prevu.
+-- excess_wait_s > 0 : les voyageurs attendent plus que prevu (signe de perturbation, meme sans message officiel).
+DROP VIEW IF EXISTS v_metro_regularity CASCADE;
+CREATE VIEW v_metro_regularity WITH (security_invoker = true) AS
+WITH obs AS (
+  SELECT line_id, hour_ts,
+         to_char(to_timestamp(hour_ts) AT TIME ZONE 'Europe/Paris', 'YYYYMMDD') AS service_date,
+         EXTRACT(HOUR FROM to_timestamp(hour_ts) AT TIME ZONE 'Europe/Paris')::int AS hour,
+         SUM(n_passages) AS n_passages, SUM(sum_gap_s)::numeric / NULLIF(SUM(n_gaps), 0) AS mean_gap_s, MAX(max_gap_s) AS max_gap_s
+  FROM idfm_metro_hourly GROUP BY line_id, hour_ts)
+SELECT o.line_id, l.short_name AS line_code, l.mode AS line_mode, o.service_date, o.hour, o.n_passages,
+       ROUND(o.mean_gap_s) AS mean_gap_s, o.max_gap_s,
+       ROUND(7200.0 / NULLIF(p.n_trips, 0)) AS planned_interval_s,         -- 2 sens : 3600 / (n_trips / 2)
+       ROUND(o.mean_gap_s - 7200.0 / NULLIF(p.n_trips, 0)) AS excess_wait_s
+FROM obs o
+LEFT JOIN idfm_planned_frequency p ON p.line_id = o.line_id AND p.service_date = o.service_date AND p.hour = o.hour
+LEFT JOIN idfm_ref_lines l ON l.line_id = o.line_id;
+
 -- Perturbations ACTIVES maintenant, une ligne par (perturbation, ligne touchee), avec la classification.
 -- Exemples : WHERE line_code = 'B' ; WHERE category IN ('interruption','travaux_interruption') ; WHERE line_mode = 'METRO'.
 DROP VIEW IF EXISTS v_idfm_disruptions_active CASCADE;
