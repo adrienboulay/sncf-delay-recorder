@@ -125,8 +125,9 @@ def metro_passages(seen, now):
 
 
 def flush_metro(con, now, final=False):
-    """Ecrit les heures terminees (ou tout, en fin de processus). Les heures partielles s'additionnent a l'ecriture."""
-    done = {k: b for k, b in _buckets.items() if final or k[3] + 3600 + 600 < now}
+    """Ecrit les compteurs accumules (appele toutes les 10 min) : ils s'ADDITIONNENT a ce qui est deja en base pour la
+    meme heure, puis sont remis a zero en memoire. Les donnees apparaissent donc en base au bout de 10 min."""
+    done = dict(_buckets)
     if not done: return 0
     bulk_upsert(con.cursor(), "idfm_metro_hourly",
                 ["line_id", "stop_ref", "direction", "hour_ts", "n_passages", "n_gaps", "sum_gap_s", "max_gap_s"],
@@ -193,7 +194,7 @@ def poll(con, i):
         if not lines: return "IDF : referentiel des lignes vide (lancer load-reference)"
         n, trains, stops, n_metro = parse_et(fetch("estimated-timetable?LineRef=ALL"), lines, now)
         store_et(con, now, trains, stops)
-        nh = flush_metro(con, now)
+        nh = flush_metro(con, now) if i % 5 == 4 else 0
         nd = store_disruptions(con, now, fetch("disruptions_bulk/disruptions/v2")) if i % 5 == 0 else None
         con.execute("INSERT INTO idfm_polls VALUES (%s,%s,%s,%s,%s,NULL)",
                     (now, n, len(trains), n_metro, nd[0] if nd else None))
