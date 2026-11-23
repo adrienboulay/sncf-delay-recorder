@@ -15,7 +15,10 @@ export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/b
 EOF
 export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$HOME/.avm/bin:$PATH"
 
-corepack enable pnpm || npm install -g pnpm
+# Node.js is installed by the Solana installer through nvm.
+grep -q 'nvm.sh' ~/.bashrc || echo 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' >> ~/.bashrc
+export NVM_DIR="$HOME/.nvm"; set +u; . "$NVM_DIR/nvm.sh"; set -u
+npm install -g pnpm
 
 solana config set --url devnet
 rustc --version; solana --version; anchor --version; node --version; pnpm --version || true
