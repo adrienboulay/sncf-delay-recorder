@@ -4,7 +4,11 @@ name: archive-and-prune
 on:
   schedule:
     - cron: "45 3 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      selftest:
+        description: "1 = auto-test envoi/relecture"
+        default: "0"
 permissions:
   contents: read
 jobs:
@@ -23,3 +27,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           KEEP_DAYS: "2"
+          SELFTEST: ${{ inputs.selftest }}

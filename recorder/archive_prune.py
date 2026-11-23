@@ -121,6 +121,18 @@ def main():
         print(f"jours termines en base : {len(days)} ; archivage {'actif' if can_archive else 'INACTIF (secrets Storage absents)'} ; "
               f"purge du detail avant le {purge_before}", flush=True)
         if can_archive: ensure_bucket()
+        if can_archive and os.environ.get("SELFTEST") == "1":
+            # Auto-test sur les donnees du jour : export compresse -> envoi -> relecture identique -> suppression.
+            d = today.strftime("%Y%m%d")
+            data, n = export_gz(con, TABLES["idfm_trains"][0], d)
+            path = f"selftest/{d}_idfm_trains.csv.gz"
+            st, _ = storage("POST", f"object/{BUCKET}/{path}", data, "application/gzip")
+            st2, back = storage("GET", f"object/{BUCKET}/{path}")
+            st3, _ = storage("DELETE", f"object/{BUCKET}", json.dumps({"prefixes": [path]}).encode())
+            ok = st in (200, 201) and st2 == 200 and back == data
+            print(f"AUTO-TEST : {n} lignes, {len(data)/1e3:.0f} ko compresses ; envoi {st}, relecture {st2} "
+                  f"{'identique' if back == data else 'DIFFERENTE'}, suppression {st3} -> {'OK' if ok else 'ECHEC'}", flush=True)
+            if not ok: raise SystemExit(1)
         for d in days:
             con.execute(STATS_SQL, {"d": d}); con.commit()
             if not can_archive: continue
