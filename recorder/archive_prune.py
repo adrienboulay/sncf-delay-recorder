@@ -70,9 +70,10 @@ ON CONFLICT (service_date, source, line_id) DO UPDATE SET n_trains = EXCLUDED.n_
 def storage(method, path, body=None, ctype="application/json"):
     url = os.environ["SUPABASE_URL"].rstrip("/") + "/storage/v1/" + path
     key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-    req = urllib.request.Request(url, data=body, method=method,
-                                 headers={"Authorization": f"Bearer {key}", "apikey": key, "Content-Type": ctype,
-                                          "x-upsert": "true"})
+    headers = {"apikey": key, "Content-Type": ctype, "x-upsert": "true"}
+    if not key.startswith("sb_secret_"):  # ancienne cle « service_role » (JWT) : aussi dans Authorization
+        headers["Authorization"] = f"Bearer {key}"
+    req = urllib.request.Request(url, data=body, method=method, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=120) as r: return r.status, r.read()
     except urllib.error.HTTPError as e:
