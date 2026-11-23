@@ -1,7 +1,10 @@
 # Sonde manuelle des API PRIM (Ile-de-France Mobilites). N'affiche que des compteurs.
 name: probe-prim
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      script:
+        default: probe_prim.py
 permissions:
   contents: read
 jobs:
@@ -13,6 +16,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python recorder/probe_prim.py
+      - run: python recorder/${{ inputs.script }}
         env:
           PRIM_API_KEY: ${{ secrets.PRIM_API_KEY }}
