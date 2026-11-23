@@ -7,7 +7,7 @@ Pour chaque jour termine (service_date <= avant-hier, heure de Paris) :
   3. Purge : le detail des jours plus vieux que KEEP_DAYS est supprime de la base, SEULEMENT si l'archive est confirmee.
 
 Variables : DATABASE_URL ; SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (sans elles : resume seulement, ni archive ni purge) ;
-KEEP_DAYS (defaut 4). N'affiche que des compteurs (journaux publics).
+KEEP_DAYS (defaut 2). N'affiche que des compteurs (journaux publics).
 """
 import datetime, gzip, io, json, os, time, urllib.request
 from zoneinfo import ZoneInfo
@@ -98,7 +98,7 @@ def export_gz(con, sql, d):
 
 
 def main():
-    keep = int(os.environ.get("KEEP_DAYS", "4"))
+    keep = int(os.environ.get("KEEP_DAYS", "2"))
     can_archive = bool(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
     today = datetime.datetime.now(PARIS).date()
     last_complete = (today - datetime.timedelta(days=2)).strftime("%Y%m%d")

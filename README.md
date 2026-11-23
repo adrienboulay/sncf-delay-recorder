@@ -24,7 +24,7 @@ Records real-time train data for France into Postgres every 2 minutes, so a trai
 
 ## Storage
 The free Postgres tier is limited to 500 MB, and the raw detail grows by several tens of MB per day. So:
-- the database keeps the **last 4 days in full detail**, plus a **permanent daily summary** per line (`daily_line_stats`: trains, cancellations, trains late by 5, 15, 30 and 60 minutes);
+- the database keeps the **last 2 full days in full detail** (plus the current day), plus a **permanent daily summary** per line (`daily_line_stats`: trains, cancellations, trains late by 5, 15, 30 and 60 minutes);
 - every night, each finished day is exported as **compressed CSV** (about 15 to 25 times smaller) to object storage (`archive/YYYY/MM/DD/<table>.csv.gz`), and its detail is removed from the database only once the archive is confirmed (`archive_log`).
 
 ## Layout
