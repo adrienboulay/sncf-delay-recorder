@@ -20,25 +20,12 @@ with psycopg.connect(os.environ["DATABASE_URL"]) as con:
     print("IDF metro : heures x arrets enregistres par ligne :", con.execute(
         "SELECT l.short_name, COUNT(*), SUM(h.n_passages) FROM idfm_metro_hourly h JOIN idfm_ref_lines l USING (line_id) "
         "GROUP BY 1 ORDER BY 1").fetchall())
-    # Perturbations : combien concernent nos lignes (train/metro/tram), et combien sont actives MAINTENANT.
-    import json, time, datetime, collections
-    def parse_t(s):
-        for f in ("%Y%m%dT%H%M%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%SZ"):
-            try: return datetime.datetime.strptime(s, f).replace(tzinfo=datetime.timezone.utc if s.endswith("Z") else None)
-            except (TypeError, ValueError): pass
-    from zoneinfo import ZoneInfo
-    now = datetime.datetime.now(ZoneInfo("Europe/Paris")).replace(tzinfo=None)  # periodes en heure de Paris
-    rows = con.execute("SELECT d.disruption_id, d.cause, d.severity, d.periods, MIN(l.mode) FROM idfm_disruptions d "
-                       "LEFT JOIN idfm_disruption_lines dl USING (disruption_id) LEFT JOIN idfm_ref_lines l USING (line_id) "
-                       "GROUP BY 1,2,3,4").fetchall()
-    c = collections.Counter()
-    for _, cause, sev, periods, mode in rows:
-        ps = [(parse_t(p.get("begin")), parse_t(p.get("end"))) for p in json.loads(periods or "[]")]
-        ps = [(b.replace(tzinfo=None) if b else None, e.replace(tzinfo=None) if e else None) for b, e in ps]
-        active = any((b is None or b <= now) and (e is None or e >= now) for b, e in ps)
-        c[(mode or "BUS/autre", cause, sev, "active" if active else "a venir/finie")] += 1
-    print("IDF perturbations (mode, cause, severite, etat) :")
-    for k, n in sorted(c.items(), key=lambda x: -x[1])[:20]: print("   ", k, n)
+    print("IDF perturbations gardees (categorie, modes) :", con.execute(
+        "SELECT category, modes, COUNT(*) FROM idfm_disruptions GROUP BY 1,2 ORDER BY 3 DESC LIMIT 15").fetchall())
+    print("IDF perturbations ACTIVES maintenant par mode et categorie :", con.execute(
+        "SELECT line_mode, category, COUNT(DISTINCT disruption_id) FROM v_idfm_disruptions_active GROUP BY 1,2 ORDER BY 3 DESC").fetchall())
+    print("IDF bus de remplacement annonces (actifs) :", con.execute(
+        "SELECT COUNT(DISTINCT disruption_id) FROM v_idfm_disruptions_active WHERE replacement_bus").fetchone()[0])
     print("poids par table (donnees + index) :", [(r[0], r[1]) for r in con.execute(
         "SELECT relname, pg_size_pretty(pg_total_relation_size(relid)) FROM pg_catalog.pg_statio_user_tables "
         "ORDER BY pg_total_relation_size(relid) DESC LIMIT 12")])

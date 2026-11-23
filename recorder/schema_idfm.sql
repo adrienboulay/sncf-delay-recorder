@@ -52,6 +52,34 @@ CREATE TABLE IF NOT EXISTS idfm_disruptions (
   periods TEXT, last_update TEXT, first_seen BIGINT, last_seen BIGINT);
 CREATE TABLE IF NOT EXISTS idfm_disruption_lines (
   disruption_id TEXT, line_id TEXT, PRIMARY KEY (disruption_id, line_id));
+-- Classification (pour filtrer vite et personnaliser : ma ligne, ma gare, maintenant, grave ou pas) :
+ALTER TABLE idfm_disruptions ADD COLUMN IF NOT EXISTS category TEXT;      -- interruption | travaux_interruption | travaux | incident | information
+ALTER TABLE idfm_disruptions ADD COLUMN IF NOT EXISTS modes TEXT;         -- ex. "RapidTransit,Bus" (modes des lignes touchees)
+ALTER TABLE idfm_disruptions ADD COLUMN IF NOT EXISTS tags TEXT;          -- ex. "Actualite"
+ALTER TABLE idfm_disruptions ADD COLUMN IF NOT EXISTS replacement_bus BOOLEAN;  -- bus ou cars de remplacement annonces
+ALTER TABLE idfm_disruptions ADD COLUMN IF NOT EXISTS active_from BIGINT; -- debut de la premiere periode (UTC, s)
+ALTER TABLE idfm_disruptions ADD COLUMN IF NOT EXISTS active_to BIGINT;   -- fin de la derniere periode (UTC, s)
+ALTER TABLE idfm_disruptions ADD COLUMN IF NOT EXISTS sections TEXT;      -- troncons touches : [{line, from, to}] (JSON)
+ALTER TABLE idfm_disruption_lines ADD COLUMN IF NOT EXISTS mode TEXT;     -- Metro, RapidTransit (RER), LocalTrain (Transilien/TER), Tramway, Bus
+CREATE INDEX IF NOT EXISTS idfm_disruptions_active ON idfm_disruptions(active_to, active_from);
+CREATE INDEX IF NOT EXISTS idfm_disruption_lines_line ON idfm_disruption_lines(line_id);
+CREATE TABLE IF NOT EXISTS idfm_disruption_periods (     -- chaque periode d'application (une perturbation peut en avoir plusieurs)
+  disruption_id TEXT, begin_ts BIGINT, end_ts BIGINT, PRIMARY KEY (disruption_id, begin_ts));
+CREATE INDEX IF NOT EXISTS idfm_disruption_periods_t ON idfm_disruption_periods(end_ts, begin_ts);
+CREATE TABLE IF NOT EXISTS idfm_disruption_stops (       -- gares / arrets touches, pour « ma gare »
+  disruption_id TEXT, line_id TEXT, stop_ref TEXT, stop_name TEXT, PRIMARY KEY (disruption_id, line_id, stop_ref));
+CREATE INDEX IF NOT EXISTS idfm_disruption_stops_stop ON idfm_disruption_stops(stop_ref);
+
+-- Nettoyage : on ne suit pas les bus. On supprime les perturbations qui ne touchent AUCUNE ligne suivie (train, RER,
+-- metro, tram) et qui n'annoncent pas de bus de remplacement. (Garde-fou : seulement si le referentiel est charge.)
+DELETE FROM idfm_disruptions d
+WHERE EXISTS (SELECT 1 FROM idfm_ref_lines)
+  AND NOT EXISTS (SELECT 1 FROM idfm_disruption_lines dl JOIN idfm_ref_lines l USING (line_id) WHERE dl.disruption_id = d.disruption_id)
+  AND COALESCE(d.replacement_bus, lower(COALESCE(d.title,'') || ' ' || COALESCE(d.short_message,'') || ' ' || COALESCE(d.message,''))
+        ~ '(bus|cars?) (de )?(remplacement|substitution)|remplac\w* par (des )?(bus|cars)|navettes? de (remplacement|substitution)') IS NOT TRUE;
+DELETE FROM idfm_disruption_lines dl WHERE NOT EXISTS (SELECT 1 FROM idfm_disruptions d WHERE d.disruption_id = dl.disruption_id);
+DELETE FROM idfm_disruption_periods p WHERE NOT EXISTS (SELECT 1 FROM idfm_disruptions d WHERE d.disruption_id = p.disruption_id);
+DELETE FROM idfm_disruption_stops s WHERE NOT EXISTS (SELECT 1 FROM idfm_disruptions d WHERE d.disruption_id = s.disruption_id);
 
 CREATE TABLE IF NOT EXISTS idfm_polls (polled_at BIGINT, n_journeys INTEGER, n_trains INTEGER, n_headway_lines INTEGER,
                                        n_disruptions INTEGER, error TEXT);
@@ -75,6 +103,8 @@ ALTER TABLE idfm_observations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE idfm_metro_hourly ENABLE ROW LEVEL SECURITY;
 ALTER TABLE idfm_disruptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE idfm_disruption_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE idfm_disruption_periods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE idfm_disruption_stops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE idfm_polls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_line_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE archive_log ENABLE ROW LEVEL SECURITY;
@@ -90,3 +120,15 @@ SELECT t.*, l.short_name AS line_code, l.long_name AS line_name, l.mode AS line_
             WHEN t.arrival_delay_s < 1800 THEN '15-29'
             WHEN t.arrival_delay_s < 3600 THEN '30-59' ELSE '60+' END AS delay_tier
 FROM idfm_trains t LEFT JOIN idfm_ref_lines l ON l.line_id = t.line_id;
+
+-- Perturbations ACTIVES maintenant, une ligne par (perturbation, ligne touchee), avec la classification.
+-- Exemples : WHERE line_code = 'B' ; WHERE category IN ('interruption','travaux_interruption') ; WHERE line_mode = 'METRO'.
+DROP VIEW IF EXISTS v_idfm_disruptions_active CASCADE;
+CREATE VIEW v_idfm_disruptions_active WITH (security_invoker = true) AS
+SELECT d.disruption_id, d.category, d.cause, d.severity, d.replacement_bus, d.title, d.short_message,
+       p.begin_ts, p.end_ts, dl.line_id, l.short_name AS line_code, l.mode AS line_mode
+FROM idfm_disruptions d
+JOIN idfm_disruption_periods p ON p.disruption_id = d.disruption_id
+     AND p.begin_ts <= EXTRACT(EPOCH FROM now())::bigint AND p.end_ts >= EXTRACT(EPOCH FROM now())::bigint
+LEFT JOIN idfm_disruption_lines dl ON dl.disruption_id = d.disruption_id
+LEFT JOIN idfm_ref_lines l ON l.line_id = dl.line_id;

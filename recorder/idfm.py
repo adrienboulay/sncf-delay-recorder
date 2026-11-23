@@ -51,8 +51,10 @@ def line_id(ref):
 def stop_ref(ref):
     m = re.search(r"StopPoint:Q:(\d+)", ref or "")
     if m: return f"Q:{m.group(1)}"
-    m = re.search(r"StopArea:SP:(\d+)", ref or "")
-    return f"SP:{m.group(1)}" if m else (ref or None)
+    m = re.search(r"StopArea:SP:(\d+)|monomodalStopPlace:(\d+)", ref or "")
+    if m: return f"SP:{m.group(1) or m.group(2)}"
+    m = re.search(r"IDFM:(\d+)$", ref or "")
+    return f"Q:{m.group(1)}" if m else (ref or None)
 
 
 def tracked_lines(con):
@@ -165,24 +167,66 @@ def store_et(con, now, trains, stops):
         cur.executemany("INSERT INTO idfm_observations VALUES (%s,%s,%s,%s,%s)", changed)
 
 
+REPLACEMENT_RE = re.compile(r"(bus|cars?) (de )?(remplacement|substitution)|remplac\w* par (des )?(bus|cars)"
+                            r"|navettes? de (remplacement|substitution)")
+
+
+def category(cause, severity):
+    """Classification simple a partir des deux champs officiels (cause x severite)."""
+    if cause == "INFORMATION" or severity == "INFORMATION": return "information"
+    if cause == "TRAVAUX": return "travaux_interruption" if severity == "BLOQUANTE" else "travaux"
+    return "interruption" if severity == "BLOQUANTE" else "incident"
+
+
+def paris_ts(s):
+    """'20261011T180059' (heure de Paris) -> secondes Unix UTC."""
+    try: return int(datetime.datetime.strptime(s, "%Y%m%dT%H%M%S").replace(tzinfo=PARIS).timestamp())
+    except (TypeError, ValueError): return None
+
+
 def store_disruptions(con, now, d):
-    rows, links = [], set()
-    for x in d.get("disruptions", []):
-        rows.append((x.get("id"), x.get("cause"), x.get("severity"), x.get("title"), x.get("shortMessage"),
-                     x.get("message"), json.dumps(x.get("applicationPeriods") or []), x.get("lastUpdate"), now, now))
+    """Garde les perturbations qui touchent une ligne non-bus (train, RER, metro, tram), ou qui annoncent des bus de
+    remplacement. Les perturbations propres aux lignes de bus sont ignorees."""
+    modes, links, stops = {}, set(), set()
     for ln in d.get("lines", []):
         lid = line_id(ln.get("id")) or ln.get("id")
         for o in ln.get("impactedObjects") or []:
             for did in o.get("disruptionIds") or []:
-                links.add((did, lid))
+                modes.setdefault(did, set()).add(ln.get("mode") or "?")
+                links.add((did, lid, ln.get("mode")))
+                if o.get("type") == "stop_point":
+                    stops.add((did, lid, stop_ref(o.get("id")), o.get("name")))
+    rows, periods, kept = [], [], set()
+    for x in d.get("disruptions", []):
+        did = x.get("id")
+        text = " ".join(str(x.get(k) or "") for k in ("title", "shortMessage", "message")).lower()
+        repl = bool(REPLACEMENT_RE.search(text))
+        m = modes.get(did, set())
+        if not (m - {"Bus"}) and not repl: continue  # bus uniquement, sans remplacement : non suivi
+        kept.add(did)
+        ps = [(paris_ts(p.get("begin")), paris_ts(p.get("end"))) for p in x.get("applicationPeriods") or []]
+        ps = [(b, e) for b, e in ps if b and e]
+        periods += [(did, b, e) for b, e in ps]
+        sections = [{"line": line_id(s.get("lineId")) or s.get("lineId"),
+                     "from": (s.get("from") or {}).get("name"), "to": (s.get("to") or {}).get("name")}
+                    for s in x.get("impactedSections") or []]
+        rows.append((did, x.get("cause"), x.get("severity"), x.get("title"), x.get("shortMessage"), x.get("message"),
+                     json.dumps(x.get("applicationPeriods") or []), x.get("lastUpdate"), now, now,
+                     category(x.get("cause"), x.get("severity")), ",".join(sorted(m)), ",".join(x.get("tags") or []),
+                     repl, min((b for b, _ in ps), default=None), max((e for _, e in ps), default=None),
+                     json.dumps(sections, ensure_ascii=False) if sections else None))
     cur = con.cursor()
-    bulk_upsert(cur, "idfm_disruptions", ["disruption_id", "cause", "severity", "title", "short_message", "message",
-                                          "periods", "last_update", "first_seen", "last_seen"], rows, ["disruption_id"],
-                {c: None for c in ["cause", "severity", "title", "short_message", "message", "periods",
-                                   "last_update", "last_seen"]})
-    bulk_upsert(cur, "idfm_disruption_lines", ["disruption_id", "line_id"], list(links),
-                ["disruption_id", "line_id"], {})
-    return len(rows), len(links)
+    cols = ["disruption_id", "cause", "severity", "title", "short_message", "message", "periods", "last_update",
+            "first_seen", "last_seen", "category", "modes", "tags", "replacement_bus", "active_from", "active_to", "sections"]
+    bulk_upsert(cur, "idfm_disruptions", cols, rows, ["disruption_id"],
+                {c: None for c in cols if c not in ("disruption_id", "first_seen")})
+    bulk_upsert(cur, "idfm_disruption_lines", ["disruption_id", "line_id", "mode"],
+                [l for l in links if l[0] in kept], ["disruption_id", "line_id"], {"mode": None})
+    bulk_upsert(cur, "idfm_disruption_periods", ["disruption_id", "begin_ts", "end_ts"], periods,
+                ["disruption_id", "begin_ts"], {"end_ts": None})
+    bulk_upsert(cur, "idfm_disruption_stops", ["disruption_id", "line_id", "stop_ref", "stop_name"],
+                [s for s in stops if s[0] in kept], ["disruption_id", "line_id", "stop_ref"], {"stop_name": None})
+    return len(rows), len(d.get("disruptions", [])) - len(rows)
 
 
 def poll(con, i):
@@ -202,7 +246,7 @@ def poll(con, i):
         late = sum(1 for t in trains.values() if (t[11] or 0) >= 900)
         return (f"IDF : {len(trains)} trains/trams ({late} >= 15 min), {len(stops)} passages, "
                 f"{n_metro} lignes metro/tram ({len(_pending)} rames-arrets suivis, {nh} heures ecrites), "
-                f"perturbations {f'{nd[0]} ({nd[1]} liens ligne)' if nd else '-'}, {time.time() - t0:.1f} s")
+                f"perturbations {f'{nd[0]} gardees, {nd[1]} bus ignorees' if nd else '-'}, {time.time() - t0:.1f} s")
     except Exception as ex:
         con.rollback()
         con.execute("INSERT INTO idfm_polls VALUES (%s,NULL,NULL,NULL,NULL,%s)", (now, repr(ex)[:500])); con.commit()
