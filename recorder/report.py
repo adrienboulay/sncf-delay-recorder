@@ -5,7 +5,7 @@ import psycopg
 TABLES = ["ref_routes", "ref_stops", "ref_trips", "ref_calendar", "trains", "stop_updates", "observations",
           "alerts", "alert_trains", "polls", "v_trains", "v_route_punctuality", "v_station_punctuality", "v_delay_tiers",
           "idfm_ref_lines", "idfm_ref_stops", "idfm_trains", "idfm_stop_updates", "idfm_observations",
-          "idfm_headways", "idfm_disruptions", "idfm_disruption_lines", "idfm_polls"]
+          "idfm_metro_hourly", "idfm_disruptions", "idfm_disruption_lines", "idfm_polls", "daily_line_stats", "archive_log"]
 
 with psycopg.connect(os.environ["DATABASE_URL"]) as con:
     for t in TABLES:
@@ -17,4 +17,7 @@ with psycopg.connect(os.environ["DATABASE_URL"]) as con:
     print(f"IDF : passages relies a une gare connue : {ok}/{n}")
     print("IDF : 5 derniers releves (trains, lignes metro/tram, erreur) :",
           [(r[0], r[1], (r[2] or "")[:80]) for r in con.execute("SELECT n_trains, n_headway_lines, error FROM idfm_polls ORDER BY polled_at DESC LIMIT 5")])
+    print("poids par table (donnees + index) :", [(r[0], r[1]) for r in con.execute(
+        "SELECT relname, pg_size_pretty(pg_total_relation_size(relid)) FROM pg_catalog.pg_statio_user_tables "
+        "ORDER BY pg_total_relation_size(relid) DESC LIMIT 12")])
     print("taille de la base :", con.execute("SELECT pg_size_pretty(pg_database_size(current_database()))").fetchone()[0])

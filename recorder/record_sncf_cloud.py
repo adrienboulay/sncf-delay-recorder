@@ -210,6 +210,7 @@ def main():
         if stop_at is None and i >= polls: break
         if stop_at is not None and next_at >= stop_at: break
         time.sleep(max(0, next_at - time.time()))
+    idfm.finish(con)
     con.close()
 
 
