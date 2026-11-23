@@ -81,10 +81,18 @@ def storage(method, path, body=None, ctype="application/json"):
 
 
 def ensure_bucket():
-    st, _ = storage("GET", f"bucket/{BUCKET}")
+    import re
+    u = os.environ["SUPABASE_URL"].strip()
+    # Diagnostic sans rien reveler : la forme attendue est https://<ref>.supabase.co
+    print("SUPABASE_URL au format https://<ref>.supabase.co :", bool(re.fullmatch(r"https://[a-z0-9]{20}\.supabase\.co/?", u)),
+          "| se termine par un chemin :", bool(re.search(r"supabase\.co/.+", u)),
+          "| cle de type :", "sb_secret" if os.environ["SUPABASE_SERVICE_ROLE_KEY"].startswith("sb_secret_")
+          else ("JWT" if os.environ["SUPABASE_SERVICE_ROLE_KEY"].startswith("eyJ") else "autre"), flush=True)
+    st, body = storage("GET", f"bucket/{BUCKET}")
     if st != 200:
+        print(f"lecture du bucket : {st} {body[:200]!r}", flush=True)
         st, body = storage("POST", "bucket", json.dumps({"id": BUCKET, "name": BUCKET, "public": False}).encode())
-        if st not in (200, 201): raise RuntimeError(f"creation du bucket impossible ({st})")
+        if st not in (200, 201): raise RuntimeError(f"creation du bucket impossible ({st}) {body[:200]!r}")
 
 
 def export_gz(con, sql, d):
