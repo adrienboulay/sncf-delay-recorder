@@ -7,7 +7,8 @@ TABLES = ["ref_routes", "ref_stops", "ref_trips", "ref_calendar", "trains", "sto
           "idfm_ref_lines", "idfm_ref_stops", "idfm_trains", "idfm_stop_updates", "idfm_observations",
           "idfm_metro_hourly", "idfm_disruptions", "idfm_disruption_lines", "idfm_disruption_periods",
           "idfm_disruption_stops", "idfm_polls", "daily_line_stats", "archive_log",
-          "v_idfm_trains", "v_idfm_disruptions_active"]
+          "v_idfm_trains", "v_idfm_disruptions_active", "v_idfm_delay_tiers", "idfm_planned_frequency",
+          "v_metro_regularity"]
 
 with psycopg.connect(os.environ["DATABASE_URL"]) as con:
     # Cadence et erreurs des releves sur les 2 dernieres heures (doit etre ~1 releve / 2 min, sans erreur).
@@ -39,6 +40,11 @@ with psycopg.connect(os.environ["DATABASE_URL"]) as con:
         "SELECT line_mode, category, COUNT(DISTINCT disruption_id) FROM v_idfm_disruptions_active GROUP BY 1,2 ORDER BY 3 DESC").fetchall())
     print("IDF bus de remplacement annonces (actifs) :", con.execute(
         "SELECT COUNT(DISTINCT disruption_id) FROM v_idfm_disruptions_active WHERE replacement_bus").fetchone()[0])
+    print("METRO regularite (derniere heure complete) : ligne, passages, ecart moyen, intervalle prevu, attente en plus (s) :",
+          con.execute("SELECT line_code, n_passages, mean_gap_s, planned_interval_s, excess_wait_s FROM v_metro_regularity "
+                      "WHERE hour_ts = (SELECT MAX(hour_ts) FROM idfm_metro_hourly) - 3600 ORDER BY line_code").fetchall())
+    print("IDF paliers de retard (ligne, n trains, p15, p30) :", [(r[0], r[1], round(float(r[2]), 3), round(float(r[3]), 3))
+          for r in con.execute("SELECT line_code, n_trains, p_15, p_30 FROM v_idfm_delay_tiers ORDER BY n_trains DESC LIMIT 8")])
     print("poids par table (donnees + index) :", [(r[0], r[1]) for r in con.execute(
         "SELECT relname, pg_size_pretty(pg_total_relation_size(relid)) FROM pg_catalog.pg_statio_user_tables "
         "ORDER BY pg_total_relation_size(relid) DESC LIMIT 12")])
