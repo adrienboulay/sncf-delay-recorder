@@ -5,9 +5,22 @@ import psycopg
 TABLES = ["ref_routes", "ref_stops", "ref_trips", "ref_calendar", "trains", "stop_updates", "observations",
           "alerts", "alert_trains", "polls", "v_trains", "v_route_punctuality", "v_station_punctuality", "v_delay_tiers",
           "idfm_ref_lines", "idfm_ref_stops", "idfm_trains", "idfm_stop_updates", "idfm_observations",
-          "idfm_metro_hourly", "idfm_disruptions", "idfm_disruption_lines", "idfm_polls", "daily_line_stats", "archive_log"]
+          "idfm_metro_hourly", "idfm_disruptions", "idfm_disruption_lines", "idfm_disruption_periods",
+          "idfm_disruption_stops", "idfm_polls", "daily_line_stats", "archive_log",
+          "v_idfm_trains", "v_idfm_disruptions_active"]
 
 with psycopg.connect(os.environ["DATABASE_URL"]) as con:
+    # Cadence et erreurs des releves sur les 2 dernieres heures (doit etre ~1 releve / 2 min, sans erreur).
+    for name, table in (("SNCF", "polls"), ("IDF", "idfm_polls")):
+        n, nerr, med, mx = con.execute(f"""
+            WITH p AS (SELECT polled_at, error, polled_at - LAG(polled_at) OVER (ORDER BY polled_at) AS gap
+                       FROM {table} WHERE polled_at > EXTRACT(EPOCH FROM now())::bigint - 7200)
+            SELECT COUNT(*), COUNT(error) FILTER (WHERE error <> ''),
+                   percentile_cont(0.5) WITHIN GROUP (ORDER BY gap), MAX(gap) FROM p""").fetchone()
+        print(f"CADENCE {name} (2 h) : {n} releves, {nerr} erreurs, ecart median {med} s, ecart max {mx} s")
+    for t, col in (("trains", "last_seen"), ("idfm_trains", "last_seen"), ("idfm_disruptions", "last_seen")):
+        age = con.execute(f"SELECT EXTRACT(EPOCH FROM now())::bigint - MAX({col}) FROM {t}").fetchone()[0]
+        print(f"FRAICHEUR {t} : derniere ecriture il y a {age} s")
     for t in TABLES:
         print(f"{t:24} {con.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]}")
     n, enriched = con.execute("SELECT COUNT(*), COUNT(line_name) FROM v_trains").fetchone()
