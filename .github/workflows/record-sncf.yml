@@ -27,3 +27,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           POLLS: "2"
           POLL_EVERY: "120"
+      - if: github.event_name == 'workflow_dispatch'
+        run: python recorder/report.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

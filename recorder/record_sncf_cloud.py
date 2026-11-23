@@ -1,40 +1,31 @@
 """Enregistreur des retards SNCF, version cloud (GitHub Actions -> Postgres Supabase).
 
-Fait N releves espaces de X secondes puis s'arrete (GitHub Actions le relance toutes les 5 min).
-Variables d'environnement :
-  DATABASE_URL   chaine de connexion Postgres (Supabase > Project Settings > Database > Connection string, mode "Session pooler")
-  POLLS          nombre de releves par execution (defaut 2)
-  POLL_EVERY     secondes entre deux releves (defaut 120)
-Sans DATABASE_URL : fait un releve "a blanc" et affiche le resume (pour tester).
+Fait N releves espaces de X secondes puis s'arrete (GitHub Actions le relance toutes les ~5 min).
+A chaque releve :
+  - trains        : dernier etat de chaque train (ligne, origine, destination, horaires prevus, retards depart/arrivee) ;
+  - stop_updates  : retard GARE PAR GARE de chaque train, arrets supprimes ;
+  - observations  : une ligne a chaque changement de retard ou de statut (historique fin) ;
+  - alerts (+ alert_trains) : perturbations, cause, effet, trains / lignes / gares concernes.
+
+Variables : DATABASE_URL, POLLS (defaut 2), POLL_EVERY (defaut 120 s).
+Sans DATABASE_URL : un releve a blanc avec resume (pour tester).
 """
-import os, re, time, datetime, urllib.request
+import datetime, os, time
 from google.transit import gtfs_realtime_pb2 as g
+from sncf_common import http_get, parse_trip_id, uic_of, apply_schema, bulk_upsert
 
 TU_URL = "https://proxy.transport.data.gouv.fr/resource/sncf-gtfs-rt-trip-updates"
 SA_URL = "https://proxy.transport.data.gouv.fr/resource/sncf-gtfs-rt-service-alerts"
 STATUS = {0: "SCHEDULED", 1: "ADDED", 2: "UNSCHEDULED", 3: "CANCELED", 5: "REPLACEMENT", 6: "DUPLICATED", 7: "DELETED"}
-
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS trains (
-  train_num TEXT, service_date TEXT, mode TEXT, trip_id TEXT,
-  status TEXT, last_stop TEXT, arrival_delay_s INTEGER, max_delay_s INTEGER,
-  first_seen BIGINT, last_seen BIGINT,
-  PRIMARY KEY (train_num, service_date));
-CREATE TABLE IF NOT EXISTS observations (
-  train_num TEXT, service_date TEXT, observed_at BIGINT, feed_ts BIGINT,
-  status TEXT, arrival_delay_s INTEGER, max_delay_s INTEGER);
-CREATE INDEX IF NOT EXISTS obs_idx ON observations(train_num, service_date);
-CREATE TABLE IF NOT EXISTS alerts (
-  alert_id TEXT PRIMARY KEY, cause INTEGER, effect INTEGER, header_fr TEXT, description_fr TEXT,
-  trains TEXT, active_start BIGINT, active_end BIGINT, first_seen BIGINT, last_seen BIGINT);
-CREATE TABLE IF NOT EXISTS polls (polled_at BIGINT, feed_ts BIGINT, n_trains INTEGER, n_alerts INTEGER, error TEXT);
-"""
+CAUSE = {1: "UNKNOWN_CAUSE", 2: "OTHER_CAUSE", 3: "TECHNICAL_PROBLEM", 4: "STRIKE", 5: "DEMONSTRATION", 6: "ACCIDENT",
+         7: "HOLIDAY", 8: "WEATHER", 9: "MAINTENANCE", 10: "CONSTRUCTION", 11: "POLICE_ACTIVITY", 12: "MEDICAL_EMERGENCY"}
+EFFECT = {1: "NO_SERVICE", 2: "REDUCED_SERVICE", 3: "SIGNIFICANT_DELAYS", 4: "DETOUR", 5: "ADDITIONAL_SERVICE",
+          6: "MODIFIED_SERVICE", 7: "OTHER_EFFECT", 8: "UNKNOWN_EFFECT", 9: "STOP_MOVED", 10: "NO_EFFECT",
+          11: "ACCESSIBILITY_ISSUE"}
 
 
-def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "delay-recorder/0.1"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        m = g.FeedMessage(); m.ParseFromString(r.read()); return m
+def feed(url):
+    m = g.FeedMessage(); m.ParseFromString(http_get(url)); return m
 
 
 def fr(ts):
@@ -44,54 +35,102 @@ def fr(ts):
     return ts.translation[0].text
 
 
+def sched(ev):
+    """heure prevue = heure estimee - retard (le flux donne les deux)."""
+    return ev.time - ev.delay if ev.time else None
+
+
 def parse():
     now = int(time.time())
-    tu = fetch(TU_URL); trains = {}
+    tu = feed(TU_URL)
+    trains, stops = {}, []
     for e in tu.entity:
         u = e.trip_update; t = u.trip
-        m = re.match(r"OCESN(\d+)", t.trip_id)
-        if not m: continue
-        mode = re.search(r"_F:([A-Z]+):", t.trip_id)
-        arr = [s for s in u.stop_time_update if s.HasField("arrival")]
-        last = u.stop_time_update[-1] if u.stop_time_update else None
-        trains[(m.group(1), t.start_date)] = dict(
-            mode=mode.group(1) if mode else None, trip_id=t.trip_id,
+        p = parse_trip_id(t.trip_id)
+        if not p["num"]: continue
+        key = (p["num"], t.start_date)
+        sts = list(u.stop_time_update)
+        arr = [s for s in sts if s.HasField("arrival")]
+        dep = [s for s in sts if s.HasField("departure")]
+        trains[key] = dict(
+            mode=p["mode"], trip_id=t.trip_id, route_id=p["route_id"],
+            origin_uic=p["origin_uic"] or (uic_of(sts[0].stop_id) if sts else None),
+            dest_uic=p["dest_uic"] or (uic_of(sts[-1].stop_id) if sts else None),
             status=STATUS.get(t.schedule_relationship, str(t.schedule_relationship)),
-            last_stop=last.stop_id if last else None,
+            last_stop=sts[-1].stop_id if sts else None,
             arr=arr[-1].arrival.delay if arr else None,
-            mx=max([s.arrival.delay for s in arr] + [0]))
-    sa = fetch(SA_URL); alerts = []
+            dep_delay=dep[0].departure.delay if dep else None,
+            mx=max([s.arrival.delay for s in arr] + [0]),
+            sched_dep=sched(dep[0].departure) if dep else None,
+            sched_arr=sched(arr[-1].arrival) if arr else None,
+            n_stops=len(sts), n_skipped=sum(1 for s in sts if s.schedule_relationship == 1))
+        for i, s in enumerate(sts):
+            stops.append((p["num"], t.start_date, i, s.stop_id, uic_of(s.stop_id),
+                          sched(s.arrival) if s.HasField("arrival") else None,
+                          sched(s.departure) if s.HasField("departure") else None,
+                          s.arrival.delay if s.HasField("arrival") else None,
+                          s.departure.delay if s.HasField("departure") else None,
+                          s.schedule_relationship == 1, now))
+    sa = feed(SA_URL)
+    alerts, links = {}, set()
     for e in sa.entity:
         a = e.alert
-        nums = sorted({re.match(r"OCESN(\d+)", i.trip.trip_id).group(1) for i in a.informed_entity
-                       if re.match(r"OCESN(\d+)", i.trip.trip_id)})
+        nums, routes, uics = set(), set(), set()
+        for ie in a.informed_entity:
+            if ie.trip.trip_id:
+                p = parse_trip_id(ie.trip.trip_id)
+                if p["num"]:
+                    nums.add(p["num"]); links.add((e.id, p["num"], ie.trip.start_date or ""))
+                if p["route_id"]: routes.add(p["route_id"])
+            if ie.route_id: routes.add(ie.route_id)
+            if ie.stop_id and uic_of(ie.stop_id): uics.add(uic_of(ie.stop_id))
         ap = a.active_period[0] if a.active_period else None
-        alerts.append((e.id, a.cause, a.effect, fr(a.header_text), fr(a.description_text), ",".join(nums),
-                       ap.start if ap else None, ap.end if ap else None, now, now))
-    return now, tu.header.timestamp, trains, alerts
+        alerts[e.id] = (e.id, a.cause, a.effect, fr(a.header_text), fr(a.description_text), ",".join(sorted(nums)),
+                        ap.start if ap else None, ap.end if ap else None, now, now,
+                        CAUSE.get(a.cause), EFFECT.get(a.effect), ",".join(sorted(routes)), ",".join(sorted(uics)))
+    return now, tu.header.timestamp, trains, stops, list(alerts.values()), list(links)
 
 
-def store(con, now, feed_ts, trains, alerts):
+def store(con, now, feed_ts, trains, stops, alerts, links):
     cur = con.cursor()
     cur.execute("SELECT train_num, service_date, status, arrival_delay_s FROM trains WHERE service_date = ANY(%s)",
                 (list({k[1] for k in trains}),))
     prev = {(r[0], r[1]): (r[2], r[3]) for r in cur.fetchall()}
-    # executemany en psycopg 3 envoie tout en "pipeline" : un seul aller-retour reseau au lieu d'un par ligne
-    cur.executemany("""INSERT INTO trains VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        ON CONFLICT (train_num, service_date) DO UPDATE SET status=EXCLUDED.status, last_stop=EXCLUDED.last_stop,
-          arrival_delay_s=EXCLUDED.arrival_delay_s, max_delay_s=GREATEST(trains.max_delay_s, EXCLUDED.max_delay_s),
-          last_seen=EXCLUDED.last_seen""",
-        [(num, date, v["mode"], v["trip_id"], v["status"], v["last_stop"], v["arr"], v["mx"], now, now)
-         for (num, date), v in trains.items()])
-    changed = [(num, date, now, feed_ts, v["status"], v["arr"], v["mx"])
-               for (num, date), v in trains.items() if prev.get((num, date)) != (v["status"], v["arr"])]
+    tcols = ["train_num", "service_date", "mode", "trip_id", "status", "last_stop", "arrival_delay_s", "max_delay_s",
+             "first_seen", "last_seen", "route_id", "origin_uic", "dest_uic", "sched_departure_ts", "sched_arrival_ts",
+             "departure_delay_s", "n_stops", "n_skipped_stops"]
+    bulk_upsert(cur, "trains", tcols,
+                [(n, d, v["mode"], v["trip_id"], v["status"], v["last_stop"], v["arr"], v["mx"], now, now, v["route_id"],
+                  v["origin_uic"], v["dest_uic"], v["sched_dep"], v["sched_arr"], v["dep_delay"], v["n_stops"], v["n_skipped"])
+                 for (n, d), v in trains.items()],
+                ["train_num", "service_date"],
+                {"status": None, "last_stop": None, "arrival_delay_s": None, "last_seen": None,
+                 "max_delay_s": "GREATEST(trains.max_delay_s, EXCLUDED.max_delay_s)",
+                 "mode": "COALESCE(EXCLUDED.mode, trains.mode)", "trip_id": None,
+                 "route_id": "COALESCE(EXCLUDED.route_id, trains.route_id)",
+                 "origin_uic": "COALESCE(trains.origin_uic, EXCLUDED.origin_uic)",
+                 "dest_uic": "COALESCE(trains.dest_uic, EXCLUDED.dest_uic)",
+                 "sched_departure_ts": "COALESCE(trains.sched_departure_ts, EXCLUDED.sched_departure_ts)",
+                 "sched_arrival_ts": "COALESCE(trains.sched_arrival_ts, EXCLUDED.sched_arrival_ts)",
+                 "departure_delay_s": None, "n_stops": None, "n_skipped_stops": None})
+    bulk_upsert(cur, "stop_updates",
+                ["train_num", "service_date", "stop_index", "stop_id", "uic", "sched_arrival_ts", "sched_departure_ts",
+                 "arrival_delay_s", "departure_delay_s", "skipped", "last_seen"],
+                stops, ["train_num", "service_date", "stop_id"],
+                {"stop_index": None, "arrival_delay_s": None, "departure_delay_s": None, "skipped": None, "last_seen": None,
+                 "sched_arrival_ts": "COALESCE(stop_updates.sched_arrival_ts, EXCLUDED.sched_arrival_ts)",
+                 "sched_departure_ts": "COALESCE(stop_updates.sched_departure_ts, EXCLUDED.sched_departure_ts)"})
+    changed = [(n, d, now, feed_ts, v["status"], v["arr"], v["mx"])
+               for (n, d), v in trains.items() if prev.get((n, d)) != (v["status"], v["arr"])]
     if changed:
         cur.executemany("INSERT INTO observations VALUES (%s,%s,%s,%s,%s,%s,%s)", changed)
-    if alerts:
-        # une meme alerte peut apparaitre deux fois dans le flux : on deduplique avant l'upsert
-        cur.executemany("""INSERT INTO alerts VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            ON CONFLICT (alert_id) DO UPDATE SET last_seen=EXCLUDED.last_seen, trains=EXCLUDED.trains""",
-            list({a[0]: a for a in alerts}.values()))
+    bulk_upsert(cur, "alerts", ["alert_id", "cause", "effect", "header_fr", "description_fr", "trains", "active_start",
+                                "active_end", "first_seen", "last_seen", "cause_label", "effect_label", "route_ids", "stop_uics"],
+                alerts, ["alert_id"],
+                {"last_seen": None, "trains": None, "header_fr": None, "description_fr": None, "active_end": None,
+                 "cause_label": None, "effect_label": None, "route_ids": None, "stop_uics": None})
+    bulk_upsert(cur, "alert_trains", ["alert_id", "train_num", "service_date"], links,
+                ["alert_id", "train_num", "service_date"], {})
     cur.execute("INSERT INTO polls VALUES (%s,%s,%s,%s,NULL)", (now, feed_ts, len(trains), len(alerts)))
     con.commit()
 
@@ -103,13 +142,15 @@ def main():
     if url:
         import psycopg
         con = psycopg.connect(url)
-        con.execute(SCHEMA); con.commit()
+        apply_schema(con)
     for i in range(polls if url else 1):
         try:
-            now, feed_ts, trains, alerts = parse()
-            if con: store(con, now, feed_ts, trains, alerts)
+            t0 = time.time()
+            now, feed_ts, trains, stops, alerts, links = parse()
+            if con: store(con, now, feed_ts, trains, stops, alerts, links)
             late = sum(1 for v in trains.values() if v["mx"] >= 900)
-            print(f"{datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d %H:%M:%S} UTC  {len(trains)} trains ({late} >= 15 min), {len(alerts)} alertes"
+            print(f"{datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d %H:%M:%S} UTC  {len(trains)} trains ({late} >= 15 min), "
+                  f"{len(stops)} passages en gare, {len(alerts)} alertes, {time.time() - t0:.1f} s"
                   + ("" if con else "  [test a blanc, rien enregistre]"), flush=True)
         except Exception as ex:
             print("erreur:", repr(ex), flush=True)
