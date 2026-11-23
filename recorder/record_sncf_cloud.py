@@ -76,18 +76,22 @@ def store(con, now, feed_ts, trains, alerts):
     cur.execute("SELECT train_num, service_date, status, arrival_delay_s FROM trains WHERE service_date = ANY(%s)",
                 (list({k[1] for k in trains}),))
     prev = {(r[0], r[1]): (r[2], r[3]) for r in cur.fetchall()}
-    for (num, date), v in trains.items():
-        cur.execute("""INSERT INTO trains VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            ON CONFLICT (train_num, service_date) DO UPDATE SET status=EXCLUDED.status, last_stop=EXCLUDED.last_stop,
-              arrival_delay_s=EXCLUDED.arrival_delay_s, max_delay_s=GREATEST(trains.max_delay_s, EXCLUDED.max_delay_s),
-              last_seen=EXCLUDED.last_seen""",
-            (num, date, v["mode"], v["trip_id"], v["status"], v["last_stop"], v["arr"], v["mx"], now, now))
-        if prev.get((num, date)) != (v["status"], v["arr"]):
-            cur.execute("INSERT INTO observations VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                        (num, date, now, feed_ts, v["status"], v["arr"], v["mx"]))
-    for a in alerts:
-        cur.execute("""INSERT INTO alerts VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            ON CONFLICT (alert_id) DO UPDATE SET last_seen=EXCLUDED.last_seen, trains=EXCLUDED.trains""", a)
+    # executemany en psycopg 3 envoie tout en "pipeline" : un seul aller-retour reseau au lieu d'un par ligne
+    cur.executemany("""INSERT INTO trains VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        ON CONFLICT (train_num, service_date) DO UPDATE SET status=EXCLUDED.status, last_stop=EXCLUDED.last_stop,
+          arrival_delay_s=EXCLUDED.arrival_delay_s, max_delay_s=GREATEST(trains.max_delay_s, EXCLUDED.max_delay_s),
+          last_seen=EXCLUDED.last_seen""",
+        [(num, date, v["mode"], v["trip_id"], v["status"], v["last_stop"], v["arr"], v["mx"], now, now)
+         for (num, date), v in trains.items()])
+    changed = [(num, date, now, feed_ts, v["status"], v["arr"], v["mx"])
+               for (num, date), v in trains.items() if prev.get((num, date)) != (v["status"], v["arr"])]
+    if changed:
+        cur.executemany("INSERT INTO observations VALUES (%s,%s,%s,%s,%s,%s,%s)", changed)
+    if alerts:
+        # une meme alerte peut apparaitre deux fois dans le flux : on deduplique avant l'upsert
+        cur.executemany("""INSERT INTO alerts VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT (alert_id) DO UPDATE SET last_seen=EXCLUDED.last_seen, trains=EXCLUDED.trains""",
+            list({a[0]: a for a in alerts}.values()))
     cur.execute("INSERT INTO polls VALUES (%s,%s,%s,%s,NULL)", (now, feed_ts, len(trains), len(alerts)))
     con.commit()
 
