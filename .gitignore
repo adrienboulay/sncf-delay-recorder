@@ -1,0 +1,17 @@
+# Données enregistrées : notre avantage, jamais dans un dépôt public
+data/
+*.db
+*.log
+
+# Environnements Python
+.venv/
+venv/
+__pycache__/
+
+# Documents internes (restent en local)
+/*.md
+!/README.md
+
+# Secrets
+.env
+.env.*

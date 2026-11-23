@@ -1,0 +1,29 @@
+# Enregistre les retards SNCF toutes les ~5 minutes, sans dependre d'un PC allume.
+# Prerequis : un secret de depot DATABASE_URL (Settings > Secrets and variables > Actions).
+# Note : GitHub peut decaler les executions planifiees de quelques minutes aux heures chargees.
+name: record-sncf-delays
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: record-sncf
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q gtfs-realtime-bindings protobuf "psycopg[binary]"
+      - run: python recorder/record_sncf_cloud.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POLLS: "2"
+          POLL_EVERY: "120"
