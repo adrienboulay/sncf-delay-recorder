@@ -1,32 +1,43 @@
-# Enregistre les retards SNCF toutes les ~5 minutes, sans dependre d'un PC allume.
+# Enregistre les retards SNCF toutes les 2 minutes, sans dependre d'un PC allume.
+# - Chaque execution tourne en boucle ~5h45 (un releve toutes les 2 min), puis relance la suivante.
+# - Le cron sert de chien de garde : si la chaine s'est arretee, il la redemarre ; sinon il s'arrete tout de suite
+#   (un verrou Postgres garantit qu'un seul enregistreur tourne a la fois).
 # Prerequis : un secret de depot DATABASE_URL (Settings > Secrets and variables > Actions).
-# Note : GitHub peut decaler les executions planifiees de quelques minutes aux heures chargees.
 name: record-sncf-delays
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
-concurrency:
-  group: record-sncf
-  cancel-in-progress: false
+permissions:
+  contents: read
+  actions: write   # pour relancer l'execution suivante
 
 jobs:
   record:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -q gtfs-realtime-bindings protobuf "psycopg[binary]"
-      - run: python recorder/record_sncf_cloud.py
+      - id: rec
+        run: python recorder/record_sncf_cloud.py | tee rec.log
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          POLLS: "2"
+          RUN_FOR: "20700"
           POLL_EVERY: "120"
+          LOCK_WAIT: ${{ github.event_name == 'workflow_dispatch' && '300' || '0' }}
+      - name: Relancer l'execution suivante
+        if: always() && !contains(steps.rec.outcome, 'cancelled')
+        run: |
+          if grep -q "un autre enregistreur tourne deja" rec.log; then echo "chaine deja active"; exit 0; fi
+          gh workflow run record-sncf.yml --ref "${GITHUB_REF_NAME}"
+        env:
+          GH_TOKEN: ${{ github.token }}
       - if: github.event_name == 'workflow_dispatch'
         run: python recorder/report.py
         env:
