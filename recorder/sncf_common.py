@@ -32,8 +32,9 @@ def uic_of(stop_id):
 
 
 def apply_schema(con):
-    with open(os.path.join(HERE, "schema.sql"), encoding="utf-8") as f:
-        con.execute(f.read())
+    for name in ("schema.sql", "schema_idfm.sql"):
+        with open(os.path.join(HERE, name), encoding="utf-8") as f:
+            con.execute(f.read())
     con.commit()
 
 

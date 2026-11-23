@@ -12,6 +12,7 @@ Sans DATABASE_URL : un releve a blanc avec resume (pour tester).
 """
 import datetime, os, time
 from google.transit import gtfs_realtime_pb2 as g
+import idfm
 from sncf_common import http_get, parse_trip_id, uic_of, apply_schema, bulk_upsert
 
 TU_URL = "https://proxy.transport.data.gouv.fr/resource/sncf-gtfs-rt-trip-updates"
@@ -197,6 +198,13 @@ def main():
                         print("verrou repris par un autre enregistreur : arret", flush=True); return
                 except Exception as ex2:
                     print("reconnexion impossible:", repr(ex2)[:300], flush=True)
+        try:
+            msg = idfm.poll(con, i)
+            if msg: print("    " + msg, flush=True)
+        except Exception as ex:  # l'Ile-de-France ne doit jamais bloquer le releve SNCF
+            print("    IDF erreur:", repr(ex)[:300], flush=True)
+            try: con.rollback()
+            except Exception: pass
         i += 1
         next_at += every
         if stop_at is None and i >= polls: break

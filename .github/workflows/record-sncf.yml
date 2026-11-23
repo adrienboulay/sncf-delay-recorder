@@ -1,4 +1,4 @@
-# Enregistre les retards SNCF toutes les 2 minutes, sans dependre d'un PC allume.
+# Enregistre les retards SNCF et Ile-de-France (PRIM) toutes les 2 minutes, sans dependre d'un PC allume.
 # - Chaque execution tourne en boucle ~5h45 (un releve toutes les 2 min), puis relance la suivante.
 # - Le cron sert de chien de garde : si la chaine s'est arretee, il la redemarre ; sinon il s'arrete tout de suite
 #   (un verrou Postgres garantit qu'un seul enregistreur tourne a la fois).
@@ -28,6 +28,7 @@ jobs:
         run: python recorder/record_sncf_cloud.py | tee rec.log
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PRIM_API_KEY: ${{ secrets.PRIM_API_KEY }}
           RUN_FOR: "20700"
           POLL_EVERY: "120"
           LOCK_WAIT: ${{ github.event_name == 'workflow_dispatch' && '300' || '0' }}

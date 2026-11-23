@@ -1,4 +1,4 @@
-# Recharge chaque nuit les referentiels SNCF (lignes, gares, trains prevus, calendrier).
+# Recharge chaque nuit les referentiels SNCF (lignes, gares, trains prevus, calendrier) et Ile-de-France (lignes, arrets).
 name: load-sncf-reference
 
 on:
@@ -9,7 +9,7 @@ on:
 jobs:
   load:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,5 +17,9 @@ jobs:
           python-version: "3.12"
       - run: pip install -q "psycopg[binary]"
       - run: python recorder/load_reference.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: python recorder/load_reference_idfm.py
+        if: always()
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
