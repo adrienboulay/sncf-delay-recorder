@@ -150,7 +150,7 @@ WITH obs AS (
          EXTRACT(HOUR FROM to_timestamp(hour_ts) AT TIME ZONE 'Europe/Paris')::int AS hour,
          SUM(n_passages) AS n_passages, SUM(sum_gap_s)::numeric / NULLIF(SUM(n_gaps), 0) AS mean_gap_s, MAX(max_gap_s) AS max_gap_s
   FROM idfm_metro_hourly GROUP BY line_id, hour_ts)
-SELECT o.line_id, l.short_name AS line_code, l.mode AS line_mode, o.service_date, o.hour, o.n_passages,
+SELECT o.line_id, l.short_name AS line_code, l.mode AS line_mode, o.hour_ts, o.service_date, o.hour, o.n_passages,
        ROUND(o.mean_gap_s) AS mean_gap_s, o.max_gap_s,
        ROUND(7200.0 / NULLIF(p.n_trips, 0)) AS planned_interval_s,         -- 2 sens : 3600 / (n_trips / 2)
        ROUND(o.mean_gap_s - 7200.0 / NULLIF(p.n_trips, 0)) AS excess_wait_s
