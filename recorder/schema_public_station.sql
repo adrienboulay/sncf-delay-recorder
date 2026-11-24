@@ -25,7 +25,7 @@ BEGIN
       'next', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
           SELECT num, mode, line_id, line, dest, sched, delay, cancelled FROM p
           WHERE COALESCE(dest_uic, '') <> p_id AND sched + GREATEST(delay, 0) >= t0 - 120
-          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json))
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 40) x), '[]'::json))
     INTO r;
   ELSIF p_net = 'idf' THEN
     WITH s AS (SELECT stop_ref, name, lat, lon FROM idfm_ref_stops WHERE COALESCE(parent_ref, stop_ref) = p_id),
@@ -57,7 +57,7 @@ BEGIN
       'next', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
           SELECT num, mode, line_id, line, dest, sched, delay, cancelled FROM p
           WHERE aimed_departure_ts IS NOT NULL AND sched + GREATEST(delay, 0) >= t0 - 120
-          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json),
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 40) x), '[]'::json),
       -- Metro / tram : prochaines rames ESTIMEES par ligne et direction (idfm_metro_next, mis a jour toutes les 2 min)
       'metro_next', COALESCE((SELECT json_agg(x ORDER BY x.line, x.dest) FROM (
           SELECT n.line_id, MIN(l.short_name) AS line, n.dest, (array_agg(DISTINCT n.expected_ts ORDER BY n.expected_ts))[1:3] AS t
@@ -70,3 +70,22 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.public_station(TEXT, TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.public_station(TEXT, TEXT) TO anon;
+
+-- Detail d'un train SNCF du jour (panneau « grandes lignes » deroulant) : arrets dans l'ordre avec horaires prevus, retards,
+-- arrets supprimes, et alertes publiees pour ce train. Donnees publiques du flux SNCF, aucune donnee personnelle.
+CREATE OR REPLACE FUNCTION public.public_train(p_num TEXT) RETURNS JSON
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+WITH d AS (SELECT MAX(service_date) AS sd FROM trains
+           WHERE train_num = p_num AND service_date <= to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYYMMDD')),
+t AS (SELECT t.* FROM trains t, d WHERE t.train_num = p_num AND t.service_date = d.sd),
+g AS (SELECT DISTINCT ON (uic) uic, name FROM ref_stops WHERE location_type = 1 AND uic IS NOT NULL ORDER BY uic, stop_id)
+SELECT json_build_object('num', p_num, 'mode', t.mode, 'status', t.status, 'max_delay', t.max_delay_s,
+  'line', (SELECT short_name FROM ref_routes WHERE route_id = t.route_id), 'long', (SELECT long_name FROM ref_routes WHERE route_id = t.route_id),
+  'stops', COALESCE((SELECT json_agg(json_build_array(g.name, u.sched_arrival_ts, u.sched_departure_ts, u.arrival_delay_s, u.departure_delay_s,
+                     COALESCE(u.skipped, FALSE), u.uic) ORDER BY u.stop_index)
+            FROM stop_updates u LEFT JOIN g ON g.uic = u.uic WHERE u.train_num = p_num AND u.service_date = t.service_date), '[]'::json),
+  'alerts', COALESCE((SELECT json_agg(DISTINCT COALESCE(NULLIF(a.header_fr, ''), left(a.description_fr, 200)))
+            FROM alert_trains x JOIN alerts a USING (alert_id) WHERE x.train_num = p_num AND x.service_date = t.service_date), '[]'::json))
+FROM t $$;
+REVOKE ALL ON FUNCTION public.public_train(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.public_train(TEXT) TO anon;
