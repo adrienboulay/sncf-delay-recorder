@@ -14,6 +14,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q "psycopg[binary]"
+      - run: python recorder/check_dburl.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - run: python recorder/report.py
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
