@@ -2,6 +2,23 @@
 -- Agregats de la journee en cours uniquement, aucune donnee personnelle. Lisibles par la page publique (anon).
 CREATE INDEX IF NOT EXISTS idfm_stop_updates_stop ON idfm_stop_updates(stop_ref);
 
+-- ============ CARTE PRE-CALCULEE ============
+-- Le calcul des gares prend 1 a 4 s, trop pres du delai de 3 s impose aux requetes publiques. L'enregistreur le refait
+-- toutes les 10 min (refresh_public_cache) et la page lit le resultat stocke, instantanement.
+CREATE TABLE IF NOT EXISTS public_cache (k TEXT PRIMARY KEY, v JSON, updated_at BIGINT);
+ALTER TABLE public_cache ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.refresh_public_cache() RETURNS VOID
+LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+INSERT INTO public_cache VALUES ('station_map', public_station_map_live(), EXTRACT(EPOCH FROM now())::bigint)
+ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = EXCLUDED.updated_at $$;
+CREATE OR REPLACE FUNCTION public.public_station_map() RETURNS JSON
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+SELECT COALESCE((SELECT v FROM public_cache WHERE k = 'station_map' AND updated_at > EXTRACT(EPOCH FROM now())::bigint - 1800),
+                public_station_map_live()) $$;
+REVOKE ALL ON FUNCTION public.refresh_public_cache() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.public_station_map() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.public_station_map() TO anon;
+
 -- Lignes ayant circule aujourd'hui (SNCF, hors cars) + toutes les lignes suivies en Ile-de-France (metro et tram compris).
 CREATE OR REPLACE FUNCTION public.public_lines() RETURNS JSON
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$

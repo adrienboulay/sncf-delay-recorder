@@ -7,7 +7,8 @@ ALTER TABLE strike_forecasts ENABLE ROW LEVEL SECURITY;
 
 -- Ponctualite par gare sur la journee en cours (heure de Paris) : SNCF + Ile-de-France.
 -- Une ligne par gare ayant au moins 3 passages. Aucune donnee individuelle.
-CREATE OR REPLACE FUNCTION public.public_station_map() RETURNS JSON
+-- Calcul complet (1 a 4 s) : la page lit la version pre-calculee, voir public_station_map() dans schema_public_search.sql.
+CREATE OR REPLACE FUNCTION public.public_station_map_live() RETURNS JSON
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
 WITH d AS (SELECT to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYYMMDD') AS today),
 gares AS (SELECT DISTINCT ON (uic) uic, name, lat, lon FROM ref_stops WHERE location_type = 1 AND uic IS NOT NULL AND lat IS NOT NULL ORDER BY uic, stop_id),
@@ -82,7 +83,6 @@ SELECT json_build_object('generated_at', EXTRACT(EPOCH FROM now())::bigint,
   'items', COALESCE((SELECT json_agg(x ORDER BY (x.kind = 'greve') DESC, x.t_start NULLS FIRST)
                      FROM (SELECT * FROM (SELECT * FROM strikes UNION ALL SELECT * FROM sncf UNION ALL SELECT * FROM idf) u LIMIT 400) x), '[]'::json)) $$;
 
-REVOKE ALL ON FUNCTION public.public_station_map() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.public_station_map_live() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.public_disruptions(INTEGER) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.public_station_map() TO anon;
 GRANT EXECUTE ON FUNCTION public.public_disruptions(INTEGER) TO anon;

@@ -117,6 +117,7 @@ def main():
     purge_before = (today - datetime.timedelta(days=keep)).strftime("%Y%m%d")
     with psycopg.connect(os.environ["DATABASE_URL"]) as con:
         apply_schema(con)
+        con.execute("SELECT refresh_public_cache()"); con.commit()  # carte publique pre-calculee
         days = sorted({r[0] for r in con.execute(
             "SELECT DISTINCT service_date FROM trains WHERE service_date <= %s UNION "
             "SELECT DISTINCT service_date FROM idfm_trains WHERE service_date <= %s", (last_complete, last_complete))})

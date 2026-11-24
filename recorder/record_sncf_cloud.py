@@ -205,6 +205,13 @@ def main():
             print("    IDF erreur:", repr(ex)[:300], flush=True)
             try: con.rollback()
             except Exception: pass
+        if i % 5 == 0:  # carte publique pre-calculee toutes les 10 min (la page la lit instantanement)
+            try:
+                con.execute("SELECT refresh_public_cache()"); con.commit()
+            except Exception as ex:
+                print("    carte publique erreur:", repr(ex)[:200], flush=True)
+                try: con.rollback()
+                except Exception: pass
         i += 1
         next_at += every
         if stop_at is None and i >= polls: break
