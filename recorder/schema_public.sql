@@ -50,7 +50,8 @@ sncf AS (
          (SELECT string_agg(DISTINCT COALESCE(r.short_name, r.long_name), ', ') FROM ref_routes r
            WHERE a.route_ids <> '' AND r.route_id = ANY(string_to_array(a.route_ids, ','))) AS lines,
          (SELECT json_agg(json_build_array(g.name, round(g.lat::numeric, 5), round(g.lon::numeric, 5)))
-            FROM (SELECT g.* FROM gares g WHERE a.stop_uics <> '' AND g.uic = ANY(string_to_array(a.stop_uics, ',')) LIMIT 25) g) AS stops
+            FROM (SELECT g.* FROM gares g WHERE a.stop_uics <> '' AND g.uic = ANY(string_to_array(a.stop_uics, ',')) LIMIT 25) g) AS stops,
+         to_json(string_to_array(NULLIF(a.route_ids, ''), ',')) AS line_ids
   FROM alerts a, w
   WHERE a.last_seen > w.t0 - 1800                                   -- toujours publiee dans le flux
     AND COALESCE(NULLIF(a.active_end, 0), w.t1) >= w.t0 AND COALESCE(NULLIF(a.active_start, 0), w.t0) <= w.t1),
@@ -65,7 +66,8 @@ idf AS (
            WHERE dl.disruption_id = d.disruption_id) AS lines,
          (SELECT json_agg(json_build_array(s.name, round(s.lat::numeric, 5), round(s.lon::numeric, 5)))
             FROM (SELECT DISTINCT ON (r.stop_ref) r.* FROM idfm_disruption_stops ds JOIN idfm_ref_stops r ON r.stop_ref = ds.stop_ref
-                  WHERE ds.disruption_id = d.disruption_id AND r.lat IS NOT NULL LIMIT 25) s) AS stops
+                  WHERE ds.disruption_id = d.disruption_id AND r.lat IS NOT NULL LIMIT 25) s) AS stops,
+         (SELECT json_agg(dl.line_id) FROM idfm_disruption_lines dl WHERE dl.disruption_id = d.disruption_id) AS line_ids
   FROM idfm_disruptions d, w
   WHERE d.category <> 'information'
     AND EXISTS (SELECT 1 FROM idfm_disruption_periods p WHERE p.disruption_id = d.disruption_id AND p.end_ts >= w.t0 AND p.begin_ts <= w.t1)),
@@ -74,7 +76,7 @@ strikes AS (
          f.title || CASE WHEN f.place <> '' THEN ' · ' || f.place ELSE '' END AS title,
          EXTRACT(EPOCH FROM (to_date(f.start_date, 'YYYYMMDD')::timestamp AT TIME ZONE 'Europe/Paris'))::bigint AS t_start,
          EXTRACT(EPOCH FROM ((to_date(f.end_date, 'YYYYMMDD') + 1)::timestamp AT TIME ZONE 'Europe/Paris'))::bigint - 1 AS t_end,
-         NULL::text AS lines, NULL::json AS stops
+         NULL::text AS lines, NULL::json AS stops, NULL::json AS line_ids
   FROM strike_forecasts f, w WHERE f.end_date >= w.d0 AND f.start_date <= w.d1)
 SELECT json_build_object('generated_at', EXTRACT(EPOCH FROM now())::bigint,
   'items', COALESCE((SELECT json_agg(x ORDER BY (x.kind = 'greve') DESC, x.t_start NULLS FIRST)
