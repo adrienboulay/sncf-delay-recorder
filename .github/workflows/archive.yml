@@ -1,5 +1,6 @@
 # Chaque nuit : resume quotidien, archive compressee dans Supabase Storage, purge du detail ancien (base < 500 Mo).
-# Secrets : DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (sans les deux derniers : resume seulement).
+# Secrets : DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (sans les deux derniers : resume seulement),
+# WAITLIST_BACKUP_KEY (sauvegarde chiffree de la preinscription, 30 nuits gardees).
 name: archive-and-prune
 on:
   schedule:
@@ -20,11 +21,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -q "psycopg[binary]"
+      - run: pip install -q "psycopg[binary]" cryptography
       - run: python recorder/archive_prune.py
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WAITLIST_BACKUP_KEY: ${{ secrets.WAITLIST_BACKUP_KEY }}
           KEEP_DAYS: "2"
           SELFTEST: ${{ inputs.selftest }}

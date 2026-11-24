@@ -7,12 +7,14 @@ Pour chaque jour termine (service_date <= avant-hier, heure de Paris) :
   3. Purge : le detail des jours plus vieux que KEEP_DAYS est supprime de la base, SEULEMENT si l'archive est confirmee.
 
 Variables : DATABASE_URL ; SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (sans elles : resume seulement, ni archive ni purge) ;
-KEEP_DAYS (defaut 2). N'affiche que des compteurs (journaux publics).
+KEEP_DAYS (defaut 2) ;
+WAITLIST_BACKUP_KEY : phrase secrete de la sauvegarde chiffree de la preinscription (voir waitlist_backup.py). N'affiche que des compteurs (journaux publics).
 """
 import datetime, gzip, io, json, os, time, urllib.parse, urllib.request
 from zoneinfo import ZoneInfo
 import psycopg
 from sncf_common import apply_schema
+import waitlist_backup
 
 PARIS = ZoneInfo("Europe/Paris")
 BUCKET = "archive"
@@ -133,6 +135,14 @@ def main():
             print(f"AUTO-TEST : {n} lignes, {len(data)/1e3:.0f} ko compresses ; envoi {st}, relecture {st2} "
                   f"{'identique' if back == data else 'DIFFERENTE'}, suppression {st3} -> {'OK' if ok else 'ECHEC'}", flush=True)
             if not ok: raise SystemExit(1)
+        wkey = os.environ.get("WAITLIST_BACKUP_KEY", "")
+        if can_archive and wkey:
+            old_day = (today - datetime.timedelta(days=waitlist_backup.KEEP)).strftime("%Y%m%d")
+            if not waitlist_backup.backup(con, storage, BUCKET, today.strftime("%Y%m%d"), old_day, wkey,
+                                          selftest=os.environ.get("SELFTEST") == "1"):
+                raise SystemExit(1)
+        else:
+            print("SAUVEGARDE WAITLIST : INACTIVE (secret WAITLIST_BACKUP_KEY absent)", flush=True)
         for d in days:
             for stmt in STATS_SQL.split(";"):  # une requete a la fois (psycopg refuse plusieurs requetes parametrees)
                 if stmt.strip(): con.execute(stmt, {"d": d})
