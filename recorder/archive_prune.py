@@ -134,7 +134,9 @@ def main():
                   f"{'identique' if back == data else 'DIFFERENTE'}, suppression {st3} -> {'OK' if ok else 'ECHEC'}", flush=True)
             if not ok: raise SystemExit(1)
         for d in days:
-            con.execute(STATS_SQL, {"d": d}); con.commit()
+            for stmt in STATS_SQL.split(";"):  # une requete a la fois (psycopg refuse plusieurs requetes parametrees)
+                if stmt.strip(): con.execute(stmt, {"d": d})
+            con.commit()
             if not can_archive: continue
             archived = {r[0] for r in con.execute("SELECT table_name FROM archive_log WHERE service_date = %s", (d,))}
             for t, (sel, _) in TABLES.items():
