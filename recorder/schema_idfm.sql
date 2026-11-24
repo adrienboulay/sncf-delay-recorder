@@ -169,3 +169,10 @@ JOIN idfm_disruption_periods p ON p.disruption_id = d.disruption_id
      AND p.begin_ts <= EXTRACT(EPOCH FROM now())::bigint AND p.end_ts >= EXTRACT(EPOCH FROM now())::bigint
 LEFT JOIN idfm_disruption_lines dl ON dl.disruption_id = d.disruption_id
 LEFT JOIN idfm_ref_lines l ON l.line_id = dl.line_id;
+
+-- Prochains passages ESTIMES des metros / trams (la RATP ne publie pas d'horaire prevu) : 3 prochaines rames par arret,
+-- ligne et direction, remplaces a chaque releve (2 min). Sert au panneau « gare » de la carte.
+CREATE TABLE IF NOT EXISTS idfm_metro_next (
+  line_id TEXT, stop_ref TEXT, direction TEXT, dest TEXT, expected_ts BIGINT, updated_at BIGINT);
+CREATE INDEX IF NOT EXISTS idfm_metro_next_stop ON idfm_metro_next(stop_ref);
+ALTER TABLE idfm_metro_next ENABLE ROW LEVEL SECURITY;

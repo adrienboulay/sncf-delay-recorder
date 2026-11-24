@@ -57,7 +57,13 @@ BEGIN
       'next', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
           SELECT num, mode, line_id, line, dest, sched, delay, cancelled FROM p
           WHERE aimed_departure_ts IS NOT NULL AND sched + GREATEST(delay, 0) >= t0 - 120
-          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json))
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json),
+      -- Metro / tram : prochaines rames ESTIMEES par ligne et direction (idfm_metro_next, mis a jour toutes les 2 min)
+      'metro_next', COALESCE((SELECT json_agg(x ORDER BY x.line, x.dest) FROM (
+          SELECT n.line_id, MIN(l.short_name) AS line, n.dest, (array_agg(DISTINCT n.expected_ts ORDER BY n.expected_ts))[1:3] AS t
+          FROM idfm_metro_next n LEFT JOIN idfm_ref_lines l USING (line_id)
+          WHERE n.stop_ref IN (SELECT stop_ref FROM s) AND n.expected_ts >= t0 - 30 AND n.updated_at >= t0 - 600
+          GROUP BY n.line_id, n.dest) x), '[]'::json))
     INTO r;
   END IF;
   RETURN r;

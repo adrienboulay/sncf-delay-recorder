@@ -65,6 +65,25 @@ def tracked_lines(con):
     return _lines["map"]
 
 
+_next = []   # prochains passages estimes metro/tram du dernier releve : (ligne, arret, direction, destination, heure)
+
+
+def store_metro_next(con, now):
+    """Prochains passages ESTIMES des metros et trams (pas d'horaire publie par la RATP) : les 3 prochaines rames par
+    arret, ligne et direction, comme les ecrans en station. Table remplacee a chaque releve (2 min), quelques milliers de lignes."""
+    best = {}
+    for lid, sr, dref, dest, e in _next:
+        best.setdefault((lid, sr, dref), []).append((e, dest))
+    rows = [(lid, sr, dref, dest, e, now) for (lid, sr, dref), xs in best.items() for e, dest in sorted(xs)[:3]]
+    cur = con.cursor()
+    cur.execute("DELETE FROM idfm_metro_next")
+    with cur.copy("COPY idfm_metro_next (line_id, stop_ref, direction, dest, expected_ts, updated_at) FROM STDIN") as cp:
+        for r in rows: cp.write_row(r)
+    con.commit()
+    _next.clear()
+    return len(rows)
+
+
 def parse_et(d, lines, now):
     frames = d["Siri"]["ServiceDelivery"]["EstimatedTimetableDelivery"][0].get("EstimatedJourneyVersionFrame", [])
     trains, stops, seen, n = {}, [], {}, 0
@@ -101,10 +120,13 @@ def parse_et(d, lines, now):
                              last_delay, mx, len(calls), ncanc, sched_arr, now, now)
             else:  # pas d'horaire prevu (metro, trams RATP) : on suit l'heure estimee de chaque rame a chaque arret
                 dref = v(j.get("DirectionRef")) or "?"
+                dest = v(j.get("DestinationName")) or ""
                 for c in calls:
                     e = ts(c.get("ExpectedArrivalTime") or c.get("ExpectedDepartureTime"))
                     if e and (c.get("DepartureStatus") or c.get("ArrivalStatus")) != "CANCELLED":
-                        seen[(lid, stop_ref(v(c.get("StopPointRef"))), dref, ref)] = e
+                        sr = stop_ref(v(c.get("StopPointRef")))
+                        seen[(lid, sr, dref, ref)] = e
+                        if now - 60 <= e <= now + 3600: _next.append((lid, sr, dref, dest, e))
     metro_passages(seen, now)
     stops = list({(s[0], s[1]): s for s in stops}.values())  # une ligne par (course, arret)
     return n, trains, stops, len({k[0] for k in seen})
@@ -236,8 +258,10 @@ def poll(con, i):
     try:
         lines = tracked_lines(con)
         if not lines: return "IDF : referentiel des lignes vide (lancer load-reference)"
+        _next.clear()
         n, trains, stops, n_metro = parse_et(fetch("estimated-timetable?LineRef=ALL"), lines, now)
         store_et(con, now, trains, stops)
+        nn = store_metro_next(con, now)
         nh = flush_metro(con, now) if i % 5 == 4 else 0
         nd = store_disruptions(con, now, fetch("disruptions_bulk/disruptions/v2")) if i % 5 == 0 else None
         con.execute("INSERT INTO idfm_polls VALUES (%s,%s,%s,%s,%s,NULL)",
@@ -245,7 +269,7 @@ def poll(con, i):
         con.commit()
         late = sum(1 for t in trains.values() if (t[11] or 0) >= 900)
         return (f"IDF : {len(trains)} trains/trams ({late} >= 15 min), {len(stops)} passages, "
-                f"{n_metro} lignes metro/tram ({len(_pending)} rames-arrets suivis, {nh} heures ecrites), "
+                f"{n_metro} lignes metro/tram ({len(_pending)} rames-arrets suivis, {nn} prochains passages, {nh} heures ecrites), "
                 f"perturbations {f'{nd[0]} gardees, {nd[1]} bus ignorees' if nd else '-'}, {time.time() - t0:.1f} s")
     except Exception as ex:
         con.rollback()
