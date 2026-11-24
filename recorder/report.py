@@ -45,6 +45,13 @@ with psycopg.connect(os.environ["DATABASE_URL"]) as con:
                       "WHERE hour_ts = (SELECT MAX(hour_ts) FROM idfm_metro_hourly) - 3600 ORDER BY line_code").fetchall())
     print("IDF paliers de retard (ligne, n trains, p15, p30) :", [(r[0], r[1], round(float(r[2]), 3), round(float(r[3]), 3))
           for r in con.execute("SELECT line_code, n_trains, p_15, p_30 FROM v_idfm_delay_tiers ORDER BY n_trains DESC LIMIT 8")])
+    m = con.execute("SELECT public_station_map()").fetchone()[0]
+    print("CARTE : gares avec chiffres aujourd'hui :", len(m["stations"]), "| dont en retard (>=1 train +15 min) :",
+          sum(1 for x in m["stations"] if x["late15"] > 0))
+    d = con.execute("SELECT public_disruptions(7)").fetchone()[0]["items"]
+    import collections as _c
+    print("PERTURBATIONS 7 jours (source, type) :", sorted(_c.Counter((x["src"], x["kind"]) for x in d).items()),
+          "| avec gares localisees :", sum(1 for x in d if x.get("stops")))
     print("poids par table (donnees + index) :", [(r[0], r[1]) for r in con.execute(
         "SELECT relname, pg_size_pretty(pg_total_relation_size(relid)) FROM pg_catalog.pg_statio_user_tables "
         "ORDER BY pg_total_relation_size(relid) DESC LIMIT 12")])
