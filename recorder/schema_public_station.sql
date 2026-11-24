@@ -1,0 +1,66 @@
+-- ============ DETAIL D'UNE GARE / STATION (panneau de droite de la carte) ============
+-- Lignes qui la desservent aujourd'hui (avec leurs chiffres), prochains departs connus en temps reel (heure prevue, retard,
+-- destination), regularite des metros / trams. Agregats publics uniquement. Identifiants = ceux de public_station_map().
+CREATE OR REPLACE FUNCTION public.public_station(p_net TEXT, p_id TEXT) RETURNS JSON
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE today TEXT := to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYYMMDD'); t0 BIGINT := EXTRACT(EPOCH FROM now())::bigint; r JSON;
+BEGIN
+  IF p_net = 'sncf' THEN
+    WITH g AS (SELECT DISTINCT ON (uic) uic, name, lat, lon FROM ref_stops WHERE location_type = 1 AND uic IS NOT NULL ORDER BY uic, stop_id),
+    p AS (SELECT u.train_num AS num, t.mode, t.route_id AS line_id, ro.short_name AS line, gd.name AS dest, t.dest_uic,
+                 COALESCE(u.sched_departure_ts, u.sched_arrival_ts) AS sched,
+                 COALESCE(u.departure_delay_s, u.arrival_delay_s, 0) AS delay, u.arrival_delay_s,
+                 (COALESCE(u.skipped, FALSE) OR t.status = 'CANCELED') AS cancelled
+          FROM stop_updates u JOIN trains t ON t.train_num = u.train_num AND t.service_date = u.service_date
+          LEFT JOIN ref_routes ro ON ro.route_id = t.route_id LEFT JOIN g gd ON gd.uic = t.dest_uic
+          WHERE u.uic = p_id AND u.service_date = today)
+    SELECT json_build_object('net', 'sncf', 'id', p_id, 'name', (SELECT name FROM g WHERE uic = p_id),
+      'n', (SELECT COUNT(*) FROM p), 'late15', (SELECT COUNT(*) FROM p WHERE COALESCE(arrival_delay_s, delay) >= 900),
+      'cancelled', (SELECT COUNT(*) FROM p WHERE cancelled),
+      'avg', (SELECT ROUND(AVG(GREATEST(delay, 0)) / 60.0, 1) FROM p),
+      'lines', COALESCE((SELECT json_agg(x ORDER BY x.n DESC) FROM (
+          SELECT line_id AS id, MAX(line) AS name, MAX(mode) AS mode, COUNT(*) AS n,
+                 COUNT(*) FILTER (WHERE COALESCE(arrival_delay_s, delay) >= 900) AS late15, COUNT(*) FILTER (WHERE cancelled) AS cancelled
+          FROM p WHERE line_id IS NOT NULL GROUP BY line_id) x), '[]'::json),
+      'next', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
+          SELECT num, mode, line_id, line, dest, sched, delay, cancelled FROM p
+          WHERE COALESCE(dest_uic, '') <> p_id AND sched + GREATEST(delay, 0) >= t0 - 120
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json))
+    INTO r;
+  ELSIF p_net = 'idf' THEN
+    WITH s AS (SELECT stop_ref, name, lat, lon FROM idfm_ref_stops WHERE COALESCE(parent_ref, stop_ref) = p_id),
+    p AS (SELECT t.train_num AS num, t.mode, t.line_id, l.short_name AS line, t.dest_name AS dest,
+                 COALESCE(u.aimed_departure_ts, u.aimed_arrival_ts) AS sched, u.aimed_departure_ts,
+                 COALESCE(u.departure_delay_s, u.arrival_delay_s, 0) AS delay, u.arrival_delay_s,
+                 (COALESCE(u.status, '') = 'CANCELLED' OR COALESCE(t.status, '') = 'CANCELLED') AS cancelled
+          FROM idfm_stop_updates u JOIN idfm_trains t USING (journey_key) LEFT JOIN idfm_ref_lines l ON l.line_id = t.line_id
+          WHERE u.stop_ref IN (SELECT stop_ref FROM s) AND t.service_date = today),
+    m AS (SELECT h.line_id, SUM(h.n_passages) AS n, SUM(h.sum_gap_s)::numeric / NULLIF(SUM(h.n_gaps), 0) AS gap_s,
+                 AVG(7200.0 / NULLIF(f.n_trips, 0)) AS planned_s
+          FROM idfm_metro_hourly h
+          LEFT JOIN idfm_planned_frequency f ON f.line_id = h.line_id
+               AND f.service_date = to_char(to_timestamp(h.hour_ts) AT TIME ZONE 'Europe/Paris', 'YYYYMMDD')
+               AND f.hour = EXTRACT(HOUR FROM to_timestamp(h.hour_ts) AT TIME ZONE 'Europe/Paris')
+          WHERE h.stop_ref IN (SELECT stop_ref FROM s) AND h.hour_ts >= t0 - 3 * 3600 GROUP BY h.line_id)
+    SELECT json_build_object('net', 'idf', 'id', p_id, 'name', (SELECT MIN(name) FROM s),
+      'n', (SELECT COUNT(*) FROM p), 'late15', (SELECT COUNT(*) FROM p WHERE COALESCE(arrival_delay_s, delay) >= 900),
+      'cancelled', (SELECT COUNT(*) FROM p WHERE cancelled),
+      'avg', (SELECT ROUND(AVG(GREATEST(delay, 0)) / 60.0, 1) FROM p),
+      'lines', COALESCE((SELECT json_agg(x ORDER BY x.n DESC) FROM (
+          SELECT line_id AS id, MAX(line) AS name, MAX(mode) AS mode, COUNT(*) AS n,
+                 COUNT(*) FILTER (WHERE COALESCE(arrival_delay_s, delay) >= 900) AS late15, COUNT(*) FILTER (WHERE cancelled) AS cancelled,
+                 NULL::numeric AS gap, NULL::numeric AS planned
+          FROM p WHERE line_id IS NOT NULL GROUP BY line_id
+          UNION ALL
+          SELECT m.line_id, l.short_name, l.mode, m.n, 0, 0, ROUND(m.gap_s / 60.0, 1), ROUND(m.planned_s / 60.0, 1)
+          FROM m JOIN idfm_ref_lines l USING (line_id) WHERE m.line_id NOT IN (SELECT line_id FROM p WHERE line_id IS NOT NULL)) x), '[]'::json),
+      'next', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
+          SELECT num, mode, line_id, line, dest, sched, delay, cancelled FROM p
+          WHERE aimed_departure_ts IS NOT NULL AND sched + GREATEST(delay, 0) >= t0 - 120
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json))
+    INTO r;
+  END IF;
+  RETURN r;
+END $$;
+REVOKE ALL ON FUNCTION public.public_station(TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.public_station(TEXT, TEXT) TO anon;
