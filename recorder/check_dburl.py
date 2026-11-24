@@ -6,6 +6,8 @@ s = raw.strip()
 print("espaces ou retour a la ligne autour :", s != raw)
 print("guillemets autour :", s[:1] in "\"'" and s[:1] != "")
 print("commence par postgresql:// ou postgres:// :", bool(re.match(r"^postgres(ql)?://", s)))
+print("crochets [ ] presents :", "[" in s or "]" in s, "| contient YOUR-PASSWORD :", "YOUR-PASSWORD" in s.upper())
+s = s.replace("[", "").replace("]", "")
 p = urllib.parse.urlsplit(s.strip("\"'"))
 user = p.username or ""
 pw = urllib.parse.unquote(p.password or "")
