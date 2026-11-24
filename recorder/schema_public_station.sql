@@ -89,3 +89,24 @@ SELECT json_build_object('num', p_num, 'mode', t.mode, 'status', t.status, 'max_
 FROM t $$;
 REVOKE ALL ON FUNCTION public.public_train(TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.public_train(TEXT) TO anon;
+
+-- Tous les points d'arret d'un meme lieu (quais metro, RER, gare SNCF...) a partir d'une position et d'un nom :
+-- a moins de 250 m, ou a moins de 600 m avec le meme premier mot (Chatelet / Chatelet - Les Halles). Sert a ouvrir la
+-- meme fiche « gare » que l'on clique un arret de ligne, une gare ou une station depuis la vue d'une ligne.
+CREATE OR REPLACE FUNCTION public.public_nearby_ids(p_lat DOUBLE PRECISION, p_lon DOUBLE PRECISION, p_name TEXT) RETURNS JSON
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+WITH p AS (SELECT p_lat AS lat, p_lon AS lon, cos(radians(p_lat)) AS c, lower(split_part(COALESCE(p_name, ''), ' ', 1)) AS w),
+idf AS (SELECT DISTINCT ON (COALESCE(s.parent_ref, s.stop_ref)) 'idf' AS net, COALESCE(s.parent_ref, s.stop_ref) AS id, s.name,
+               111000 * sqrt((s.lat - p.lat) ^ 2 + ((s.lon - p.lon) * p.c) ^ 2) AS dist
+        FROM idfm_ref_stops s, p WHERE s.lat BETWEEN p.lat - .006 AND p.lat + .006 AND s.lon BETWEEN p.lon - .009 AND p.lon + .009
+        ORDER BY COALESCE(s.parent_ref, s.stop_ref), dist),
+sn AS (SELECT DISTINCT ON (r.uic) 'sncf' AS net, r.uic AS id, r.name,
+              111000 * sqrt((r.lat - p.lat) ^ 2 + ((r.lon - p.lon) * p.c) ^ 2) AS dist
+       FROM ref_stops r, p WHERE r.location_type = 1 AND r.uic IS NOT NULL
+         AND r.lat BETWEEN p.lat - .006 AND p.lat + .006 AND r.lon BETWEEN p.lon - .009 AND p.lon + .009
+       ORDER BY r.uic, dist)
+SELECT COALESCE(json_agg(json_build_object('net', x.net, 'id', x.id, 'name', x.name, 'dist', round(x.dist)) ORDER BY x.dist), '[]'::json)
+FROM (SELECT * FROM idf UNION ALL SELECT * FROM sn) x, p
+WHERE x.dist < 250 OR (x.dist < 600 AND p.w <> '' AND lower(split_part(x.name, ' ', 1)) = p.w) $$;
+REVOKE ALL ON FUNCTION public.public_nearby_ids(DOUBLE PRECISION, DOUBLE PRECISION, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.public_nearby_ids(DOUBLE PRECISION, DOUBLE PRECISION, TEXT) TO anon;
