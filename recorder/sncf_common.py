@@ -32,7 +32,7 @@ def uic_of(stop_id):
 
 
 def apply_schema(con):
-    for name in ("schema.sql", "schema_idfm.sql"):
+    for name in ("schema.sql", "schema_idfm.sql", "schema_waitlist.sql"):
         with open(os.path.join(HERE, name), encoding="utf-8") as f:
             con.execute(f.read())
     con.commit()
