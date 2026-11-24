@@ -26,12 +26,34 @@ idf AS (
          ROUND(AVG(GREATEST(COALESCE(u.arrival_delay_s, u.departure_delay_s, 0), 0)) / 60.0, 1) AS avg_min
   FROM idfm_stop_updates u JOIN idfm_trains t USING (journey_key) JOIN idfm_ref_stops s ON s.stop_ref = u.stop_ref, d
   WHERE t.service_date = d.today AND s.lat IS NOT NULL
-  GROUP BY COALESCE(s.parent_ref, s.stop_ref) HAVING COUNT(*) >= 3)
+  GROUP BY COALESCE(s.parent_ref, s.stop_ref) HAVING COUNT(*) >= 3),
+-- Metro et tram RATP : pas d'horaire prevu publie (ni identifiant de course), donc pas de « retard » au sens SNCF.
+-- On mesure la regularite sur les 3 dernieres heures : intervalle moyen observe entre deux rames vs intervalle prevu
+-- (GTFS). gap / planned en minutes ; l'attente en plus d'un voyageur arrivant au hasard ~ (gap - planned) / 2.
+mline AS (
+  SELECT COALESCE(s.parent_ref, s.stop_ref) AS id, h.line_id, MIN(s.name) AS name, AVG(s.lat) AS lat, AVG(s.lon) AS lon,
+         SUM(h.n_passages) AS n, SUM(h.sum_gap_s)::numeric / NULLIF(SUM(h.n_gaps), 0) AS gap_s,
+         AVG(7200.0 / NULLIF(p.n_trips, 0)) AS planned_s
+  FROM idfm_metro_hourly h JOIN idfm_ref_stops s ON s.stop_ref = h.stop_ref
+  LEFT JOIN idfm_planned_frequency p ON p.line_id = h.line_id
+       AND p.service_date = to_char(to_timestamp(h.hour_ts) AT TIME ZONE 'Europe/Paris', 'YYYYMMDD')
+       AND p.hour = EXTRACT(HOUR FROM to_timestamp(h.hour_ts) AT TIME ZONE 'Europe/Paris')
+  WHERE h.hour_ts >= EXTRACT(EPOCH FROM now())::bigint - 3 * 3600 AND s.lat IS NOT NULL
+  GROUP BY 1, 2 HAVING SUM(h.n_gaps) >= 3),
+metro AS (   -- une station = la ligne la plus irreguliere qui la dessert
+  SELECT 'idf' AS net, w.id, w.name, w.lat, w.lon, t.n, 0::bigint AS late15, 0::bigint AS cancelled, NULL::numeric AS avg_min,
+         'metro' AS kind, ROUND(w.gap_s / 60.0, 1) AS gap, ROUND(w.planned_s / 60.0, 1) AS planned, t.lines
+  FROM (SELECT DISTINCT ON (id) * FROM mline ORDER BY id, gap_s - COALESCE(planned_s, gap_s) DESC) w
+  JOIN (SELECT m.id, SUM(m.n) AS n, string_agg(DISTINCT l.short_name, ', ') AS lines
+        FROM mline m JOIN idfm_ref_lines l USING (line_id) GROUP BY m.id) t USING (id))
 SELECT json_build_object(
   'updated_at', (SELECT MAX(polled_at) FROM polls),
   'stations', COALESCE((SELECT json_agg(json_build_object('net', net, 'id', id, 'name', name, 'lat', round(lat::numeric, 5),
-              'lon', round(lon::numeric, 5), 'n', n, 'late15', late15, 'cancelled', cancelled, 'avg', avg_min))
-              FROM (SELECT * FROM sncf UNION ALL SELECT * FROM idf) x), '[]'::json)) $$;
+              'lon', round(lon::numeric, 5), 'n', n, 'late15', late15, 'cancelled', cancelled, 'avg', avg_min,
+              'kind', kind, 'gap', gap, 'planned', planned, 'lines', lines))
+              FROM (SELECT *, 'train' AS kind, NULL::numeric AS gap, NULL::numeric AS planned, NULL::text AS lines FROM sncf
+                    UNION ALL SELECT *, 'train', NULL::numeric, NULL::numeric, NULL::text FROM idf
+                    UNION ALL SELECT * FROM metro) x), '[]'::json)) $$;
 
 -- Perturbations en cours et a venir (fenetre de `days` jours) : greves annoncees, travaux et incidents
 -- (alertes SNCF + Info Trafic IDFM), avec au plus 25 gares localisees chacune pour la carte.

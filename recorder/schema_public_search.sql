@@ -7,10 +7,45 @@ CREATE INDEX IF NOT EXISTS idfm_stop_updates_stop ON idfm_stop_updates(stop_ref)
 -- toutes les 10 min (refresh_public_cache) et la page lit le resultat stocke, instantanement.
 CREATE TABLE IF NOT EXISTS public_cache (k TEXT PRIMARY KEY, v JSON, updated_at BIGINT);
 ALTER TABLE public_cache ENABLE ROW LEVEL SECURITY;
+-- Troncons du reseau (gare -> gare suivante) circules aujourd'hui, avec le retard moyen a l'arrivee du troncon :
+-- permet de dessiner les LIGNES colorees quand on dezoome (plus lisible que des milliers de points).
+-- Format compact : [lat1, lon1, lat2, lon2, nb de passages, retard moyen (min), nb d'arrets supprimes]. Serveur seulement.
+CREATE OR REPLACE FUNCTION public.public_segments_live() RETURNS JSON
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+WITH d AS (SELECT to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYYMMDD') AS today),
+g AS (SELECT DISTINCT ON (uic) uic, lat, lon FROM ref_stops WHERE location_type = 1 AND uic IS NOT NULL AND lat IS NOT NULL ORDER BY uic, stop_id),
+su AS (SELECT u.uic AS a, LEAD(u.uic) OVER w AS b,
+              LEAD(GREATEST(COALESCE(u.arrival_delay_s, u.departure_delay_s, 0), 0)) OVER w AS dl, LEAD(u.skipped) OVER w AS sk
+       FROM stop_updates u, d WHERE u.service_date = d.today WINDOW w AS (PARTITION BY u.train_num ORDER BY u.stop_index)),
+s1 AS (SELECT LEAST(a, b) AS a, GREATEST(a, b) AS b, COUNT(*) AS n, AVG(dl) / 60.0 AS m, COUNT(*) FILTER (WHERE sk) AS c
+       FROM su WHERE b IS NOT NULL AND a <> b GROUP BY 1, 2),
+ist AS (SELECT stop_ref, COALESCE(parent_ref, stop_ref) AS id FROM idfm_ref_stops WHERE lat IS NOT NULL),
+ipos AS (SELECT COALESCE(parent_ref, stop_ref) AS id, AVG(lat) AS lat, AVG(lon) AS lon FROM idfm_ref_stops WHERE lat IS NOT NULL GROUP BY 1),
+iu AS (SELECT ist.id AS a, LEAD(ist.id) OVER w AS b,
+              LEAD(GREATEST(COALESCE(u.arrival_delay_s, u.departure_delay_s, 0), 0)) OVER w AS dl, LEAD(u.status = 'CANCELLED') OVER w AS sk
+       FROM idfm_stop_updates u JOIN idfm_trains t USING (journey_key) JOIN ist ON ist.stop_ref = u.stop_ref, d
+       WHERE t.service_date = d.today WINDOW w AS (PARTITION BY u.journey_key ORDER BY COALESCE(u.aimed_departure_ts, u.aimed_arrival_ts))),
+s2 AS (SELECT LEAST(a, b) AS a, GREATEST(a, b) AS b, COUNT(*) AS n, AVG(dl) / 60.0 AS m, COUNT(*) FILTER (WHERE sk) AS c
+       FROM iu WHERE b IS NOT NULL AND a <> b GROUP BY 1, 2)
+SELECT COALESCE(json_agg(json_build_array(x.lat1, x.lon1, x.lat2, x.lon2, x.n, x.m, x.c)), '[]'::json) FROM (
+  SELECT round(ga.lat::numeric, 4) AS lat1, round(ga.lon::numeric, 4) AS lon1, round(gb.lat::numeric, 4) AS lat2, round(gb.lon::numeric, 4) AS lon2,
+         s1.n, round(s1.m, 1) AS m, s1.c FROM s1 JOIN g ga ON ga.uic = s1.a JOIN g gb ON gb.uic = s1.b
+  UNION ALL
+  SELECT round(pa.lat::numeric, 4), round(pa.lon::numeric, 4), round(pb.lat::numeric, 4), round(pb.lon::numeric, 4),
+         s2.n, round(s2.m, 1), s2.c FROM s2 JOIN ipos pa ON pa.id = s2.a JOIN ipos pb ON pb.id = s2.b) x $$;
+REVOKE ALL ON FUNCTION public.public_segments_live() FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.refresh_public_cache() RETURNS VOID
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
 INSERT INTO public_cache VALUES ('station_map', public_station_map_live(), EXTRACT(EPOCH FROM now())::bigint)
+ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = EXCLUDED.updated_at;
+INSERT INTO public_cache VALUES ('segments', public_segments_live(), EXTRACT(EPOCH FROM now())::bigint)
 ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = EXCLUDED.updated_at $$;
+CREATE OR REPLACE FUNCTION public.public_segments() RETURNS JSON
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+SELECT COALESCE((SELECT v FROM public_cache WHERE k = 'segments' AND updated_at > EXTRACT(EPOCH FROM now())::bigint - 3600), '[]'::json) $$;
+REVOKE ALL ON FUNCTION public.public_segments() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.public_segments() TO anon;
 CREATE OR REPLACE FUNCTION public.public_station_map() RETURNS JSON
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
 SELECT COALESCE((SELECT v FROM public_cache WHERE k = 'station_map' AND updated_at > EXTRACT(EPOCH FROM now())::bigint - 1800),
