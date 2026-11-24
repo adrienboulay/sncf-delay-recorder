@@ -15,3 +15,9 @@ __pycache__/
 # Secrets
 .env
 .env.*
+
+# depot du projet LateProof (depot git separe)
+/lateproof/
+
+# essais d apprentissage (non soumis)
+/bac_a_sable/
