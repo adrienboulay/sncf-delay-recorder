@@ -1,0 +1,26 @@
+# Test manuel des outils externes (ElevenLabs, Firecrawl). N'affiche que des statuts ; le MP3 est fourni en artefact.
+name: probe-tools
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python probes/probe_tools.py
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: alerte-vocale
+          path: out/
+          retention-days: 3
+          if-no-files-found: ignore
