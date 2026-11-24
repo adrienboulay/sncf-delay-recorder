@@ -76,7 +76,7 @@ BEGIN
 END $$;
 
 -- Trajet direct A -> B aujourd'hui (meme reseau) : trains qui desservent A puis B, retards au depart de A et a l'arrivee a B,
--- bilan de la journee (n, late15, cancelled), les trains a partir d'il y a 1 h 30, et le trace du plus complet d'entre eux. Identifiants = ceux de public_station_map().
+-- bilan de la journee (n, late15, cancelled), les trains a partir d'il y a 1 h 30, et le trace du prochain train (sinon du dernier parti). Identifiants = ceux de public_station_map().
 CREATE OR REPLACE FUNCTION public.public_trip(p_net TEXT, p_from TEXT, p_to TEXT) RETURNS JSON
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE today TEXT := to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYYMMDD'); r JSON;
@@ -91,7 +91,7 @@ BEGIN
           FROM stop_updates ua JOIN stop_updates ub ON ub.train_num = ua.train_num AND ub.service_date = ua.service_date AND ub.stop_index > ua.stop_index
           JOIN trains t ON t.train_num = ua.train_num AND t.service_date = ua.service_date LEFT JOIN ref_routes ro ON ro.route_id = t.route_id
           WHERE ua.service_date = today AND ua.uic = p_from AND ub.uic = p_to),
-    f AS (SELECT * FROM m ORDER BY cancelled, ib - ia DESC LIMIT 1)
+    f AS (SELECT * FROM m ORDER BY cancelled, (dep < EXTRACT(EPOCH FROM now())::bigint - 600), abs(dep - EXTRACT(EPOCH FROM now())::bigint) LIMIT 1)
     SELECT json_build_object('net', 'sncf',
       'n', (SELECT COUNT(*) FROM m), 'late15', (SELECT COUNT(*) FROM m WHERE COALESCE(arr_delay, 0) >= 900),
       'cancelled', (SELECT COUNT(*) FROM m WHERE cancelled),
@@ -112,7 +112,7 @@ BEGIN
           LEFT JOIN idfm_ref_lines l ON l.line_id = t.line_id
           WHERE t.service_date = today AND ua.stop_ref IN (SELECT stop_ref FROM sa) AND ub.stop_ref IN (SELECT stop_ref FROM sb)
             AND COALESCE(ua.aimed_departure_ts, ua.aimed_arrival_ts) < COALESCE(ub.aimed_arrival_ts, ub.aimed_departure_ts)),
-    f AS (SELECT * FROM m ORDER BY cancelled, arr - dep DESC LIMIT 1)
+    f AS (SELECT * FROM m ORDER BY cancelled, (dep < EXTRACT(EPOCH FROM now())::bigint - 600), abs(dep - EXTRACT(EPOCH FROM now())::bigint) LIMIT 1)
     SELECT json_build_object('net', 'idf',
       'n', (SELECT COUNT(*) FROM m), 'late15', (SELECT COUNT(*) FROM m WHERE COALESCE(arr_delay, 0) >= 900),
       'cancelled', (SELECT COUNT(*) FROM m WHERE cancelled),
