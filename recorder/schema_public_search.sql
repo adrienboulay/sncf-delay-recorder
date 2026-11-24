@@ -76,7 +76,7 @@ BEGIN
 END $$;
 
 -- Trajet direct A -> B aujourd'hui (meme reseau) : trains qui desservent A puis B, retards au depart de A et a l'arrivee a B,
--- et le trace (gares intermediaires) du plus complet d'entre eux. Identifiants = ceux de public_station_map().
+-- bilan de la journee (n, late15, cancelled), les trains a partir d'il y a 1 h 30, et le trace du plus complet d'entre eux. Identifiants = ceux de public_station_map().
 CREATE OR REPLACE FUNCTION public.public_trip(p_net TEXT, p_from TEXT, p_to TEXT) RETURNS JSON
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE today TEXT := to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYYMMDD'); r JSON;
@@ -93,7 +93,11 @@ BEGIN
           WHERE ua.service_date = today AND ua.uic = p_from AND ub.uic = p_to),
     f AS (SELECT * FROM m ORDER BY cancelled, ib - ia DESC LIMIT 1)
     SELECT json_build_object('net', 'sncf',
-      'trains', COALESCE((SELECT json_agg(x ORDER BY x.dep) FROM (SELECT num, mode, line_id, line, dep, dep_delay, arr, arr_delay, cancelled FROM m ORDER BY dep LIMIT 120) x), '[]'::json),
+      'n', (SELECT COUNT(*) FROM m), 'late15', (SELECT COUNT(*) FROM m WHERE COALESCE(arr_delay, 0) >= 900),
+      'cancelled', (SELECT COUNT(*) FROM m WHERE cancelled),
+      'trains', COALESCE((SELECT json_agg(x ORDER BY x.dep) FROM (SELECT num, mode, line_id, line, dep, dep_delay, arr, arr_delay, cancelled FROM m
+                 WHERE arr >= EXTRACT(EPOCH FROM now())::bigint - 5400 ORDER BY dep LIMIT 40) x), '[]'::json),
+      'line_ids', (SELECT json_agg(DISTINCT line_id) FROM m WHERE line_id IS NOT NULL),
       'path', (SELECT json_agg(json_build_array(g.name, round(g.lat::numeric, 5), round(g.lon::numeric, 5)) ORDER BY u.stop_index)
                FROM f JOIN stop_updates u ON u.train_num = f.num AND u.service_date = today AND u.stop_index BETWEEN f.ia AND f.ib JOIN g ON g.uic = u.uic))
     INTO r;
@@ -110,10 +114,15 @@ BEGIN
             AND COALESCE(ua.aimed_departure_ts, ua.aimed_arrival_ts) < COALESCE(ub.aimed_arrival_ts, ub.aimed_departure_ts)),
     f AS (SELECT * FROM m ORDER BY cancelled, arr - dep DESC LIMIT 1)
     SELECT json_build_object('net', 'idf',
-      'trains', COALESCE((SELECT json_agg(x ORDER BY x.dep) FROM (SELECT num, mode, line_id, line, dep, dep_delay, arr, arr_delay, cancelled FROM m ORDER BY dep LIMIT 120) x), '[]'::json),
+      'n', (SELECT COUNT(*) FROM m), 'late15', (SELECT COUNT(*) FROM m WHERE COALESCE(arr_delay, 0) >= 900),
+      'cancelled', (SELECT COUNT(*) FROM m WHERE cancelled),
+      'trains', COALESCE((SELECT json_agg(x ORDER BY x.dep) FROM (SELECT num, mode, line_id, line, dep, dep_delay, arr, arr_delay, cancelled FROM m
+                 WHERE arr >= EXTRACT(EPOCH FROM now())::bigint - 5400 ORDER BY dep LIMIT 40) x), '[]'::json),
+      'line_ids', (SELECT json_agg(DISTINCT line_id) FROM m WHERE line_id IS NOT NULL),
       'path', (SELECT json_agg(json_build_array(s.name, round(s.lat::numeric, 5), round(s.lon::numeric, 5)) ORDER BY COALESCE(u.aimed_departure_ts, u.aimed_arrival_ts))
                FROM f JOIN idfm_stop_updates u ON u.journey_key = f.k JOIN idfm_ref_stops s ON s.stop_ref = u.stop_ref
-               WHERE s.lat IS NOT NULL AND COALESCE(u.aimed_departure_ts, u.aimed_arrival_ts) BETWEEN f.dep AND f.arr))
+               WHERE s.lat IS NOT NULL AND COALESCE(u.aimed_departure_ts, u.aimed_arrival_ts) >= f.dep
+                 AND COALESCE(u.aimed_arrival_ts, u.aimed_departure_ts) <= f.arr))
     INTO r;
   END IF;
   RETURN r;
