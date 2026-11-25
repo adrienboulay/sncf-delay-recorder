@@ -1,0 +1,37 @@
+# Chaque nuit : empreinte (racine de Merkle) des retards de la veille, archivee puis publiee sur Solana.
+# Secrets : DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY ; pour publier : SOLANA_RPC_URL, ORACLE_KEYPAIR,
+# LATEPROOF_PROGRAM_ID. Sans ces trois-la : mode a blanc (tout sauf la transaction).
+name: delay-roots
+on:
+  schedule:
+    - cron: "15 2 * * *"   # 03h15 / 04h15 a Paris, avant l'archivage de 03h45 UTC
+  workflow_dispatch:
+    inputs:
+      day:
+        description: "Journee AAAAMMJJ (vide = la veille)"
+        default: ""
+permissions:
+  contents: read
+jobs:
+  roots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q "psycopg[binary]" cryptography solders
+      - name: Auto-tests (memes racines que le programme Rust, transaction bien formee)
+        run: |
+          python -c "import sys; sys.path.insert(0, 'recorder'); import merkle; v = merkle.test_vectors(); assert v['five'] == 'bafe8d721670518e41dbe7ab3fc57f1eac1e97e1a8c6ac3dba737958e0697fb2', v; print('racines identiques au programme Rust')"
+          SELFTEST_TX=1 python recorder/delay_roots.py
+      - run: python recorder/delay_roots.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          ORACLE_KEYPAIR: ${{ secrets.ORACLE_KEYPAIR }}
+          LATEPROOF_PROGRAM_ID: ${{ secrets.LATEPROOF_PROGRAM_ID }}
+          DAY: ${{ inputs.day }}
