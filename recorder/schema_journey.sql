@@ -57,6 +57,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.lp_leg_info(TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 
 -- Itineraires A -> B des 2 prochaines heures : directs, et avec une correspondance (arrivee au plus tard dans 5 h).
+-- (Etapes MATERIALIZED : calculees une fois, sinon Postgres les recalcule a chaque ligne : 10 s au lieu de 0,1 s.)
 -- Les correspondances sont calculees avec les retards CONNUS (heure reelle d'arrivee du 1er train + marche + 2 min
 -- <= heure reelle de depart du 2e). Renvoie jusqu'a 40 candidats ; la page garde les meilleurs (partir plus tard,
 -- arriver plus tot). Identifiants = ceux de public_station_map().
@@ -74,7 +75,7 @@ BEGIN
   sb AS (SELECT 'sncf' AS net, id AS stop, id AS node FROM pb WHERE net = 'sncf'
          UNION ALL SELECT 'idf', s.stop_ref, pb.id FROM pb JOIN idfm_ref_stops s ON pb.net = 'idf' AND COALESCE(s.parent_ref, s.stop_ref) = pb.id),
   -- Departs de A (2 h) et arrivees a B (5 h), trains non supprimes
-  ea AS (
+  ea AS MATERIALIZED (
     SELECT 'sncf' AS net, u.train_num AS trip, NULL::bigint AS k, u.stop_index AS idx, u.sched_departure_ts AS t,
            COALESCE(u.departure_delay_s, 0) AS dl, sa.node
       FROM sa JOIN stop_updates u ON u.uic = sa.stop AND u.service_date = today
@@ -87,7 +88,7 @@ BEGIN
      WHERE sa.net = 'idf' AND t.service_date = today AND u.aimed_departure_ts IS NOT NULL
        AND COALESCE(u.status, '') <> 'CANCELLED' AND COALESCE(t.status, '') <> 'CANCELLED'
        AND u.aimed_departure_ts + GREATEST(COALESCE(u.departure_delay_s, 0), 0) BETWEEN t0 - 300 AND t0 + 7200),
-  eb AS (
+  eb AS MATERIALIZED (
     SELECT 'sncf' AS net, u.train_num AS trip, NULL::bigint AS k, u.stop_index AS idx, COALESCE(u.sched_arrival_ts, u.sched_departure_ts) AS t,
            COALESCE(u.arrival_delay_s, u.departure_delay_s, 0) AS dl, sb.node
       FROM sb JOIN stop_updates u ON u.uic = sb.stop AND u.service_date = today
@@ -101,12 +102,12 @@ BEGIN
      WHERE sb.net = 'idf' AND t.service_date = today
        AND COALESCE(u.status, '') <> 'CANCELLED' AND COALESCE(t.status, '') <> 'CANCELLED'
        AND COALESCE(u.aimed_arrival_ts, u.aimed_departure_ts) BETWEEN t0 - 300 AND t0 + 18000),
-  dir AS (
+  dir AS MATERIALIZED (
     SELECT DISTINCT ON (a.net, a.trip) a.net, a.trip, a.t AS dep, a.dl AS ddl, a.node AS na, b.t AS arr, b.dl AS adl, b.node AS nb
       FROM ea a JOIN eb b ON b.net = a.net AND b.trip = a.trip AND b.t > a.t
      ORDER BY a.net, a.trip, b.t),
   -- Arrets apres A des trains qui ne vont pas directement a B
-  d1 AS (
+  d1 AS MATERIALIZED (
     SELECT a.net, a.trip, a.t AS dep, a.dl AS ddl, a.node AS na, 'sncf' AS nnet, x.uic AS nid,
            COALESCE(x.sched_arrival_ts, x.sched_departure_ts) AS arr, COALESCE(x.arrival_delay_s, x.departure_delay_s, 0) AS adl
       FROM ea a JOIN stop_updates x ON x.train_num = a.trip AND x.service_date = today AND x.stop_index > a.idx
@@ -119,7 +120,7 @@ BEGIN
      WHERE a.net = 'idf' AND COALESCE(x.aimed_arrival_ts, x.aimed_departure_ts) > a.t AND COALESCE(x.status, '') <> 'CANCELLED'
        AND NOT EXISTS (SELECT 1 FROM dir WHERE dir.net = a.net AND dir.trip = a.trip)),
   -- Arrets avant B des trains qui ne partent pas directement de A
-  u2 AS (
+  u2 AS MATERIALIZED (
     SELECT b.net, b.trip, b.t AS arr, b.dl AS adl, b.node AS nb, 'sncf' AS nnet, x.uic AS nid,
            x.sched_departure_ts AS dep, COALESCE(x.departure_delay_s, 0) AS ddl
       FROM eb b JOIN stop_updates x ON x.train_num = b.trip AND x.service_date = today AND x.stop_index < b.idx
