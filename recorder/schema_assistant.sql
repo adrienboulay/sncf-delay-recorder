@@ -51,3 +51,9 @@ BEGIN
   RETURN mine <= p_limit;
 END $$;
 REVOKE ALL ON FUNCTION public.assistant_hit(TEXT, INTEGER, INTEGER) FROM PUBLIC, anon, authenticated;
+
+-- La fonction serveur peut lire les memes donnees publiques avec la cle de service (si l'ancienne cle « anon »
+-- est desactivee), et seule elle peut incrementer le compteur.
+GRANT EXECUTE ON FUNCTION public.public_find_stop(TEXT), public.public_station(TEXT, TEXT), public.public_nearby_ids(DOUBLE PRECISION, DOUBLE PRECISION, TEXT),
+  public.public_trip(TEXT, TEXT, TEXT), public.public_lines(), public.public_line(TEXT, TEXT), public.public_disruptions(INTEGER),
+  public.public_train(TEXT), public.assistant_hit(TEXT, INTEGER, INTEGER) TO service_role;
