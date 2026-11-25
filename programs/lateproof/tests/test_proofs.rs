@@ -273,3 +273,16 @@ fn only_admin_rotates_oracle() {
     assert!(w.post_delay_root(&old, DAY, [1u8; 32], 1).is_err());
     w.post_delay_root(&new_oracle, DAY, [1u8; 32], 1).unwrap();
 }
+
+/// Test croise : le serveur Python (recorder/merkle.py) et le programme doivent calculer les MEMES
+/// racines, a l'octet pres. Valeurs produites par `python recorder/merkle.py`.
+#[test]
+fn cross_language_vectors() {
+    let hex = |b: [u8; 32]| b.iter().map(|x| format!("{x:02x}")).collect::<String>();
+    let records = sample_records();
+    let leaves: Vec<[u8; 32]> = records.iter().map(|r| merkle::leaf(merkle::TAG_DELAY, r)).collect();
+    assert_eq!(hex(merkle::build(&leaves[..1]).0), "6920be9584b1be6c22c387328125d8a57bbf2d0c15e79526e0ecb2ecd93f32a7");
+    assert_eq!(hex(merkle::build(&leaves).0), "bafe8d721670518e41dbe7ab3fc57f1eac1e97e1a8c6ac3dba737958e0697fb2");
+    let certs: Vec<[u8; 32]> = (0..3u8).map(|i| merkle::leaf(merkle::TAG_CERT, &[i + 1; 32])).collect();
+    assert_eq!(hex(merkle::build(&certs).0), "6352987e734de648f9ee80790aca1e7dc6398f6e9b7af99243606f7b37b8fe1c");
+}
