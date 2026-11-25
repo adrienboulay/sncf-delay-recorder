@@ -94,6 +94,7 @@ const MODE_WORDS: Record<string, string[]> = {
   rer: ["RER"], metro: ["METRO"], tram: ["TRAM"], tramway: ["TRAM"], transilien: ["TRANSILIEN"], ter: ["TER"],
   tgv: ["OUI", "OGO", "LYR", "ICE", "TT"], inoui: ["OUI"], ouigo: ["OGO"], intercites: ["IC", "ICN"], lyria: ["LYR"],
 };
+const TRANSPORT = /\b(sncf|ratp|transports?|cheminots?|trains?|ter|tgv|rer|metros?|trams?|tramways?|bus|transilien|ouigo|intercites|aiguilleurs|controleurs|conducteurs|idfm|mobilites)\b/;
 const FILLER = new Set(["ligne", "la", "le", "les", "du", "de", "des", "l", "d"]);
 
 /** Trouve une ligne a partir d'un nom libre (« RER B », « metro 14 », « T3b », « TER Lyon Grenoble »). */
@@ -217,16 +218,20 @@ const shortDisruption = (it: Json) => ({
 async function perturbations(rpc: Rpc, a: Json) {
   const days = Math.min(Math.max(parseInt(a.jours) || 2, 1), 7);
   const d = await rpc("public_disruptions", { days });
-  let items = ((d?.items || []) as Json[]);
+  // L'agenda des greves couvre tous les secteurs : on ne garde que celles qui touchent les transports.
+  let items = ((d?.items || []) as Json[]).filter((it) => it.kind !== "greve" || it.lines || TRANSPORT.test(norm(it.title || "")));
   const f = norm(a.filtre || "");
   if (f) {
-    const words = f.split(" ").filter((w) => !FILLER.has(w) && !MODE_WORDS[w]);
     const lineIds = new Set(matchLine(await allLines(rpc), a.filtre).slice(0, 3).map((l) => l.id));
+    // Mots de 3 lettres ou plus : « RER A » se cherche par la ligne, pas par la lettre « a » dans les titres.
+    const words = f.split(" ").filter((w) => w.length >= 3 && !FILLER.has(w) && !MODE_WORDS[w]);
     items = items.filter((it) =>
       (it.line_ids || []).some((id: string) => lineIds.has(id)) ||
-      (words.length && words.every((w) => norm(`${it.title} ${it.lines || ""} ${(it.stops || []).map((s: Json) => s[0]).join(" ")}`).includes(w)))
+      (words.length > 0 && words.every((w) => norm(`${it.title} ${it.lines || ""} ${(it.stops || []).map((s: Json) => s[0]).join(" ")}`).includes(w)))
     );
   }
+  // Les perturbations rattachees a une ligne d'abord (les plus concretes pour un voyageur).
+  items.sort((x, y) => Number(!x.lines) - Number(!y.lines));
   return { nombre: items.length, fenetre_jours: days, elements: items.slice(0, 12).map(shortDisruption) };
 }
 

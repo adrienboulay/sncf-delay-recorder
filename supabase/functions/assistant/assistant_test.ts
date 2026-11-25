@@ -116,6 +116,25 @@ Deno.test("perturbations : filtre par ville via les gares touchees", async () =>
   assertEquals(r.elements[0].type, "greve");
 });
 
+Deno.test("perturbations : greves hors transport ecartees, « RER A » ne filtre pas sur la lettre a", async () => {
+  _resetCache();
+  const base = fakeRpc();
+  const rpc: Rpc = (fn, body) => fn !== "public_disruptions" ? base(fn, body) : Promise.resolve({ items: [
+    { kind: "greve", severity: "bloquant", title: "Grève des sapeurs-pompiers", lines: null, line_ids: null, t_start: NOW, t_end: NOW },
+    { kind: "greve", severity: "bloquant", title: "Grève nationale SNCF", lines: null, line_ids: null, t_start: NOW, t_end: NOW },
+    { kind: "travaux", severity: "perturbe", title: "Travaux à Nation", lines: "A", line_ids: ["C01742"], t_start: NOW, t_end: NOW },
+    { kind: "incident", severity: "perturbe", title: "Panne à Lyon", lines: null, line_ids: null, t_start: NOW, t_end: NOW },
+  ] });
+  const all = await runTool(rpc, "perturbations", {});
+  assertEquals(all.nombre, 3);
+  assertEquals(all.elements[0].titre, "Travaux à Nation");
+  const lines = [...LINES, { net: "idf", id: "C01742", name: "A", long: "A", mode: "RER", n: 400, late15: 3, cancelled: 0 }];
+  const rpcA: Rpc = (fn, body) => fn === "public_lines" ? Promise.resolve(lines) : rpc(fn, body);
+  _resetCache();
+  const a = await runTool(rpcA, "perturbations", { filtre: "RER A" });
+  assertEquals(a.nombre, 1);
+});
+
 Deno.test("train : arrets et alertes ; numero inconnu", async () => {
   const r = await runTool(fakeRpc(), "train", { numero: "TGV 6611" });
   assertEquals(r.arrets.length, 2);
