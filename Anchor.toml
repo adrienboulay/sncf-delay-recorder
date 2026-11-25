@@ -5,14 +5,11 @@ package_manager = "npm"
 resolution = true
 skip-lint = false
 
+[programs.devnet]
+lateproof = "8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu"
+
 [programs.localnet]
 lateproof = "11111111111111111111111111111111"
-
-[programs.devnet]
-lateproof = "11111111111111111111111111111111"
-
-[registry]
-url = "https://api.apr.dev"
 
 [provider]
 cluster = "devnet"
@@ -20,3 +17,5 @@ wallet = "~/keys/admin.json"
 
 [scripts]
 test = "cargo test"
+
+[hooks]

@@ -23,7 +23,7 @@ pub use instructions::*;
 pub use state::*;
 
 // L'adresse du programme. Remplacee par la vraie au premier `anchor keys sync`.
-declare_id!("11111111111111111111111111111111");
+declare_id!("8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu");
 
 #[program]
 pub mod lateproof {
