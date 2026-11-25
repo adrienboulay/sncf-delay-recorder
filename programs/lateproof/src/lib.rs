@@ -22,7 +22,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-// L'adresse du programme. Remplacee par la vraie au premier `anchor keys sync`.
+// L'adresse du programme (sa cle est gardee hors du depot, dans ~/keys/lateproof-program.json du Codespace).
 declare_id!("8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu");
 
 #[program]

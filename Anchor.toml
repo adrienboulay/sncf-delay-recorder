@@ -9,7 +9,7 @@ skip-lint = false
 lateproof = "8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu"
 
 [programs.localnet]
-lateproof = "11111111111111111111111111111111"
+lateproof = "8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu"
 
 [provider]
 cluster = "devnet"
