@@ -181,3 +181,16 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.public_journey(TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.public_journey(TEXT, TEXT, TEXT, TEXT) TO anon, service_role;
+
+-- Gares « train » les plus proches d'un point (adresse collee, clic sur la carte, ma position) : 5 au plus, a moins de 3 km.
+CREATE OR REPLACE FUNCTION public.public_nearest_stops(p_lat DOUBLE PRECISION, p_lon DOUBLE PRECISION) RETURNS JSON
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+SELECT COALESCE(json_agg(json_build_object('net', net, 'id', id, 'name', name, 'lat', round(lat::numeric, 5), 'lon', round(lon::numeric, 5),
+                                           'dist', round(d)) ORDER BY d), '[]'::json)
+FROM (SELECT n.*, 111000 * sqrt((n.lat - p_lat) ^ 2 + ((n.lon - p_lon) * cos(radians(p_lat))) ^ 2) AS d
+        FROM lp_nodes n
+       WHERE n.lat BETWEEN p_lat - .027 AND p_lat + .027 AND n.lon BETWEEN p_lon - .04 AND p_lon + .04
+       ORDER BY d LIMIT 5) x
+WHERE d < 3000 $$;
+REVOKE ALL ON FUNCTION public.public_nearest_stops(DOUBLE PRECISION, DOUBLE PRECISION) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.public_nearest_stops(DOUBLE PRECISION, DOUBLE PRECISION) TO anon, service_role;
