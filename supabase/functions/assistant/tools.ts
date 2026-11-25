@@ -206,12 +206,18 @@ async function etatLigne(rpc: Rpc, a: Json) {
       : { gares_les_plus_en_retard: worst.map((s) => ({ gare: s.name, retard_moyen_min: s.avg, retards_15min: s.late15, supprimes: s.cancelled })) }),
     perturbations: ((disr?.items || []) as Json[])
       .filter((it) => (it.line_ids || []).includes(l.id))
-      .slice(0, 6).map(shortDisruption),
+      .slice(0, 6).map(shortDisruption(await allLines(rpc))),
   };
 }
 
-const shortDisruption = (it: Json) => ({
-  type: it.kind, gravite: it.severity, titre: String(it.title || "").slice(0, 220), lignes: it.lines,
+/** « 3 » ne dit pas si c'est le metro 3 ou le tram 3 : on nomme les lignes avec leur mode quand on le connait. */
+const lineLabels = (it: Json, lines: Json[]) => {
+  const named = ((it.line_ids || []) as string[]).map((id) => lines.find((l) => l.id === id)).filter(Boolean)
+    .map((l: Json) => `${l.mode} ${l.name}`);
+  return named.length ? [...new Set(named)].join(", ") : it.lines;
+};
+const shortDisruption = (lines: Json[]) => (it: Json) => ({
+  type: it.kind, gravite: it.severity, titre: String(it.title || "").slice(0, 220), lignes: lineLabels(it, lines),
   debut: dayTime(it.t_start), fin: dayTime(it.t_end),
 });
 
@@ -232,7 +238,7 @@ async function perturbations(rpc: Rpc, a: Json) {
   }
   // Les perturbations rattachees a une ligne d'abord (les plus concretes pour un voyageur).
   items.sort((x, y) => Number(!x.lines) - Number(!y.lines));
-  return { nombre: items.length, fenetre_jours: days, elements: items.slice(0, 12).map(shortDisruption) };
+  return { nombre: items.length, fenetre_jours: days, elements: items.slice(0, 12).map(shortDisruption(await allLines(rpc))) };
 }
 
 async function train(rpc: Rpc, a: Json) {

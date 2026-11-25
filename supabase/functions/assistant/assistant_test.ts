@@ -107,6 +107,7 @@ Deno.test("etat_ligne : chiffres du jour + perturbations de la ligne seulement",
   assertEquals(r.retards_15min, 12);
   assertEquals(r.perturbations.length, 1);
   assertEquals(r.perturbations[0].titre, "Travaux RER B");
+  assertEquals(r.perturbations[0].lignes, "RER B");
 });
 
 Deno.test("perturbations : filtre par ville via les gares touchees", async () => {
