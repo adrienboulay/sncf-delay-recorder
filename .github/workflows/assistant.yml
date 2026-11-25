@@ -68,5 +68,6 @@ jobs:
         run: |
           sleep 5
           BODY=$(python3 -c 'import json,os;print(json.dumps({"messages":[{"role":"user","content":os.environ["QUESTION"]}]}))')
-          curl -sS -m 60 -X POST "$SUPABASE_URL/functions/v1/assistant" -H "Content-Type: application/json" \
+          BASE=$(printf '%s' "$SUPABASE_URL" | sed -nE 's#^(https://[a-z0-9-]+\.supabase\.co).*##p')
+          curl -sS -m 60 -X POST "$BASE/functions/v1/assistant" -H "Content-Type: application/json" \
             -H "Origin: https://adrienboulay.github.io" -d "$BODY" -w '\nHTTP %{http_code}\n'

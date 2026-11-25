@@ -2,7 +2,8 @@
 // Lance par le workflow « assistant » quand SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont disponibles.
 import { runTool, type Rpc } from "./tools.ts";
 
-const SB = Deno.env.get("SUPABASE_URL")!.replace(/\/+$/, "");
+// Le secret peut contenir un chemin apres l'adresse (ex. /rest/v1/) : on ne garde que https://xxx.supabase.co
+const SB = (Deno.env.get("SUPABASE_URL")!.match(/^https:\/\/[a-z0-9-]+\.supabase\.co/) || [""])[0];
 const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const rpc: Rpc = async (fn, body = {}) => {
   const r = await fetch(`${SB}/rest/v1/rpc/${fn}`, {
