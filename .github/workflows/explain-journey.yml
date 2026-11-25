@@ -1,0 +1,28 @@
+# Diagnostic manuel : plan d'execution de la requete d'itineraire (lecture seule).
+name: explain-journey
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "Depart net|id"
+        required: true
+      to:
+        description: "Arrivee net|id"
+        required: true
+permissions:
+  contents: read
+jobs:
+  explain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q "psycopg[binary]"
+      - run: python probes/explain_journey.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FROM: ${{ inputs.from }}
+          TO: ${{ inputs.to }}
