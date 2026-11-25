@@ -1,0 +1,7 @@
+# Configuration minimale pour deployer les fonctions serveur (Edge Functions) avec la CLI Supabase.
+project_id = "lateproof"
+
+[functions.assistant]
+# Pas de jeton utilisateur exige : la page publique l'appelle avec la cle « publishable ».
+# La fonction se protege elle-meme (taille des messages, limite par visiteur et par jour).
+verify_jwt = false
