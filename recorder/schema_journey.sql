@@ -56,7 +56,7 @@ ELSE
 END $$;
 REVOKE ALL ON FUNCTION public.lp_leg_info(TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 
--- Itineraires A -> B des 2 prochaines heures : directs, et avec une correspondance (arrivee au plus tard dans 5 h).
+-- Itineraires A -> B des 3 prochaines heures : directs, et avec une correspondance (arrivee au plus tard dans 8 h).
 -- (Etapes MATERIALIZED : calculees une fois, sinon Postgres les recalcule a chaque ligne : 10 s au lieu de 0,1 s.)
 -- Les correspondances sont calculees avec les retards CONNUS (heure reelle d'arrivee du 1er train + marche + 2 min
 -- <= heure reelle de depart du 2e). Renvoie jusqu'a 40 candidats ; la page garde les meilleurs (partir plus tard,
@@ -64,44 +64,53 @@ REVOKE ALL ON FUNCTION public.lp_leg_info(TEXT, TEXT, TEXT) FROM PUBLIC, anon, a
 CREATE OR REPLACE FUNCTION public.public_journey(p_from_net TEXT, p_from_id TEXT, p_to_net TEXT, p_to_id TEXT) RETURNS JSON
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE today TEXT := to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYYMMDD'); t0 BIGINT := EXTRACT(EPOCH FROM now())::bigint; r JSON;
+        alat FLOAT8; alon FLOAT8; blat FLOAT8; blon FLOAT8;
 BEGIN
+  -- Position des deux gares (meme une station de metro, absente des noeuds « train ») : on part de toutes les gares a
+  -- moins de 400 m (Chatelet metro -> Chatelet - Les Halles RER).
+  SELECT lat, lon INTO alat, alon FROM lp_nodes WHERE net = p_from_net AND id = p_from_id;
+  IF alat IS NULL AND p_from_net = 'idf' THEN SELECT AVG(lat), AVG(lon) INTO alat, alon FROM idfm_ref_stops WHERE COALESCE(parent_ref, stop_ref) = p_from_id; END IF;
+  SELECT lat, lon INTO blat, blon FROM lp_nodes WHERE net = p_to_net AND id = p_to_id;
+  IF blat IS NULL AND p_to_net = 'idf' THEN SELECT AVG(lat), AVG(lon) INTO blat, blon FROM idfm_ref_stops WHERE COALESCE(parent_ref, stop_ref) = p_to_id; END IF;
   WITH
-  pa AS (SELECT b_net AS net, b_id AS id FROM lp_node_links WHERE a_net = p_from_net AND a_id = p_from_id
+  pa AS (SELECT net, id FROM lp_nodes WHERE lat BETWEEN alat - .0036 AND alat + .0036 AND lon BETWEEN alon - .0054 AND alon + .0054
+           AND 111000 * sqrt((lat - alat) ^ 2 + ((lon - alon) * cos(radians(alat))) ^ 2) < 400
          UNION SELECT p_from_net, p_from_id),
-  pb AS (SELECT b_net AS net, b_id AS id FROM lp_node_links WHERE a_net = p_to_net AND a_id = p_to_id
+  pb AS (SELECT net, id FROM lp_nodes WHERE lat BETWEEN blat - .0036 AND blat + .0036 AND lon BETWEEN blon - .0054 AND blon + .0054
+           AND 111000 * sqrt((lat - blat) ^ 2 + ((lon - blon) * cos(radians(blat))) ^ 2) < 400
          UNION SELECT p_to_net, p_to_id),
   sa AS (SELECT 'sncf' AS net, id AS stop, id AS node FROM pa WHERE net = 'sncf'
          UNION ALL SELECT 'idf', s.stop_ref, pa.id FROM pa JOIN idfm_ref_stops s ON pa.net = 'idf' AND COALESCE(s.parent_ref, s.stop_ref) = pa.id),
   sb AS (SELECT 'sncf' AS net, id AS stop, id AS node FROM pb WHERE net = 'sncf'
          UNION ALL SELECT 'idf', s.stop_ref, pb.id FROM pb JOIN idfm_ref_stops s ON pb.net = 'idf' AND COALESCE(s.parent_ref, s.stop_ref) = pb.id),
-  -- Departs de A (2 h) et arrivees a B (5 h), trains non supprimes
+  -- Departs de A (3 h) et arrivees a B (8 h), trains non supprimes
   ea AS MATERIALIZED (
     SELECT 'sncf' AS net, u.train_num AS trip, NULL::bigint AS k, u.stop_index AS idx, u.sched_departure_ts AS t,
            COALESCE(u.departure_delay_s, 0) AS dl, sa.node
       FROM sa JOIN stop_updates u ON u.uic = sa.stop AND u.service_date = today
       JOIN trains t ON t.train_num = u.train_num AND t.service_date = u.service_date
      WHERE sa.net = 'sncf' AND u.sched_departure_ts IS NOT NULL AND NOT COALESCE(u.skipped, FALSE) AND COALESCE(t.status, '') <> 'CANCELED'
-       AND u.sched_departure_ts + GREATEST(COALESCE(u.departure_delay_s, 0), 0) BETWEEN t0 - 300 AND t0 + 7200
+       AND u.sched_departure_ts + GREATEST(COALESCE(u.departure_delay_s, 0), 0) BETWEEN t0 - 300 AND t0 + 10800
     UNION ALL
     SELECT 'idf', u.journey_key::text, u.journey_key, NULL, u.aimed_departure_ts, COALESCE(u.departure_delay_s, 0), sa.node
       FROM sa JOIN idfm_stop_updates u ON u.stop_ref = sa.stop JOIN idfm_trains t ON t.journey_key = u.journey_key
      WHERE sa.net = 'idf' AND t.service_date = today AND u.aimed_departure_ts IS NOT NULL
        AND COALESCE(u.status, '') <> 'CANCELLED' AND COALESCE(t.status, '') <> 'CANCELLED'
-       AND u.aimed_departure_ts + GREATEST(COALESCE(u.departure_delay_s, 0), 0) BETWEEN t0 - 300 AND t0 + 7200),
+       AND u.aimed_departure_ts + GREATEST(COALESCE(u.departure_delay_s, 0), 0) BETWEEN t0 - 300 AND t0 + 10800),
   eb AS MATERIALIZED (
     SELECT 'sncf' AS net, u.train_num AS trip, NULL::bigint AS k, u.stop_index AS idx, COALESCE(u.sched_arrival_ts, u.sched_departure_ts) AS t,
            COALESCE(u.arrival_delay_s, u.departure_delay_s, 0) AS dl, sb.node
       FROM sb JOIN stop_updates u ON u.uic = sb.stop AND u.service_date = today
       JOIN trains t ON t.train_num = u.train_num AND t.service_date = u.service_date
      WHERE sb.net = 'sncf' AND NOT COALESCE(u.skipped, FALSE) AND COALESCE(t.status, '') <> 'CANCELED'
-       AND COALESCE(u.sched_arrival_ts, u.sched_departure_ts) BETWEEN t0 - 300 AND t0 + 18000
+       AND COALESCE(u.sched_arrival_ts, u.sched_departure_ts) BETWEEN t0 - 300 AND t0 + 28800
     UNION ALL
     SELECT 'idf', u.journey_key::text, u.journey_key, NULL, COALESCE(u.aimed_arrival_ts, u.aimed_departure_ts),
            COALESCE(u.arrival_delay_s, u.departure_delay_s, 0), sb.node
       FROM sb JOIN idfm_stop_updates u ON u.stop_ref = sb.stop JOIN idfm_trains t ON t.journey_key = u.journey_key
      WHERE sb.net = 'idf' AND t.service_date = today
        AND COALESCE(u.status, '') <> 'CANCELLED' AND COALESCE(t.status, '') <> 'CANCELLED'
-       AND COALESCE(u.aimed_arrival_ts, u.aimed_departure_ts) BETWEEN t0 - 300 AND t0 + 18000),
+       AND COALESCE(u.aimed_arrival_ts, u.aimed_departure_ts) BETWEEN t0 - 300 AND t0 + 28800),
   dir AS MATERIALIZED (
     SELECT DISTINCT ON (a.net, a.trip) a.net, a.trip, a.t AS dep, a.dl AS ddl, a.node AS na, b.t AS arr, b.dl AS adl, b.node AS nb
       FROM ea a JOIN eb b ON b.net = a.net AND b.trip = a.trip AND b.t > a.t
