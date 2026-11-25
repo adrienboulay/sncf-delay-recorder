@@ -68,7 +68,9 @@ sncf AS (
          CASE WHEN a.cause_label = 'STRIKE' THEN 'greve'
               WHEN a.cause_label IN ('MAINTENANCE', 'CONSTRUCTION') THEN 'travaux' ELSE 'incident' END AS kind,
          CASE WHEN a.effect_label = 'NO_SERVICE' THEN 'bloquant' ELSE 'perturbe' END AS severity,
-         COALESCE(NULLIF(a.header_fr, ''), left(a.description_fr, 140)) AS title,
+         -- Titre generique (« Plus d'information : ») ou vide : on prend le debut de la description, plus parlant.
+         CASE WHEN btrim(COALESCE(a.header_fr, '')) = '' OR (length(a.header_fr) < 30 AND lower(a.header_fr) ~ 'plus d.?info')
+              THEN COALESCE(NULLIF(left(btrim(a.description_fr), 160), ''), btrim(a.header_fr)) ELSE btrim(a.header_fr) END AS title,
          NULLIF(a.active_start, 0) AS t_start, NULLIF(a.active_end, 0) AS t_end,
          (SELECT string_agg(DISTINCT COALESCE(r.short_name, r.long_name), ', ') FROM ref_routes r
            WHERE a.route_ids <> '' AND r.route_id = ANY(string_to_array(a.route_ids, ','))) AS lines,
