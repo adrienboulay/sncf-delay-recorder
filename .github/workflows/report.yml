@@ -20,3 +20,6 @@ jobs:
       - run: python recorder/report.py
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: python recorder/db_health.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
