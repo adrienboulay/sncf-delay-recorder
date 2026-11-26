@@ -44,10 +44,16 @@ def bulk_upsert(cur, table, cols, rows, keys, updates, touch=True):
     touch=False : last_seen / updated_at ne bougent que si une autre valeur change (grosses tables du releve)."""
     if not rows:
         return 0
+    # Une ligne par cle, dedoublonnee ici (la derniere gagne) : plus de tri DISTINCT ON cote base, donc rien
+    # qui deborde sur disque quand la memoire de tri est petite.
+    kidx = [cols.index(k) for k in keys]
+    rows = list({tuple(r[i] for i in kidx): r for r in rows}.values())
     tmp = f"tmp_{table}"
     collist = ", ".join(cols)
-    cur.execute(f"DROP TABLE IF EXISTS {tmp}")
-    cur.execute(f"CREATE TEMP TABLE {tmp} AS SELECT {collist} FROM {table} WITH NO DATA")
+    # Table temporaire creee une seule fois par session puis videe : la recreer a chaque releve ecrivait
+    # dans le catalogue (et donc dans le journal) a chaque appel. Les tables temporaires ne sont pas journalisees.
+    cur.execute(f"CREATE TEMP TABLE IF NOT EXISTS {tmp} AS SELECT {collist} FROM {table} WITH NO DATA")
+    cur.execute(f"DELETE FROM {tmp}")
     with cur.copy(f"COPY {tmp} ({collist}) FROM STDIN") as cp:
         for r in rows:
             cp.write_row(r)
@@ -68,7 +74,6 @@ def bulk_upsert(cur, table, cols, rows, keys, updates, touch=True):
         action = f"DO UPDATE SET {sets}" + (f" WHERE {' OR '.join(f'({x})' for x in cond)}" if cond else "")
     else:
         action = "DO NOTHING"
-    cur.execute(f"INSERT INTO {table} ({collist}) SELECT DISTINCT ON ({keylist}) {collist} FROM {tmp} "
-                f"ON CONFLICT ({keylist}) {action}")
-    cur.execute(f"DROP TABLE {tmp}")
+    cur.execute(f"INSERT INTO {table} ({collist}) SELECT {collist} FROM {tmp} ON CONFLICT ({keylist}) {action}")
+    cur.execute(f"DELETE FROM {tmp}")
     return len(rows)

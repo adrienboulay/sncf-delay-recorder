@@ -3,7 +3,10 @@ Tailles, écritures par table, lectures disque, requêtes les plus coûteuses. L
 import os
 import psycopg
 
+import sys
+
 con = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
+ONLY_COUNTERS = "--compteurs" in sys.argv   # premiere etape du rapport, avant les requetes lourdes
 
 
 def show(title, sql, args=()):
@@ -19,6 +22,16 @@ def show(title, sql, args=()):
         print("indisponible :", str(e).splitlines()[0][:150])
 
 
+show("COMPTEURS (a comparer entre deux rapports)", """
+SELECT now()::timestamp(0) AS a, w.wal_bytes, d.temp_bytes, d.temp_files,
+       (SELECT COUNT(*) FROM polls) AS polls,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'stop_updates') AS upd_stop_updates,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'idfm_stop_updates') AS upd_idfm_stop_updates,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'trains') AS upd_trains,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'idfm_trains') AS upd_idfm_trains
+FROM pg_stat_wal w, pg_stat_database d WHERE d.datname = current_database()""")
+if ONLY_COUNTERS:
+    con.close(); sys.exit(0)
 show("Taille totale", "SELECT pg_size_pretty(pg_database_size(current_database())) AS taille")
 show("Depuis la remise a zero des compteurs", "SELECT stats_reset, now() - stats_reset AS duree FROM pg_stat_database WHERE datname = current_database()")
 show("Tables : taille, lignes, ecritures depuis la remise a zero", """
@@ -64,14 +77,6 @@ SELECT regexp_replace(left(query, 45), '\\s+', ' ', 'g') AS debut, COUNT(*) AS e
        MIN(stats_since)::timestamp(0) AS depuis
 FROM extensions.pg_stat_statements WHERE stats_since > now() - interval '2 hours'
 GROUP BY 1 ORDER BY SUM(temp_blks_written) * 8192 + SUM(wal_bytes) DESC LIMIT 20""")
-show("COMPTEURS (a comparer entre deux rapports)", """
-SELECT now()::timestamp(0) AS a, w.wal_bytes, d.temp_bytes, d.temp_files,
-       (SELECT COUNT(*) FROM polls) AS polls,
-       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'stop_updates') AS upd_stop_updates,
-       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'idfm_stop_updates') AS upd_idfm_stop_updates,
-       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'trains') AS upd_trains,
-       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'idfm_trains') AS upd_idfm_trains
-FROM pg_stat_wal w, pg_stat_database d WHERE d.datname = current_database()""")
 show("Lignes presentes dans le flux (vues depuis 12 min)", """
 SELECT (SELECT COUNT(*) FROM stop_updates WHERE last_seen > EXTRACT(EPOCH FROM now())::bigint - 720) AS stop_updates,
        (SELECT COUNT(*) FROM idfm_stop_updates WHERE last_seen > EXTRACT(EPOCH FROM now())::bigint - 720) AS idfm_stop_updates""")

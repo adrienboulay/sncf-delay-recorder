@@ -159,6 +159,19 @@ def take_lock(con, wait):
         time.sleep(15)
 
 
+def io_mark(con):
+    """Position du journal d'ecriture et total des fichiers temporaires, pour mesurer chaque releve. None si indisponible."""
+    try:
+        r = con.execute("SELECT pg_wal_lsn_diff(pg_current_wal_insert_lsn(), '0/0')::bigint, "
+                        "(SELECT temp_bytes FROM pg_stat_database WHERE datname = current_database())").fetchone()
+        con.commit()
+        return (int(r[0]), int(r[1] or 0))
+    except Exception:
+        try: con.rollback()
+        except Exception: pass
+        return None
+
+
 def poll_once(con):
     t0 = time.time()
     now, feed_ts, trains, stops, alerts, links = parse()
@@ -184,6 +197,7 @@ def main():
     stop_at = time.time() + run_for if run_for > 0 else None
     i, next_at = 0, time.time()
     while True:
+        io0 = io_mark(con)
         try:
             poll_once(con)
         except Exception as ex:
@@ -207,6 +221,9 @@ def main():
             print("    IDF erreur:", repr(ex)[:300], flush=True)
             try: con.rollback()
             except Exception: pass
+        io1 = io_mark(con)
+        if io0 and io1:   # volume ecrit par ce releve : journal (WAL) et fichiers temporaires de toute la base
+            print(f"    disque : journal {(io1[0] - io0[0]) / 1e6:.1f} Mo, temporaires {(io1[1] - io0[1]) / 1e6:.1f} Mo", flush=True)
         if i % 5 == 0:  # carte publique pre-calculee toutes les 10 min (la page la lit instantanement)
             try:
                 con.execute("SELECT refresh_public_cache()"); con.commit()
