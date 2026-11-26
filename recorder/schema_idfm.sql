@@ -176,3 +176,10 @@ CREATE TABLE IF NOT EXISTS idfm_metro_next (
   line_id TEXT, stop_ref TEXT, direction TEXT, dest TEXT, expected_ts BIGINT, updated_at BIGINT);
 CREATE INDEX IF NOT EXISTS idfm_metro_next_stop ON idfm_metro_next(stop_ref);
 ALTER TABLE idfm_metro_next ENABLE ROW LEVEL SECURITY;
+-- Table jetable (remplacee toutes les 2 min) : sans journal d'ecriture (WAL), elle ne coute presque plus rien en disque.
+-- Si la base redemarre, elle repart vide et se remplit au releve suivant.
+DO $$ BEGIN
+  IF (SELECT relpersistence FROM pg_class WHERE oid = 'public.idfm_metro_next'::regclass) = 'p' THEN
+    ALTER TABLE public.idfm_metro_next SET UNLOGGED;
+  END IF;
+END $$;

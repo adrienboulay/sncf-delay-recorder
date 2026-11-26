@@ -142,6 +142,8 @@ LOCK_ID = 87_000_001  # verrou Postgres : un seul enregistreur actif a la fois
 def connect(url):
     import psycopg
     con = psycopg.connect(url, keepalives=1, keepalives_idle=30)
+    # Plus de memoire pour les tris des chargements (DISTINCT ON) : sinon ils debordent sur disque a chaque releve.
+    con.execute("SET work_mem = '64MB'"); con.commit()
     apply_schema(con)
     return con
 

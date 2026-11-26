@@ -52,8 +52,19 @@ def bulk_upsert(cur, table, cols, rows, keys, updates):
             cp.write_row(r)
     keylist = ", ".join(keys)
     if updates:
-        sets = ", ".join(f"{c} = {e if e else 'EXCLUDED.' + c}" for c, e in updates.items())
-        action = f"DO UPDATE SET {sets}"
+        exprs = {c: (e if e else "EXCLUDED." + c) for c, e in updates.items()}
+        sets = ", ".join(f"{c} = {x}" for c, x in exprs.items())
+        # Economie d'ecritures disque : on ne reecrit la ligne que si une valeur change vraiment.
+        # « last_seen » seul ne suffit pas : on le rafraichit au plus toutes les 10 min.
+        watch = [c for c in exprs if c not in ("last_seen", "updated_at")]
+        cond = []
+        if watch:
+            cond.append(f"({', '.join(exprs[c] for c in watch)}) IS DISTINCT FROM ({', '.join(f'{table}.{c}' for c in watch)})"
+                        if len(watch) > 1 else f"{exprs[watch[0]]} IS DISTINCT FROM {table}.{watch[0]}")
+        for c in ("last_seen", "updated_at"):
+            if c in exprs:
+                cond.append(f"{table}.{c} IS NULL OR {table}.{c} < EXCLUDED.{c} - 600")
+        action = f"DO UPDATE SET {sets}" + (f" WHERE {' OR '.join(f'({x})' for x in cond)}" if cond else "")
     else:
         action = "DO NOTHING"
     cur.execute(f"INSERT INTO {table} ({collist}) SELECT DISTINCT ON ({keylist}) {collist} FROM {tmp} "
