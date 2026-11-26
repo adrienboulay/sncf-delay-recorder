@@ -20,6 +20,19 @@ export const norm = (t: string) =>
 // ---------------------------------------------------------------- definitions (format « function calling » standard)
 export const TOOLS = [
   {
+    name: "ouvrir_itineraire",
+    description: "Ouvre la carte LateProof sur les itineraires (avec correspondance et marche) entre deux lieux : gares, adresses, villes. " +
+      "A utiliser des que l'utilisateur veut aller quelque part ou demande comment se rendre a un endroit.",
+    parameters: {
+      type: "object",
+      properties: {
+        depart: { type: "string", description: "Lieu de depart (gare, adresse, ville), ou « ma position » si l'utilisateur ne le precise pas" },
+        arrivee: { type: "string", description: "Lieu d'arrivee (gare, adresse, ville)" },
+      },
+      required: ["arrivee"],
+    },
+  },
+  {
     name: "etat_gare",
     description: "Etat en temps reel d'une gare ou station (France, et metro/RER/tram/Transilien en Ile-de-France) : " +
       "prochains departs avec retards et suppressions, prochaines rames de metro/tram estimees, ponctualite du jour par ligne.",
@@ -255,8 +268,13 @@ async function train(rpc: Rpc, a: Json) {
   };
 }
 
+// La page ouvre elle-meme la carte sur l'itineraire (avec correspondances et marche) : ici on confirme seulement.
+async function ouvrirItineraire(_rpc: Rpc, a: Json): Promise<Json> {
+  return { ok: true, note: `La carte des itineraires s'ouvre pour ${a.depart || "ma position"} -> ${a.arrivee}. Dis-le en une phrase courte.` };
+}
+
 const IMPL: Record<string, (rpc: Rpc, a: Json) => Promise<Json>> = {
-  etat_gare: etatGare, trajet, etat_ligne: etatLigne, perturbations, train,
+  etat_gare: etatGare, trajet, etat_ligne: etatLigne, perturbations, train, ouvrir_itineraire: ouvrirItineraire,
 };
 
 /** Execute un outil ; ne leve jamais d'exception (le modele recoit un message d'erreur lisible). */

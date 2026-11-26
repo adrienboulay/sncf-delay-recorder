@@ -4,6 +4,7 @@
 
 import { handle } from "./handler.ts";
 import { mistralChat } from "./llm.ts";
+import { pickStt } from "./stt.ts";
 import type { Rpc } from "./tools.ts";
 
 const env = (k: string, d = "") => Deno.env.get(k) || d;
@@ -29,6 +30,7 @@ const pub = call(PUBLIC_KEY);
 const rpc: Rpc = (fn, body) => (PUBLIC_KEY ? pub(fn, body) : Promise.reject(new Error("401")))
   .catch((e) => (/ 40[13]$|^401$/.test(String(e?.message)) ? admin(fn, body) : Promise.reject(e)));
 
+const stt = pickStt({ elevenlabs: env("ELEVENLABS_API_KEY"), mistral: env("MISTRAL_API_KEY") });
 const perUser = parseInt(env("ASSISTANT_DAILY_PER_USER", "30"));
 const total = parseInt(env("ASSISTANT_DAILY_TOTAL", "800"));
 
@@ -39,5 +41,6 @@ Deno.serve((req) =>
     hit: (who) => admin("assistant_hit", { p_who: who, p_limit: perUser, p_global: total }).then((ok) => ok !== false),
     origins: env("ALLOWED_ORIGINS", "https://adrienboulay.github.io,http://localhost:8000,http://127.0.0.1:8000").split(","),
     salt: env("ASSISTANT_SALT", SERVICE_KEY.slice(-16)),
+    stt,
   })
 );

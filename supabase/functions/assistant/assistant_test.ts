@@ -237,3 +237,39 @@ Deno.test("mistralChat : format de requete et lecture des appels d'outils", asyn
   await mistralChat("cle", "m", fakeFetch)([{ role: "user", content: "q" }], []);
   assertEquals(sent.tools, undefined);
 });
+
+// ---------------------------------------------------------------- itineraire et voix
+Deno.test("conversation : demande de trajet -> action d'ouverture de la carte", async () => {
+  let n = 0;
+  const chat: Chat = () => {
+    if (n++ === 0) {
+      const tc = [{ id: "itin12345", type: "function" as const, function: { name: "ouvrir_itineraire", arguments: '{"arrivee":"Grenoble"}' } }];
+      return Promise.resolve({ text: "", toolCalls: tc, raw: { role: "assistant", content: null, tool_calls: tc } });
+    }
+    return Promise.resolve({ text: "Je t'ouvre l'itinéraire vers Grenoble.", toolCalls: [], raw: { role: "assistant", content: "x" } });
+  };
+  const res = await handle(post({ messages: [{ role: "user", content: "Je veux aller à Grenoble" }] }), deps(chat));
+  const j = await res.json();
+  assertEquals(j.action, { type: "itineraire", depart: "ma position", arrivee: "Grenoble" });
+});
+
+const audio = (bytes: number, type = "audio/webm;codecs=opus") =>
+  new Request("http://x/assistant", { method: "POST", headers: { origin: "https://adrienboulay.github.io", "content-type": type, "x-forwarded-for": "1.2.3.4" }, body: new Uint8Array(bytes) });
+
+Deno.test("voix : transcription renvoyee, sans appeler le modele", async () => {
+  const chat: Chat = () => { throw new Error("ne doit pas etre appele"); };
+  let got = "";
+  const d = { ...deps(chat), stt: (a: Uint8Array, t: string) => { got = `${a.length} ${t}`; return Promise.resolve("de Lyon à Grenoble"); } };
+  const res = await handle(audio(1000), d);
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).text, "de Lyon à Grenoble");
+  assertEquals(got, "1000 audio/webm");
+});
+
+Deno.test("voix : sans cle 501, trop long 413, limite 429", async () => {
+  const chat: Chat = () => { throw new Error("ne doit pas etre appele"); };
+  assertEquals((await handle(audio(10), deps(chat))).status, 501);
+  const stt = () => Promise.resolve("x");
+  assertEquals((await handle(audio(2_100_000), { ...deps(chat), stt })).status, 413);
+  assertEquals((await handle(audio(10), { ...deps(chat, false), stt })).status, 429);
+});
