@@ -38,9 +38,10 @@ def apply_schema(con):
     con.commit()
 
 
-def bulk_upsert(cur, table, cols, rows, keys, updates):
+def bulk_upsert(cur, table, cols, rows, keys, updates, touch=True):
     """Charge `rows` via COPY dans une table temporaire puis fait un seul INSERT ... ON CONFLICT.
-    updates : dict colonne -> expression SQL (EXCLUDED.x par defaut si valeur None). Vide = DO NOTHING."""
+    updates : dict colonne -> expression SQL (EXCLUDED.x par defaut si valeur None). Vide = DO NOTHING.
+    touch=False : last_seen / updated_at ne bougent que si une autre valeur change (grosses tables du releve)."""
     if not rows:
         return 0
     tmp = f"tmp_{table}"
@@ -62,7 +63,7 @@ def bulk_upsert(cur, table, cols, rows, keys, updates):
             cond.append(f"({', '.join(exprs[c] for c in watch)}) IS DISTINCT FROM ({', '.join(f'{table}.{c}' for c in watch)})"
                         if len(watch) > 1 else f"{exprs[watch[0]]} IS DISTINCT FROM {table}.{watch[0]}")
         for c in ("last_seen", "updated_at"):
-            if c in exprs:
+            if c in exprs and touch:
                 cond.append(f"{table}.{c} IS NULL OR {table}.{c} < EXCLUDED.{c} - 600")
         action = f"DO UPDATE SET {sets}" + (f" WHERE {' OR '.join(f'({x})' for x in cond)}" if cond else "")
     else:

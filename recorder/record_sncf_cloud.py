@@ -113,14 +113,14 @@ def store(con, now, feed_ts, trains, stops, alerts, links):
                  "dest_uic": "COALESCE(trains.dest_uic, EXCLUDED.dest_uic)",
                  "sched_departure_ts": "COALESCE(trains.sched_departure_ts, EXCLUDED.sched_departure_ts)",
                  "sched_arrival_ts": "COALESCE(trains.sched_arrival_ts, EXCLUDED.sched_arrival_ts)",
-                 "departure_delay_s": None, "n_stops": None, "n_skipped_stops": None})
+                 "departure_delay_s": None, "n_stops": None, "n_skipped_stops": None}, touch=False)
     bulk_upsert(cur, "stop_updates",
                 ["train_num", "service_date", "stop_index", "stop_id", "uic", "sched_arrival_ts", "sched_departure_ts",
                  "arrival_delay_s", "departure_delay_s", "skipped", "last_seen"],
                 stops, ["train_num", "service_date", "stop_id"],
                 {"stop_index": None, "arrival_delay_s": None, "departure_delay_s": None, "skipped": None, "last_seen": None,
                  "sched_arrival_ts": "COALESCE(stop_updates.sched_arrival_ts, EXCLUDED.sched_arrival_ts)",
-                 "sched_departure_ts": "COALESCE(stop_updates.sched_departure_ts, EXCLUDED.sched_departure_ts)"})
+                 "sched_departure_ts": "COALESCE(stop_updates.sched_departure_ts, EXCLUDED.sched_departure_ts)"}, touch=False)
     changed = [(n, d, now, feed_ts, v["status"], v["arr"], v["mx"])
                for (n, d), v in trains.items() if prev.get((n, d)) != (v["status"], v["arr"])]
     if changed:

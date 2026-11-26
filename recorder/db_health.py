@@ -52,4 +52,21 @@ show("Requetes : plus de temps total", """
 SELECT calls, round(total_exec_time::numeric / 1000, 1) AS sec_total, round(mean_exec_time::numeric, 1) AS ms_moy,
        regexp_replace(left(query, 90), '\\s+', ' ', 'g') AS requete
 FROM extensions.pg_stat_statements ORDER BY total_exec_time DESC LIMIT 15""")
+show("Requetes : plus de fichiers temporaires (tris / hachages qui debordent sur disque)", """
+SELECT calls, temp_blks_written AS temp_blocs, pg_size_pretty(temp_blks_written * 8192) AS temp,
+       round(mean_exec_time::numeric, 1) AS ms_moy, regexp_replace(left(query, 90), '\\s+', ' ', 'g') AS requete
+FROM extensions.pg_stat_statements WHERE temp_blks_written > 0 ORDER BY temp_blks_written DESC LIMIT 15""")
+show("Fenetre de pg_stat_statements", "SELECT stats_reset FROM extensions.pg_stat_statements_info")
+show("COMPTEURS (a comparer entre deux rapports)", """
+SELECT now()::timestamp(0) AS a, w.wal_bytes, d.temp_bytes, d.temp_files,
+       (SELECT COUNT(*) FROM polls) AS polls,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'stop_updates') AS upd_stop_updates,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'idfm_stop_updates') AS upd_idfm_stop_updates,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'trains') AS upd_trains,
+       (SELECT n_tup_upd FROM pg_stat_user_tables WHERE relname = 'idfm_trains') AS upd_idfm_trains
+FROM pg_stat_wal w, pg_stat_database d WHERE d.datname = current_database()""")
+show("Lignes presentes dans le flux (vues depuis 12 min)", """
+SELECT (SELECT COUNT(*) FROM stop_updates WHERE last_seen > EXTRACT(EPOCH FROM now())::bigint - 720) AS stop_updates,
+       (SELECT COUNT(*) FROM idfm_stop_updates WHERE last_seen > EXTRACT(EPOCH FROM now())::bigint - 720) AS idfm_stop_updates""")
+show("Table des prochains metros : journalisee ? (u = non)", "SELECT relpersistence FROM pg_class WHERE oid = 'public.idfm_metro_next'::regclass")
 con.close()

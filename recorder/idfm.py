@@ -176,14 +176,14 @@ def store_et(con, now, trains, stops):
                 {"status": None, "last_stop_ref": None, "arrival_delay_s": None, "n_calls": None, "n_cancelled": None,
                  "last_seen": None, "sched_arrival_ts": None,
                  "max_delay_s": "GREATEST(idfm_trains.max_delay_s, EXCLUDED.max_delay_s)",
-                 "train_num": "COALESCE(EXCLUDED.train_num, idfm_trains.train_num)"})
+                 "train_num": "COALESCE(EXCLUDED.train_num, idfm_trains.train_num)"}, touch=False)
     bulk_upsert(cur, "idfm_stop_updates",
                 ["journey_key", "stop_ref", "aimed_arrival_ts", "aimed_departure_ts", "arrival_delay_s",
                  "departure_delay_s", "status", "platform", "last_seen"],
                 stops, ["journey_key", "stop_ref"],
                 {"aimed_arrival_ts": None, "aimed_departure_ts": None, "arrival_delay_s": None,
                  "departure_delay_s": None, "status": None, "last_seen": None,
-                 "platform": "COALESCE(EXCLUDED.platform, idfm_stop_updates.platform)"})
+                 "platform": "COALESCE(EXCLUDED.platform, idfm_stop_updates.platform)"}, touch=False)
     changed = [(k, now, t[8], t[10], t[11]) for k, t in trains.items() if prev.get(k) != (t[8], t[10])]
     if changed:
         cur.executemany("INSERT INTO idfm_observations VALUES (%s,%s,%s,%s,%s)", changed)
