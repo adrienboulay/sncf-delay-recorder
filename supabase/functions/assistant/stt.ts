@@ -12,7 +12,7 @@ const ext = (type: string) => (type.includes("mp4") || type.includes("m4a") ? "m
 function form(audio: Uint8Array, type: string, fields: Record<string, string>): FormData {
   const f = new FormData();
   for (const [k, v] of Object.entries(fields)) f.append(k, v);
-  f.append("file", new Blob([audio], { type }), `voix.${ext(type)}`);
+  f.append("file", new Blob([audio.slice().buffer as ArrayBuffer], { type }), `voix.${ext(type)}`);
   return f;
 }
 
