@@ -56,7 +56,14 @@ show("Requetes : plus de fichiers temporaires (tris / hachages qui debordent sur
 SELECT calls, temp_blks_written AS temp_blocs, pg_size_pretty(temp_blks_written * 8192) AS temp,
        round(mean_exec_time::numeric, 1) AS ms_moy, regexp_replace(left(query, 90), '\\s+', ' ', 'g') AS requete
 FROM extensions.pg_stat_statements WHERE temp_blks_written > 0 ORDER BY temp_blks_written DESC LIMIT 15""")
-show("Fenetre de pg_stat_statements", "SELECT stats_reset FROM extensions.pg_stat_statements_info")
+show("Fenetre de pg_stat_statements", "SELECT stats_reset, dealloc AS entrees_evincees FROM extensions.pg_stat_statements_info")
+show("Version", "SELECT current_setting('server_version') AS pg, current_setting('work_mem') AS work_mem_defaut")
+show("Depuis 2 h, par debut de requete : fichiers temporaires et journal (PG 17+)", """
+SELECT regexp_replace(left(query, 45), '\\s+', ' ', 'g') AS debut, COUNT(*) AS entrees, SUM(calls) AS appels,
+       pg_size_pretty(SUM(temp_blks_written) * 8192) AS temp, pg_size_pretty(SUM(wal_bytes)) AS wal,
+       MIN(stats_since)::timestamp(0) AS depuis
+FROM extensions.pg_stat_statements WHERE stats_since > now() - interval '2 hours'
+GROUP BY 1 ORDER BY SUM(temp_blks_written) * 8192 + SUM(wal_bytes) DESC LIMIT 20""")
 show("COMPTEURS (a comparer entre deux rapports)", """
 SELECT now()::timestamp(0) AS a, w.wal_bytes, d.temp_bytes, d.temp_files,
        (SELECT COUNT(*) FROM polls) AS polls,
