@@ -51,6 +51,8 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
 SELECT COALESCE((SELECT v FROM public_cache WHERE k = 'station_map' AND updated_at > EXTRACT(EPOCH FROM now())::bigint - 1800),
                 public_station_map_live()) $$;
 REVOKE ALL ON FUNCTION public.refresh_public_cache() FROM PUBLIC, anon, authenticated;
+-- Ses agregats debordaient sur disque (~1,4 Mo de fichiers temporaires a chaque appel) : plus de memoire de tri.
+ALTER FUNCTION public.refresh_public_cache() SET work_mem = '64MB';
 REVOKE ALL ON FUNCTION public.public_station_map() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.public_station_map() TO anon;
 
