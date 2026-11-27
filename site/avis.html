@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Avis des voyageurs · LateProof</title>
+<meta name="description" content="Ce que les voyageurs pensent de LateProof. Chaque avis est relu avant d'être publié.">
+<meta name="theme-color" content="#121417">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+  --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{position:relative;margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 var(--display);font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--lime);outline-offset:3px;border-radius:8px}
+a{color:var(--lime)}
+.wrap{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em;line-height:1.05;margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:16px;padding-inline:4px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:700 1.25rem var(--head);letter-spacing:-.02em}
+.nav{display:flex;align-items:center;gap:18px}
+.lp-aurora.page{height:min(900px,110vh);bottom:auto}
+
+.intro{max-width:44rem;padding-block:48px 40px}
+.kick{font:800 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+.intro h1{margin-top:12px;font-size:clamp(2.2rem,5vw,3.8rem);letter-spacing:-.025em}
+.intro p{margin:18px 0 0;font-size:1.15rem;color:#C9CCD3}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:start;margin-bottom:80px}
+
+/* Pile de cartes : la première devant, les suivantes décalées derrière ; elles tournent toutes les 6 s */
+.stack{position:relative;height:300px;margin-top:48px}
+.rv{position:absolute;inset:0 0 auto 0;height:260px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;padding:26px;border-radius:28px;
+  background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.08),0 18px 50px rgb(0 0 0/.35);
+  transform-origin:top center;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s,background-color .45s}
+.rv .body{margin:0;font-size:1.06rem;color:var(--fg);overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
+.rv .who{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rv .who b{font:700 1rem var(--head)}
+.rv .who span{color:var(--muted);font-size:.9rem}
+.hl{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;background:rgb(212 255 58/.12);color:var(--lime);font-weight:800;font-size:.85rem}
+.rv.empty .body{color:#C9CCD3}
+.rv.ghost{background:var(--surface)}
+.rv > *{transition:opacity .3s}.rv[aria-hidden="true"] > *{opacity:0}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:var(--surface3);cursor:pointer}
+.dots button[aria-current="true"]{background:var(--lime);width:22px;border-radius:4px}
+.note{margin:16px 0 0;color:var(--muted);font-size:.92rem}
+
+.formcard{padding:32px;border-radius:32px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.formcard h2{font-size:clamp(1.6rem,3vw,2.2rem)}
+.formcard > p{margin:10px 0 22px;color:#C9CCD3}
+form{display:grid;gap:14px}
+label{display:grid;gap:6px;font-size:.9rem;font-weight:700;color:#C9CCD3}
+input,textarea{font:500 1rem var(--display);color:var(--fg);background:var(--bg);border:2px solid var(--surface3);border-radius:14px;padding:13px 14px;width:100%}
+textarea{min-height:130px;resize:vertical;line-height:1.5}
+input:focus,textarea:focus{border-color:var(--lime);outline:none}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cnt{justify-self:end;margin-top:-6px;color:var(--muted);font-size:.8rem;font-weight:600}
+.check{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;font-weight:500;color:var(--muted)}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--lime)}
+.hp{position:absolute;left:-9999px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;font:800 1rem var(--display);text-decoration:none;border:0;cursor:pointer;background:var(--lime);color:#0B0C0F}
+.btn:disabled{opacity:.5;cursor:default}
+.msg{min-height:1.4em;margin:0;font-weight:700}.msg.ok{color:var(--lime)}.msg.err{color:var(--orange)}
+footer{border-top:1px solid var(--line);padding-block:26px 40px;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+@media (max-width:900px){.grid{grid-template-columns:1fr;gap:36px}.intro{padding-block:32px 24px}}
+@media (max-width:480px){.row{grid-template-columns:1fr}.formcard{padding:22px;border-radius:26px}.rv{padding:22px;height:280px}.stack{height:320px}}
+@media (prefers-reduced-motion:reduce){.rv{transition:none}}
+</style>
+<link rel="stylesheet" href="lp-ui.css">
+</head>
+<body data-lpn-sticky>
+<div class="lp-aurora page" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./" aria-label="LateProof">
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
+      lateproof
+    </a>
+    <nav class="nav"></nav>
+  </header>
+
+  <main>
+    <div class="intro lp-rv">
+      <span class="kick" data-en="Reviews">Avis</span>
+      <h1 data-en="What travellers say.">Ce qu'en disent les voyageurs.</h1>
+      <p data-en="Every review is read before it is published, with the first name its author chose. None is made up.">Chaque avis est relu avant d'être publié, avec le prénom choisi par son auteur. Aucun n'est inventé.</p>
+    </div>
+
+    <div class="grid">
+      <section aria-labelledby="tList" class="lp-rv">
+        <h2 id="tList" class="sr-h" data-en="Published reviews" style="font-size:1.3rem">Avis publiés</h2>
+        <div class="stack" id="stack" aria-live="off"></div>
+        <div class="dots" id="dots" role="group" aria-label="Choisir un avis" data-en-label="Pick a review"></div>
+        <p class="note" id="note"></p>
+      </section>
+
+      <section class="formcard lp-rv" aria-labelledby="tForm">
+        <h2 id="tForm" data-en="Your turn.">À toi.</h2>
+        <p data-en="You've used LateProof on a trip? Tell us in a few lines what worked, or what didn't.">Tu as utilisé LateProof sur un trajet ? Dis-nous en quelques lignes ce qui a marché, ou pas.</p>
+        <form id="form" novalidate>
+          <div class="row">
+            <label for="name"><span data-en="First name or nickname">Prénom ou pseudo</span><input id="name" name="name" type="text" required maxlength="40" autocomplete="given-name" placeholder="Camille" data-en-placeholder="Alex"></label>
+            <label for="trip"><span data-en="Your route (optional)">Ton trajet (facultatif)</span><input id="trip" name="trip" type="text" maxlength="60" placeholder="Lyon → Grenoble"></label>
+          </div>
+          <label for="body"><span data-en="Your review">Ton avis</span><textarea id="body" name="body" required minlength="10" maxlength="400"></textarea></label>
+          <span class="cnt" id="cnt">0 / 400</span>
+          <input class="hp" type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="check" for="consent"><input id="consent" name="consent" type="checkbox" required><span data-en="I agree that my first name, route and review are published on this page after being read. I can ask for removal at any time.">J'accepte que mon prénom, mon trajet et mon avis soient publiés sur cette page après relecture. Je peux demander leur retrait à tout moment.</span></label>
+          <button class="btn" id="submit" type="submit" data-en="Send my review">Envoyer mon avis</button>
+          <p class="msg" id="msg" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span data-en="LateProof, a project in progress. Reviews are read before publication.">LateProof, projet en construction. Les avis sont relus avant publication.</span>
+    <span data-en="Data: SNCF open data, Île-de-France Mobilités.">Données : SNCF open data, Île-de-France Mobilités.</span>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script src="lp-i18n.js"></script>
+<script src="lp-ui.js"></script>
+<script src="gus.js"></script>
+<script>Gus.fab();</script>
+<script>
+const {L, locale, lang} = LPI;
+const CFG = window.LP_CONFIG || {};
+const api = (path, opts = {}) => fetch(`${CFG.url}/rest/v1/${path}`, {...opts, headers: {apikey: CFG.key, "Content-Type": "application/json", ...(opts.headers || {})}});
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const $ = id => document.getElementById(id);
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ------------------------------------------------------------------ Pile d'avis
+let items = [], front = 0, timer = null;
+function place() {
+  const cards = [...$("stack").children], n = cards.length;
+  cards.forEach((c, i) => {
+    const k = (i - front + n) % n;   // 0 = devant
+    c.style.zIndex = String(10 - k);
+    c.style.transform = `translateY(${-k * 16}px) scale(${1 - k * 0.06})`;
+    c.style.opacity = k > 2 ? "0" : String(1 - k * 0.18);
+    c.setAttribute("aria-hidden", String(k !== 0));
+  });
+  $("dots").querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-current", String(i === front)));
+}
+function card(r) {
+  const d = r.at ? new Date(r.at * 1000).toLocaleDateString(locale, {day: "numeric", month: "long"}) : "";
+  return `<article class="rv"><p class="body">« ${esc(r.body)} »</p><div class="who"><b>${esc(r.name)}</b>${r.trip ? `<span class="hl">${esc(r.trip)}</span>` : ""}${d ? `<span>${d}</span>` : ""}</div></article>`;
+}
+function draw() {
+  const st = $("stack");
+  if (!items.length) {
+    st.innerHTML = `<article class="rv empty"><p class="body">${L("Pas encore d'avis publié. Le tien peut être le premier : il apparaîtra ici après relecture.", "No review published yet. Yours can be the first: it will show here once read.")}</p>
+      <div class="who"><span class="hl">LateProof</span></div></article><article class="rv ghost"></article><article class="rv ghost"></article>`;
+    $("dots").innerHTML = ""; $("note").textContent = "";
+    front = 0; place(); return;
+  }
+  st.innerHTML = items.map(card).join("");
+  $("dots").innerHTML = items.length > 1 ? items.map((_, i) => `<button type="button" aria-label="${L("Avis", "Review")} ${i + 1}"></button>`).join("") : "";
+  $("dots").querySelectorAll("button").forEach((b, i) => b.addEventListener("click", () => { front = i; place(); restart(); }));
+  $("note").textContent = L(`${items.length} avis publié${items.length > 1 ? "s" : ""}.`, `${items.length} review${items.length > 1 ? "s" : ""} published.`);
+  front = 0; place(); restart();
+}
+function restart() {
+  clearInterval(timer);
+  if (still || items.length < 2) return;
+  timer = setInterval(() => { if (!document.hidden) { front = (front + 1) % items.length; place(); } }, 6000);
+}
+$("stack").addEventListener("mouseenter", () => clearInterval(timer));
+$("stack").addEventListener("mouseleave", restart);
+function load() {
+  draw();
+  if (!CFG.url) return;
+  api("rpc/public_reviews", {method: "POST", body: "{}"}).then(r => r.ok ? r.json() : []).then(j => { items = Array.isArray(j) ? j : []; draw(); }).catch(() => {});
+}
+
+// ------------------------------------------------------------------ Envoi d'un avis (à valider avant publication)
+const form = $("form"), msg = $("msg"), btn = $("submit");
+const say = (t, cls) => { msg.textContent = t; msg.className = "msg " + (cls || ""); };
+form.body.addEventListener("input", () => { $("cnt").textContent = `${form.body.value.length} / 400`; });
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  if (form.website.value) return;   // piège à robots
+  const name = form.name.value.trim(), body = form.body.value.trim(), trip = form.trip.value.trim();
+  if (!name) { say(L("Indique un prénom ou un pseudo.", "Please enter a first name or nickname."), "err"); form.name.focus(); return; }
+  if (body.length < 10) { say(L("Ton avis doit faire au moins 10 caractères.", "Your review needs at least 10 characters."), "err"); form.body.focus(); return; }
+  if (!form.consent.checked) { say(L("Coche la case pour qu'on puisse publier ton avis.", "Please tick the box so we can publish your review."), "err"); form.consent.focus(); return; }
+  if (!CFG.url) { say(L("L'envoi n'est pas disponible pour le moment.", "Sending isn't available right now."), "err"); return; }
+  btn.disabled = true; say(L("Envoi…", "Sending…"));
+  try {
+    const r = await api("reviews", {method: "POST", headers: {Prefer: "return=minimal"}, body: JSON.stringify({name, trip: trip || null, body, lang, consent: true})});
+    if (r.ok) { say(L("Merci ! Ton avis sera publié ici après relecture.", "Thank you! Your review will show here once it's been read."), "ok"); form.reset(); $("cnt").textContent = "0 / 400"; }
+    else say(L("L'envoi n'est pas passé. Réessaie dans un moment.", "Sending didn't go through. Please try again later."), "err");
+  } catch (err) { say(L("L'envoi n'est pas passé. Réessaie dans un moment.", "Sending didn't go through. Please try again later."), "err"); }
+  btn.disabled = false;
+});
+document.title = L("Avis des voyageurs · LateProof", "Traveller reviews · LateProof");
+load();
+</script>
+</body>
+</html>
