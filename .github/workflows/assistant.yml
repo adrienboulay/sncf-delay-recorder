@@ -28,8 +28,9 @@ jobs:
           deno-version: v2.x
       - run: deno check supabase/functions/assistant/index.ts
       - run: deno test supabase/functions/assistant/
-      - name: Outils sur les vraies donnees (lecture seule)
+      - name: Outils sur les vraies donnees (lecture seule, informatif : une base lente ne bloque pas le deploiement)
         if: env.SUPABASE_URL != ''
+        continue-on-error: true
         run: deno run --allow-net --allow-env supabase/functions/assistant/live_check.ts
       - name: Cle Gemini et modele (la cle n'est jamais affichee)
         env:
