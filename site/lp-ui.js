@@ -6,7 +6,7 @@
   const LINKS = [
     {href: "carte.html", fr: "Carte", en: "Map"},
     {href: "assistant.html", fr: "Copilote", en: "Copilot"},
-    {href: "avis.html", fr: "Avis", en: "Reviews"},
+    {href: "./#avis", fr: "Avis", en: "Reviews"},
     {href: "app.html", fr: "Mon espace", en: "My space", cta: true},
   ];
   const lang = () => (document.documentElement.lang === "en" ? "en" : "fr");

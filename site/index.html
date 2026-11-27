@@ -41,7 +41,15 @@ h1,h2,h3{font-family:var(--head);letter-spacing:-.04em;line-height:1.05;margin:0
 .lede{font-size:1.2rem;color:#C9CCD3;margin:22px 0 30px;max-width:34rem}
 .ctas{display:flex;flex-wrap:wrap;gap:12px}
 
-.board{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:12px;align-items:stretch;margin-bottom:72px}
+.today{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 22px;margin:0 0 64px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--muted);font-size:.95rem}
+.today b{color:var(--fg);font:700 1.15rem var(--head);letter-spacing:-.01em}
+.today .o b{color:var(--orange)}
+.today .tt b{font-size:1rem}
+.today .live{display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--lime);vertical-align:1px}
+.today .m{font-size:.85rem}
+.today .go{margin-left:auto;color:var(--lime);font-weight:800;text-decoration:none;white-space:nowrap}
+.today .go:hover{text-decoration:underline;text-underline-offset:3px}
+@media (max-width:700px){.today{gap:6px 16px}.today .tt{flex-basis:100%}.today .go{margin-left:0;flex-basis:100%}}
 .board .lbl{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:20px 24px;border-radius:24px;background:var(--surface);min-width:230px}
 .board .lbl span{color:var(--muted);font-size:.9rem}
 .stat{display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding:20px 24px;border-radius:24px;background:var(--surface)}
@@ -149,6 +157,29 @@ h1,h2,h3{font-weight:700;letter-spacing:-.015em}
 .biz .btn{background:var(--lime);color:#121417}
 input,select{background:var(--bg);border-color:var(--surface3)}
 
+/* Avis : pile de cartes + formulaire */
+.revgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:start}
+.stack{position:relative;height:300px;margin-top:26px}
+.rv{position:absolute;inset:0 0 auto 0;height:260px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;padding:26px;border-radius:28px;
+  background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.08),0 18px 50px rgb(0 0 0/.35);transform-origin:top center;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
+.rv > *{transition:opacity .3s}.rv[aria-hidden="true"] > *{opacity:0}
+.rv .body{margin:0;font-size:1.06rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
+.rv .who{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.rv .who b{font:700 1rem var(--head)}.rv .who span{color:var(--muted);font-size:.9rem}
+.rv.empty .body{color:#C9CCD3}.rv.ghost{background:var(--surface)}
+.hl{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;background:rgb(212 255 58/.12);color:var(--lime)!important;font-weight:800;font-size:.85rem}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:var(--surface3);cursor:pointer}
+.dots button[aria-current="true"]{background:var(--lime);width:22px;border-radius:4px}
+.revnote{margin:16px 0 0;color:var(--muted);font-size:.92rem;text-align:center}
+.formcard{padding:32px;border-radius:32px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.formcard h3{font-size:clamp(1.5rem,2.6vw,2rem)}
+.formcard > p{margin:10px 0 22px;color:#C9CCD3}
+textarea{font:500 1rem var(--display);color:var(--fg);background:var(--bg);border:2px solid var(--surface3);border-radius:14px;padding:13px 14px;width:100%;min-height:130px;resize:vertical;line-height:1.5}
+textarea:focus{border-color:var(--lime);outline:none}
+.cnt{justify-self:end;margin-top:-6px;color:var(--muted);font-size:.8rem;font-weight:600}
+@media (max-width:900px){.revgrid{grid-template-columns:1fr;gap:28px}}
+@media (max-width:480px){.formcard{padding:22px;border-radius:26px}.rv{padding:22px;height:280px}.stack{height:320px}}
+@media (prefers-reduced-motion:reduce){.rv{transition:none}}
 /* ---- Revision F : barre commune, accroche animée, mots qui défilent, grille des fonctionnalités, captures ---- */
 body{position:relative}
 .wrap{position:relative;z-index:1}
@@ -244,6 +275,7 @@ body{position:relative}
         <p class="lede" data-i18n="lede">LateProof suit ton trajet en direct, te donne le plan B avant tout le monde, et prouve ton retard avec un simple lien que ton manager vérifie en 3 secondes, sans rien installer.</p>
         <div class="ctas">
           <a class="btn lime" href="app.html" data-i18n="cta1">Ouvrir l'appli</a>
+          <a class="btn line" href="carte.html" data-i18n="ctaMap">Voir la carte</a>
           <a class="btn line" href="#nouveautes" data-i18n="cta2">Être prévenu des nouveautés</a>
         </div>
       </div>
@@ -261,12 +293,14 @@ body{position:relative}
       </div>
     </div>
 
-    <div class="board" aria-live="off">
-      <div class="lbl"><b data-i18n="boardTitle">Aujourd'hui en France</b><span><span data-i18n="boardSub">relevé toutes les 2 min</span> · <span id="updated">—</span></span></div>
-      <div class="stat"><b id="sTrains">—</b><span data-i18n="sTrains">trains suivis</span></div>
-      <div class="stat o"><b id="sLate">—</b><span data-i18n="sLate">en retard de 15 min ou plus</span></div>
-      <div class="stat o"><b id="sCanc">—</b><span data-i18n="sCanc">supprimés</span></div>
-    </div>
+    <p class="today" aria-live="off">
+      <span class="tt"><i class="live" aria-hidden="true"></i><b data-i18n="boardTitle">Aujourd'hui en France</b></span>
+      <span><b id="sTrains">—</b> <span data-i18n="sTrains">trains suivis</span></span>
+      <span class="o"><b id="sLate">—</b> <span data-i18n="sLate">en retard de 15 min ou plus</span></span>
+      <span class="o"><b id="sCanc">—</b> <span data-i18n="sCanc">supprimés</span></span>
+      <span class="m"><span data-i18n="boardSub">relevé toutes les 2 min</span> · <span id="updated">—</span></span>
+      <a class="go" href="carte.html" data-i18n="seeMap">Voir la carte en direct →</a>
+    </p>
 
     <p class="flip lp-rv"><span data-i18n="flipA">Avec LateProof, tu as</span><span class="flipw" id="flipw" aria-hidden="true"></span><span class="sr" id="flipSr"></span></p>
 
@@ -328,8 +362,7 @@ body{position:relative}
       </div>
     </section>
 
-    <section aria-labelledby="tShots">
-      <div class="sh"><h2 id="tShots" data-i18n="shotsT">L'appli en images.</h2><p data-i18n="shotsP">La carte des retards, le copilote, ton espace et la page de vérification, tels qu'ils sont en ligne aujourd'hui.</p></div>
+    <section aria-label="Captures d'écran de LateProof" data-i18n-aria="shotsAlt">
       <div class="shots lp-rv" id="shots" role="img" aria-label="Captures d'écran de LateProof : carte, copilote, espace personnel, vérification" data-i18n-aria="shotsAlt"><div class="plane" id="plane"></div></div>
     </section>
 
@@ -375,6 +408,33 @@ body{position:relative}
         <details><summary data-i18n="q4">Quels trains ?</summary><p data-i18n="a4">Tous les trains SNCF en France (TGV, Intercités, TER), et en Île-de-France les RER et Transilien. Pour le métro et le tram, on suit la régularité, mais pas encore de justificatif : ils ne publient pas d'horaires.</p></details>
       </div>
     </section>
+
+    <section id="avis" aria-labelledby="tRev">
+      <div class="sh"><h2 id="tRev" data-i18n="revT">Ce qu'en disent les voyageurs.</h2><p data-i18n="revP">Chaque avis est relu avant d'être publié, avec le prénom choisi par son auteur. Aucun n'est inventé.</p></div>
+      <div class="revgrid">
+        <div>
+          <div class="stack" id="stack" aria-live="off"></div>
+          <div class="dots" id="dots" role="group" aria-label="Choisir un avis" data-i18n-aria="revPick"></div>
+          <p class="revnote" id="revNote"></p>
+        </div>
+        <div class="formcard">
+          <h3 data-i18n="revFormT">À toi.</h3>
+          <p data-i18n="revFormP">Tu as utilisé LateProof sur un trajet ? Dis-nous en quelques lignes ce qui a marché, ou pas.</p>
+          <form id="revForm" novalidate>
+            <div class="row">
+              <label for="rName"><span data-i18n="revName">Prénom ou pseudo</span><input id="rName" name="name" type="text" required maxlength="40" autocomplete="given-name" placeholder="Camille"></label>
+              <label for="rTrip"><span data-i18n="revTrip">Ton trajet (facultatif)</span><input id="rTrip" name="trip" type="text" maxlength="60" placeholder="Lyon → Grenoble"></label>
+            </div>
+            <label for="rBody"><span data-i18n="revBody">Ton avis</span><textarea id="rBody" name="body" required minlength="10" maxlength="400"></textarea></label>
+            <span class="cnt" id="rCnt">0 / 400</span>
+            <input class="hp" type="text" id="rSite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <label class="check" for="rConsent"><input id="rConsent" name="consent" type="checkbox" required><span data-i18n="revConsent">J'accepte que mon prénom, mon trajet et mon avis soient publiés sur cette page après relecture. Je peux demander leur retrait à tout moment.</span></label>
+            <button class="btn lime" id="rSubmit" type="submit" data-i18n="revSend">Envoyer mon avis</button>
+            <p class="msg" id="rMsg" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -416,7 +476,11 @@ const I18N = {
     q2:"Is the certificate really reliable?", a2:"It's signed by your phone during the trip, checked against official SNCF and Île-de-France Mobilités records, and any edit shows. And every night, a fingerprint of all the previous day's records is published on Solana (test network during the hackathon): nobody, not even us, can change them afterwards without it showing.",
     q3:"What about my location?", a3:"It's only used, on your phone, to recognise your station at check-in. Your trips and certificates stay on your device.",
     q4:"Which trains?", a4:"All SNCF trains in France (TGV, Intercités, regional), plus RER and Transilien in Île-de-France. For metro and tram we track regularity, but no certificate yet: they publish no timetable.",
-    flipA:"With LateProof, you get", moreGus:"Talk to Gus →", moreMap:"See the map →", live:"LIVE",
+    flipA:"With LateProof, you get", seeMap:"See the live map →", ctaMap:"See the map",
+    revT:"What travellers say.", revP:"Every review is read before it is published, with the first name its author chose. None is made up.", revPick:"Pick a review",
+    revFormT:"Your turn.", revFormP:"You've used LateProof on a trip? Tell us in a few lines what worked, or what didn't.", revName:"First name or nickname",
+    revTrip:"Your route (optional)", revBody:"Your review", revConsent:"I agree that my first name, route and review are published on this page after being read. I can ask for removal at any time.",
+    revSend:"Send my review", moreGus:"Talk to Gus →", moreMap:"See the map →", live:"LIVE",
     lT:"All of France, every 2 minutes", lP:"Every SNCF train (TGV, Intercités, regional) and, in Île-de-France, RER and Transilien, tracked from official data.",
     shotsT:"The app, in pictures.", shotsP:"The delay map, the copilot, your space and the verification page, as they are online today.",
     shotsAlt:"LateProof screenshots: map, copilot, personal space, verification",
@@ -432,6 +496,7 @@ Object.assign(I18N.fr, {ok:"C'est noté ! On t'écrit quand une grosse nouveaut�
   bad:"Vérifie ton adresse e-mail.", noConsent:"Coche la case pour qu'on ait le droit de t'écrire.",
   fail:"L'inscription n'est pas passée. Réessaie dans une minute.", sending:"Envoi…", restart:"Recommencer ↺", updated:"mis à jour",
   shotsAlt:"Captures d'écran de LateProof : carte, copilote, espace personnel, vérification",
+  revPick:"Choisir un avis",
   altGus:"Gus, le copilote, répond à une question avec les départs en direct", altApp:"L'appli LateProof sur un téléphone", altVerif:"La page de vérification d'un justificatif"});
 const FLIP = {fr: ["les retards en direct", "le plan B avant tout le monde", "un justificatif vérifiable en 3 s", "Gus, ton copilote à la voix"],
   en: ["live delays", "a plan B before anyone else", "a certificate checked in 3 s", "Gus, your voice copilot"]};
@@ -447,7 +512,7 @@ function setLang(l) {
   document.querySelectorAll("[data-i18n-aria]").forEach(el => { const v = I18N[l][el.dataset.i18nAria]; if (v) el.setAttribute("aria-label", v); });
   document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
   try { localStorage.setItem("lp-lang", l); } catch (e) {}
-  splitTitle(); flipReset();
+  splitTitle(); flipReset(); if (typeof drawReviews === "function" && document.getElementById("stack")) drawReviews();
   document.title = l === "en" ? "LateProof · Delays, proven" : "LateProof · Le retard, prouvé";
   if (window.Gus && Gus.setLang) Gus.setLang(l);
   if (lastStats) showStats(lastStats);
@@ -625,7 +690,63 @@ if (flipBox && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   new IntersectionObserver(es => box.classList.toggle("paused", !es[0].isIntersecting)).observe(box);
 })();
 
-setLang(lang); loadStats(); loadCount(); setInterval(loadStats, 120000);
+// ------------------------------------------------------------------ Avis : seuls les avis validés à la main sont publiés
+const RV = {
+  fr: {empty: "Pas encore d'avis publié. Le tien peut être le premier : il apparaîtra ici après relecture.", one: "avis publié", many: "avis publiés", rev: "Avis",
+    noName: "Indique un prénom ou un pseudo.", short: "Ton avis doit faire au moins 10 caractères.", consent: "Coche la case pour qu'on puisse publier ton avis.",
+    off: "L'envoi n'est pas disponible pour le moment.", sending: "Envoi…", ok: "Merci ! Ton avis sera publié ici après relecture.", fail: "L'envoi n'est pas passé. Réessaie dans un moment."},
+  en: {empty: "No review published yet. Yours can be the first: it will show here once read.", one: "review published", many: "reviews published", rev: "Review",
+    noName: "Please enter a first name or nickname.", short: "Your review needs at least 10 characters.", consent: "Please tick the box so we can publish your review.",
+    off: "Sending isn't available right now.", sending: "Sending…", ok: "Thank you! Your review will show here once it's been read.", fail: "Sending didn't go through. Please try again later."}};
+let reviews = [], rvFront = 0, rvTimer = null;
+const rvStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const escH = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+function rvPlace() {
+  const cards = [...document.getElementById("stack").children], n = cards.length;
+  cards.forEach((c, i) => { const k = (i - rvFront + n) % n;
+    c.style.zIndex = String(10 - k); c.style.transform = `translateY(${-k * 16}px) scale(${1 - k * 0.06})`;
+    c.style.opacity = k > 2 ? "0" : String(1 - k * 0.18); c.setAttribute("aria-hidden", String(k !== 0)); });
+  document.querySelectorAll("#dots button").forEach((b, i) => b.setAttribute("aria-current", String(i === rvFront)));
+}
+function rvRestart() { clearInterval(rvTimer); if (rvStill || reviews.length < 2) return; rvTimer = setInterval(() => { if (!document.hidden) { rvFront = (rvFront + 1) % reviews.length; rvPlace(); } }, 6000); }
+function drawReviews() {
+  const R = RV[lang], st = document.getElementById("stack"), dots = document.getElementById("dots"); if (!st) return;
+  if (!reviews.length) {
+    st.innerHTML = `<article class="rv empty"><p class="body">${R.empty}</p><div class="who"><span class="hl">LateProof</span></div></article><article class="rv ghost"></article><article class="rv ghost"></article>`;
+    dots.innerHTML = ""; document.getElementById("revNote").textContent = ""; rvFront = 0; rvPlace(); return;
+  }
+  const loc = lang === "en" ? "en-GB" : "fr-FR";
+  st.innerHTML = reviews.map(r => `<article class="rv"><p class="body">« ${escH(r.body)} »</p><div class="who"><b>${escH(r.name)}</b>${r.trip ? `<span class="hl">${escH(r.trip)}</span>` : ""}${r.at ? `<span>${new Date(r.at * 1000).toLocaleDateString(loc, {day: "numeric", month: "long"})}</span>` : ""}</div></article>`).join("");
+  dots.innerHTML = reviews.length > 1 ? reviews.map((_, i) => `<button type="button" aria-label="${R.rev} ${i + 1}"></button>`).join("") : "";
+  dots.querySelectorAll("button").forEach((b, i) => b.addEventListener("click", () => { rvFront = i; rvPlace(); rvRestart(); }));
+  document.getElementById("revNote").textContent = `${reviews.length} ${reviews.length > 1 ? R.many : R.one}`;
+  rvFront = Math.min(rvFront, reviews.length - 1); rvPlace(); rvRestart();
+}
+document.getElementById("stack").addEventListener("mouseenter", () => clearInterval(rvTimer));
+document.getElementById("stack").addEventListener("mouseleave", rvRestart);
+function loadReviews() { if (!CFG.url) return; rpc("public_reviews").then(j => { reviews = Array.isArray(j) ? j : []; drawReviews(); }).catch(() => {}); }
+(function () {
+  const f = document.getElementById("revForm"), msg = document.getElementById("rMsg"), btn = document.getElementById("rSubmit");
+  const say = (k, cls) => { msg.textContent = RV[lang][k]; msg.className = "msg " + (cls || ""); };
+  f.body.addEventListener("input", () => { document.getElementById("rCnt").textContent = `${f.body.value.length} / 400`; });
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (f.website.value) return;   // piège à robots
+    const name = f.name.value.trim(), body = f.body.value.trim(), trip = f.trip.value.trim();
+    if (!name) { say("noName", "err"); f.name.focus(); return; }
+    if (body.length < 10) { say("short", "err"); f.body.focus(); return; }
+    if (!f.consent.checked) { say("consent", "err"); f.consent.focus(); return; }
+    if (!CFG.url) { say("off", "err"); return; }
+    btn.disabled = true; say("sending");
+    try {
+      const r = await api("reviews", {method: "POST", headers: {Prefer: "return=minimal"}, body: JSON.stringify({name, trip: trip || null, body, lang, consent: true})});
+      if (r.ok) { say("ok", "ok"); f.reset(); document.getElementById("rCnt").textContent = "0 / 400"; } else say("fail", "err");
+    } catch (err) { say("fail", "err"); }
+    btn.disabled = false;
+  });
+})();
+
+setLang(lang); loadStats(); loadReviews(); loadCount(); setInterval(loadStats, 120000);
 </script>
 </body>
 </html>

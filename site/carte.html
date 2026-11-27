@@ -39,6 +39,38 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .quick button{flex:none;display:inline-flex;align-items:center;gap:6px;border:0;background:var(--surface);color:var(--fg);font:600 .85rem var(--display);border-radius:999px;padding:7px 12px;box-shadow:0 1px 4px rgb(0 0 0/.2);cursor:pointer;white-space:nowrap}
 .quick button:hover{background:var(--bg)}
 .quick button[aria-pressed="true"]{background:var(--blue);color:var(--on-blue)}
+.recent{display:contents}
+.quick .recent button{max-width:200px}
+.quick .recent .rl{overflow:hidden;text-overflow:ellipsis}
+.quick .recent svg{flex:none;color:var(--muted)}
+.menunews{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:14px;background:var(--surface2);color:var(--fg);font:700 .95rem var(--display);padding:13px 14px;cursor:pointer;text-align:left;box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.menunews .chev{margin-left:auto;color:var(--muted)}
+.menunews .n{font:700 .72rem var(--mono);background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red);border-radius:999px;padding:1px 6px}
+/* « Lancer mon trajet » */
+.btn.launch{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:12px 14px;font-size:.95rem}
+.gd{display:grid;gap:12px}
+.gd .now{display:grid;gap:4px;padding:14px;border-radius:14px;background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.gd .now .k{font:800 .7rem var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--blue)}
+.gd .now b{font:700 1.08rem/1.3 var(--head)}
+.gd .now span{font-size:.86rem;color:var(--muted)}
+.gd .trk{position:relative;height:34px;margin:2px 10px 0}
+.gd .trk .rl,.gd .trk .fl{position:absolute;left:0;right:0;top:15px;height:4px;border-radius:2px;background:var(--surface3)}
+.gd .trk .fl{right:auto;background:var(--fg);transition:width .6s}
+.gd .trk .st{position:absolute;top:10px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--bg);border:3px solid #4A5058;box-sizing:border-box}
+.gd .trk .st.on{border-color:var(--fg)}
+.gd .trk .me{position:absolute;top:6px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 6px color-mix(in srgb,var(--blue) 18%,transparent);transition:left .6s}
+.gd .names{display:flex;justify-content:space-between;gap:6px;font-size:.72rem;color:var(--muted)}
+.gd .names span{max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gd ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.gd li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;font-size:.86rem;color:var(--muted)}
+.gd li .ck{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:2px solid var(--line);font:800 .7rem var(--display)}
+.gd li.done{color:var(--fg)}.gd li.done .ck{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+.gd li.cur{color:var(--fg)}.gd li.cur .ck{border-color:var(--blue)}
+.gd .card{display:grid;gap:6px;padding:12px 14px;border-radius:14px;background:var(--surface2);font-size:.86rem}
+.gd .card.warn{box-shadow:inset 3px 0 0 var(--amber)}.gd .card.ok{box-shadow:inset 3px 0 0 var(--blue)}
+.gd .card b{font-size:.92rem}
+.gd .row2{display:flex;flex-wrap:wrap;gap:8px}
+.gd .gps{font-size:.76rem;color:var(--muted)}
 .quick .n{font:700 .72rem var(--mono);background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red);border-radius:999px;padding:1px 6px}
 .quick button[aria-pressed="true"] .n{background:rgb(255 255 255/.25);color:inherit}
 .sheet{background:var(--surface);border-radius:14px;box-shadow:0 2px 10px rgb(0 0 0/.22);overflow:auto;min-height:0;flex:0 1 auto;display:flex;flex-direction:column;overscroll-behavior:contain}
@@ -78,6 +110,7 @@ button.pill[aria-expanded="true"]{background:var(--fg);color:var(--bg)}
 .posbox{display:grid;gap:8px}
 .posbox .row .btn{padding:7px 10px;font-size:.8rem}
 .sugg .k.addr{color:var(--blue)}
+.medot{width:18px;height:18px;border-radius:50%;background:var(--blue);border:3px solid #121417;box-shadow:0 0 0 7px color-mix(in srgb,var(--blue) 30%,transparent)}
 .locdot{width:16px;height:16px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 6px color-mix(in srgb,var(--blue) 25%,transparent)}
 @media (max-width:720px){
   .side{left:8px;right:8px;top:8px;width:auto;max-height:none}
@@ -283,14 +316,10 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
         <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l9.4 9.4-9.4 9.4L2.6 12z" fill="currentColor"/><path d="M9 14v-2.5a1.5 1.5 0 0 1 1.5-1.5H15m-2-2l2 2-2 2" fill="none" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
     <div class="quick" role="toolbar" aria-label="Raccourcis">
-      <button type="button" id="newsBtn" aria-pressed="false" aria-controls="sheet">
-        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4m0 3v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <span data-i18n="newsBtn">Perturbations</span><span class="n" id="newsN" hidden></span></button>
-      <button type="button" id="regionBtn"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg>
-        <span id="regionBtnLbl" data-i18n="regionBtn">Ma région</span></button>
       <button type="button" id="locBtn"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span data-i18n="around">Autour de moi</span></button>
       <button type="button" id="favBtn" aria-pressed="false" aria-controls="sheet"><span class="star" aria-hidden="true">★</span><span data-i18n="favs">Favoris</span></button>
+      <span id="recent" class="recent"></span>
     </div>
 
     <div class="sheet" id="sheet" hidden>
@@ -322,6 +351,9 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
       <section class="box" id="menuBox" aria-labelledby="menuTitle" hidden>
         <div class="nhead"><h2 id="menuTitle" data-i18n="settings">Préférences</h2>
           <button class="btn ghost" type="button" data-close="menu" data-i18n-aria="close" aria-label="Fermer">✕</button></div>
+        <button type="button" class="menunews" id="newsBtn" aria-pressed="false" aria-controls="sheet">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4m0 3v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span data-i18n="pTitle">Perturbations annoncées</span><span class="n" id="newsN" hidden></span><span class="chev" aria-hidden="true">→</span></button>
         <div class="field"><span id="profLbl" data-i18n="profLbl">Mon profil</span>
           <div class="seg" id="profile" role="group" aria-labelledby="profLbl">
             <button type="button" data-p="quotidien" aria-pressed="false" data-i18n="pQ">Au quotidien</button>
@@ -345,12 +377,6 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
 
   <div class="pickbar" id="pickBar" role="status" hidden><span id="pickTxt"></span><button type="button" id="pickCancel" data-i18n="cancel">Annuler</button></div>
   <div class="mapinfo">
-    <div class="pill" aria-live="polite">
-      <span><b id="kSt">—</b><span data-i18n="kSt">gares suivies</span></span>
-      <span class="late"><b id="kLate">—</b><span data-i18n="kLate">passages à +15 min</span></span>
-      <span><b id="kCanc">—</b><span data-i18n="kCanc">arrêts supprimés</span></span>
-      <span><b id="kUpd">—</b><span data-i18n="kUpd">dernière mise à jour</span></span>
-    </div>
     <button class="pill" type="button" id="legendBtn" aria-expanded="false" aria-controls="legendCard" data-i18n="legendBtn">Légende</button>
   </div>
   <div class="legendcard legend" id="legendCard" hidden>
@@ -391,7 +417,8 @@ const EN = {navApp:"My space", navCopilot:"Copilot", signup:"News", h1:"Train de
   scopeRegion:" · region", scopeLine:" · this line", scopeTrip:" · this trip", scopeStation:" · this station", scopeAround:" · around me", noData:"No train recorded on this line today.", loadingCtx:"Loading…",
   newsBtn:"Disruptions", regionBtn:"My region", settings:"Settings", legendBtn:"Legend", menu:"Settings", expand:"Expand", newsHere:"Disruptions",
   direct:"Direct", oneChange:"1 change", changeAt:"Change at", walk:"walk", waitFor:"wait", tight:"Tight connection", missed:"Connection at risk",
-  towards:"towards", journeys:"Options in the next 3 hours", noJourney:"No route found in the next 3 hours (trains, RER, Transilien, metro and tram).", changes:"changes", stopsN:"stops", stop1:"stop", estNote:"Times estimated from the network map: metro and tram publish no timetable.", liveFirst:"next departure live", estimated:"estimated times",
+  towards:"towards", journeys:"Options in the next 3 hours", launch:"Start my trip", gKick:"On my way", gStop:"Stop", gGoTo:"Head to", gDepAt:"departs", gAtSt:"You're at the station", gBoard:"Board", gOnBoard:"On board", gGetOff:"Get off at", gArrAt:"arrival", gArrived:"Arrived", gArrivedAt:"You've arrived at", gBoardBtn:"I'm on board", gOffBtn:"I've got off", gNoGps:"Location off: confirm each step with the buttons.", gGps:"Your position confirms each step.", gLate:"late", gRisk:"Connection at risk", gPlanB:"Plan B", gTakeB:"Take this plan B", gReplan:"Looking for another route…", gNoB:"No other route found for now. Ask staff on the platform.", gMissed:"Your train has left", gCancel:"Train cancelled", gSaved:"Trip saved in My space", gProof:"Create my certificate", gTotal:"Arrival", gWalk:"Walk to", gStep:"stop", gLive:"Live, updated every minute", gPlanBOn:"Plan B adopted", gEnd:"Done",
+  noJourney:"No route found in the next 3 hours (trains, RER, Transilien, metro and tram).", changes:"changes", stopsN:"stops", stop1:"stop", estNote:"Times estimated from the network map: metro and tram publish no timetable.", liveFirst:"next departure live", estimated:"estimated times",
   journeyNote:"Times and delays from live data. Connection checked with the known delays.", arrLate:"late on arrival", arrOk:"on time on arrival", leaveAt:"Leave", arriveAt:"arrive",
   dur:"min", hr:"h", trainN:"train", origFr:"original in French",
   mapPick:"Pick on the map", pickA:"Click the map or a station to choose the departure", pickB:"Click the map or a station to choose the arrival", pickPos:"Click the map to set your position",
@@ -419,7 +446,8 @@ Object.assign(FR, {tabGL:"TGV & Intercités", tabTER:"TER & régionaux", noHour:
   scopeRegion:" · région", scopeLine:" · cette ligne", scopeTrip:" · ce trajet", scopeStation:" · cette gare", scopeAround:" · autour de moi", noData:"Aucun train enregistré sur cette ligne aujourd'hui.", loadingCtx:"Chargement…",
   tripBtn:"Mon trajet", menu:"Préférences", expand:"Agrandir", newsHere:"Perturbations",
   direct:"Direct", oneChange:"1 correspondance", changeAt:"Correspondance à", walk:"à pied", waitFor:"attente", tight:"Correspondance juste", missed:"Correspondance compromise",
-  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", noJourney:"Aucun itinéraire trouvé dans les 3 prochaines heures (train, RER, Transilien, métro et tram).", changes:"correspondances", stopsN:"arrêts", stop1:"arrêt", estNote:"Horaires estimés d'après le plan du réseau : le métro et le tram ne publient pas d'horaires.", liveFirst:"prochain passage en direct", estimated:"horaires estimés",
+  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", launch:"Lancer mon trajet", posPh:"Adresse ou gare", gKick:"En route", gStop:"Arrêter", gGoTo:"Rejoins", gDepAt:"départ", gAtSt:"Tu es à la gare", gBoard:"Monte dans le", gOnBoard:"À bord", gGetOff:"Descends à", gArrAt:"arrivée", gArrived:"Arrivé", gArrivedAt:"Tu es arrivé à", gBoardBtn:"Je suis à bord", gOffBtn:"Je suis descendu", gNoGps:"Position désactivée : valide chaque étape avec les boutons.", gGps:"Ta position valide chaque étape.", gLate:"de retard", gRisk:"Correspondance compromise", gPlanB:"Plan B", gTakeB:"Prendre ce plan B", gReplan:"Je cherche un autre itinéraire…", gNoB:"Pas d'autre itinéraire pour l'instant. Demande au personnel en gare.", gMissed:"Ton train est parti", gCancel:"Train supprimé", gSaved:"Voyage enregistré dans Mon espace", gProof:"Créer mon justificatif", gTotal:"Arrivée", gWalk:"Marche jusqu'à", gStep:"arrêt", gLive:"En direct, mis à jour chaque minute", gPlanBOn:"Plan B adopté", gEnd:"Terminer",
+  noJourney:"Aucun itinéraire trouvé dans les 3 prochaines heures (train, RER, Transilien, métro et tram).", changes:"correspondances", stopsN:"arrêts", stop1:"arrêt", estNote:"Horaires estimés d'après le plan du réseau : le métro et le tram ne publient pas d'horaires.", liveFirst:"prochain passage en direct", estimated:"horaires estimés",
   journeyNote:"Horaires et retards en temps réel. Correspondance vérifiée avec les retards connus.", arrLate:"de retard à l'arrivée", arrOk:"à l'heure à l'arrivée", leaveAt:"Départ", arriveAt:"arrivée",
   dur:"min", hr:"h", trainN:"train", origFr:"texte d'origine en français",
   mapPick:"Choisir sur la carte", pickA:"Clique sur la carte ou sur une gare pour choisir le départ", pickB:"Clique sur la carte ou sur une gare pour choisir l'arrivée", pickPos:"Clique sur la carte pour choisir ta position",
@@ -650,7 +678,7 @@ function popup(s) {
     (s.id ? `<div class="row"><button class="btn" type="button" data-trip="a" data-st="${esc(s.net + "|" + s.id)}">${T.fromHere}</button>` +
             `<button class="btn" type="button" data-trip="b" data-st="${esc(s.net + "|" + s.id)}">${T.toHere}</button></div>` : "");
 }
-const dimmed = () => ctx && (ctx.type === "line" || ctx.type === "trip");
+const dimmed = () => ctx && (ctx.type === "line" || ctx.type === "trip" || ctx.type === "guide");
 const canvasClick = map.options.renderer;   // lignes IDF et arrets cliquables, sous les gares (ordre de dessin)
 // Fond de reseau : voies reelles du reseau ferre national (gris) + traces officiels des lignes d'Ile-de-France (couleurs des plans).
 const netRenderer = L.canvas({pane: "seg"});
@@ -718,10 +746,7 @@ function drawStations() {
       .on("click", () => openStation(s)).addTo(stationLayer);
   });
   const trains = list.filter(s => s.kind !== "metro"), sum = k => trains.reduce((a, s) => a + s[k], 0);
-  document.getElementById("kSt").textContent = f.format(list.length);
-  document.getElementById("kLate").textContent = f.format(sum("late15"));
-  document.getElementById("kCanc").textContent = f.format(sum("cancelled"));
-  if (updatedAt) document.getElementById("kUpd").textContent = new Date(updatedAt * 1000).toLocaleTimeString(loc(), {hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"});
+  void f; void sum;   // chiffres du jour : affichés sur l'accueil, plus sur la carte
 }
 // Perturbations dessinees UNIQUEMENT la ou elles s'appliquent (gares touchees), dans la zone visible.
 const KIND_RANK = {greve: 3, travaux: 2, incident: 1};
@@ -765,7 +790,7 @@ function inCtx(x) {
   }
   const ids = ctx.type === "line" ? [ctx.line.id] : (ctx.data && ctx.data.line_ids) || [];
   if ((x.line_ids || []).some(id => ids.includes(id))) return true;
-  if (ctx.type === "trip" && ctx.bounds) return (x.stops || []).some(s => ctx.bounds.contains([s[1], s[2]]));
+  if ((ctx.type === "trip" || ctx.type === "guide") && ctx.bounds) return (x.stops || []).some(s => ctx.bounds.contains([s[1], s[2]]));
   return false;
 }
 function visible() {
@@ -898,9 +923,9 @@ function combo(input, list, only, onPick) {
   input.addEventListener("blur", () => setTimeout(close, 120));
 }
 combo(document.getElementById("q"), document.getElementById("qList"), null, o => {
-  if (o.type === "region") openRegion(o.r.id);
-  else if (o.type === "line") openLine(o.l);
-  else { map.setView([o.st.lat, o.st.lon], 14); openStation(o.st); }
+  if (o.type === "region") { addRecent({t: "region", id: o.r.id, name: o.r.name}); openRegion(o.r.id); }
+  else if (o.type === "line") { addRecent({t: "line", net: o.l.net, id: o.l.id, name: lineLabel(o.l)}); openLine(o.l); }
+  else { addRecent({t: "station", net: o.st.net, id: o.st.id, name: o.st.name, lat: o.st.lat, lon: o.st.lon}); map.setView([o.st.lat, o.st.lon], 14); openStation(o.st); }
 });
 
 // ================================================================= Adresses et points : Base Adresse Nationale (gratuite, sans cle) + gares les plus proches
@@ -1034,7 +1059,7 @@ function savedHtml() {
 
 // ================================================================= Favoris (gares, lignes, trajets, lieux) : dans ce navigateur
 function favs() { try { return JSON.parse(store.get("lp-favs") || "[]"); } catch (e) { return []; } }
-const favKey = f => f.t === "station" ? `s|${f.net}|${f.id}` : f.t === "line" ? `l|${f.net}|${f.id}` :
+const favKey = f => f.t === "region" ? `r|${f.id}` : f.t === "station" ? `s|${f.net}|${f.id}` : f.t === "line" ? `l|${f.net}|${f.id}` :
   f.t === "trip" ? `t|${f.a.net}|${f.a.id}|${f.a.place ? f.a.place.label : ""}>${f.b.net}|${f.b.id}|${f.b.place ? f.b.place.label : ""}` : `p|${(+f.lat).toFixed(4)}|${(+f.lon).toFixed(4)}`;
 function ctxFav() {
   if (!ctx) return null;
@@ -1069,6 +1094,7 @@ function openFav(f) {
   if (f.t === "station") { map.setView([f.lat, f.lon], 14); openStation({net: f.net, id: f.id, name: f.name, lat: f.lat, lon: f.lon}); }
   else if (f.t === "line") { const l = lines.find(x => x.net === f.net && x.id === f.id) || lineFor(f.id) || {net: f.net, id: f.id, name: f.name}; openLine(l); }
   else if (f.t === "trip") openTrip(f.a, f.b);
+  else if (f.t === "region") openRegion(f.id);
   else if (f.t === "place") { myPos = {lat: f.lat, lon: f.lon, label: f.name}; store.set("lp-pos", JSON.stringify(myPos)); showPos(); openAround(); }
 }
 // Gares et lieux favoris : boutons pour remplir le depart ou l'arrivee d'un trajet en un geste
@@ -1103,6 +1129,7 @@ function drawCtxInner() {
   const T = L_();
   if (!ctx) { ctxEl.hidden = true; ctxEl.innerHTML = ""; return; }
   ctxEl.hidden = false;
+  if (ctx.type === "guide") { ctxEl.innerHTML = guideHtml(); return; }
   if (ctx.type === "region") {
     const st = shown().filter(s => inB(ctx.r.b, s.lat, s.lon)), sum = k => st.reduce((a, s) => a + s[k], 0);
     const worst = st.filter(s => s.n >= 20).sort((a, b) => b.late15 / b.n - a.late15 / a.n).slice(0, 3).filter(s => s.late15);
@@ -1247,12 +1274,18 @@ ctxEl.addEventListener("click", e => {
   else if (act === "swap") { const a = ctx.a, b = ctx.b; if (a && b) openTrip(b, a); else { ctx.a = b; ctx.b = a; drawCtx(); } }
   else if (act === "around-pos") openAround();
   else if (act === "go") { if (ctx.a && ctx.b) openTrip(ctx.a, ctx.b); else toast(L_().pickBoth); }
+  else if (act === "guide") { const j = ctx.data && ctx.data.journeys[+e.target.closest("[data-gj]").dataset.gj]; if (j) startGuide(j); }
+  else if (act === "gboard" && ctx.g) { const k = curLeg(ctx.g); if (k >= 0) { if (ctx.g.st[k] < 1) ctx.g.st[k] = 1; setBoarded(ctx.g, k); drawGuideMap(false); drawCtx(); } }
+  else if (act === "goff" && ctx.g) { const k = curLeg(ctx.g); if (k >= 0) { setArrived(ctx.g, k); drawGuideMap(false); drawCtx(); refreshGuide(ctx.g); } }
+  else if (act === "takeb" && ctx.g) takePlanB(ctx.g);
+  else if (act === "gstop") { const b = ctx.a, c = ctx.b; stopGuide(ctx); openTrip(b, c); }
 
 });
 const key = s => s.net + "|" + s.id;
 const findSt = k => stations.find(s => key(s) === k);
 
 function setCtx(c) {
+  if (ctx && ctx.type === "guide" && c !== ctx) stopGuide(ctx);
   if (c && c !== ctx) { panel = null; newsOpen = false; }
   ctx = c; ctxLayer.clearLayers(); focusLayer.clearLayers();
   drawNetwork(); drawStations(); drawCtx(); drawList(); drawEvents();
@@ -1375,6 +1408,7 @@ function journeyHtml(j, i) {
     }).join("") + `</ol>`;
     if (wa) body = body.replace(`<ol class="legs">`, `<ol class="legs">` + walkRow(dep, `${T.walkTo} ${esc(first.from[0] || "")} · ${Math.round(wa / 60)} ${T.min} (${esc(ctx.a.place.label)})`));
     if (wb) body = body.replace(/<\/ol>$/, walkRow(realT(last.arr, last.arr_delay), `${T.walkEnd} · ${Math.round(wb / 60)} ${T.min} (${esc(ctx.b.place.label)})`) + `</ol>`);
+    body += launchBtn(i);
   }
   return `<div class="jrn${open ? " on" : ""}" role="listitem"><button class="jhead" type="button" data-j="${i}" aria-expanded="${open}">` +
     `<span class="jtop"><span class="t">${hhmm(dep)} → ${hhmm(arr)}</span><span class="dur">${durTxt(arr - dep)}</span></span>` +
@@ -1524,7 +1558,7 @@ function metroJourneyHtml(j, i) {
         `<li class="leg" style="--lc:${c}"><span class="t">${hhmm(l.dep)}</span><span class="rail"></span><span class="what"><b>${esc(l.from[0])}</b>` +
         `<small>${legPic(l)} ${inf.dest ? `${T.towards} ${esc(inf.dest)}` : ""} · ${l.stops} ${l.stops > 1 ? T.stopsN : T.stop1}</small></span></li>` +
         `<li class="leg end" style="--lc:${c}"><span class="t">${hhmm(l.arr)}</span><span class="rail"></span><span class="what"><b>${esc(l.to[0])}</b></span></li>`;
-    }).join("") + (j.walk_end >= 45 ? walkRow(j.legs[n].arr, `${T.walkEnd} · ${mins(j.walk_end)} ${T.min}`) : "") + `</ol><p class="hint">${T.estNote}</p>`;
+    }).join("") + (j.walk_end >= 45 ? walkRow(j.legs[n].arr, `${T.walkEnd} · ${mins(j.walk_end)} ${T.min}`) : "") + `</ol><p class="hint">${T.estNote}</p>` + launchBtn(i);
   }
   const dep = j.start;
   return `<div class="jrn${open ? " on" : ""}" role="listitem"><button class="jhead" type="button" data-j="${i}" aria-expanded="${open}">` +
@@ -1532,8 +1566,201 @@ function metroJourneyHtml(j, i) {
     `<span class="chain">${j.legs.map(legPic).join(`<span class="sep">›</span>`)}<span>· ${n === 0 ? T.direct : n === 1 ? T.oneChange : `${n} ${T.changes}`}</span></span>` +
     `<span class="jsub">${j.live ? T.liveFirst + " · " + T.estimated : T.estimated}</span></button>${body}</div>`;
 }
+
+// ================================================================= « Lancer mon trajet » : suivi en direct, étape par étape
+// Comme sur l'accueil : la position fait avancer le trajet (à la gare, à bord, arrivé), les retards sont relus chaque minute,
+// et si une correspondance saute ou si le train est supprimé, un plan B est cherché tout seul depuis l'endroit où tu seras.
+const NAV_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 19-7-4-7 4z" fill="currentColor"/></svg>';
+const launchBtn = i => `<button class="btn primary launch" type="button" data-act="guide" data-gj="${i}">${NAV_ICON} ${L_().launch}</button>`;
+let meMarker = null;
+const legLen = l => geoDist([l.from[1], l.from[2]], [l.to[1], l.to[2]]);
+function routePts(l) {
+  if (l.path && l.path.length > 1) return l.path;
+  const a = [l.from[1], l.from[2]], b = [l.to[1], l.to[2]], out = [];
+  for (let i = 0; i <= 24; i++) out.push([a[0] + (b[0] - a[0]) * i / 24, a[1] + (b[1] - a[1]) * i / 24]);
+  return out;
+}
+const legDelay = (g, k, w) => { const lv = g.live[k] || {}, l = g.j.legs[k]; return w === "dep" ? (lv.dep_delay ?? l.dep_delay ?? 0) : (lv.arr_delay ?? l.arr_delay ?? 0); };
+const legDep = (g, k) => realT(g.j.legs[k].dep, legDelay(g, k, "dep"));
+const legArr = (g, k) => realT(g.j.legs[k].arr, legDelay(g, k, "arr"));
+function startGuide(j) {
+  const a = ctx.a, b = ctx.b;
+  setCtx({type: "guide", a, b, data: {journeys: [j], line_ids: j.legs.map(l => l.info && l.info.line_id).filter(Boolean)},
+    g: {j, st: j.legs.map(() => 0), live: {}, saved: [], planB: null, msg: null, pos: null, gps: null, startedAt: Math.floor(Date.now() / 1000)}});
+  const g = ctx.g;
+  if (navigator.geolocation) {
+    g.gps = "wait";
+    g.watch = navigator.geolocation.watchPosition(p => onGuidePos(g, {lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0), speed: p.coords.speed, at: Math.floor(p.timestamp / 1000)}),
+      () => { g.gps = "off"; drawCtx(); }, {enableHighAccuracy: true, maximumAge: 10000, timeout: 30000});
+  } else g.gps = "off";
+  g.timer = setInterval(() => refreshGuide(g), 60000);
+  refreshGuide(g); drawGuideMap(true); drawCtx();
+}
+function stopGuide(c) {
+  const g = c && c.g; if (!g) return;
+  if (g.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(g.watch);
+  clearInterval(g.timer); g.dead = true;
+  if (meMarker) { meMarker.remove(); meMarker = null; }
+}
+const guideOn = g => ctx && ctx.g === g && !g.dead;
+function curLeg(g) { const k = g.st.findIndex(x => x < 3); return k; }
+function onGuidePos(g, pos) {
+  if (!guideOn(g)) return;
+  g.pos = pos; g.gps = "on";
+  const k = curLeg(g);
+  if (k >= 0) {
+    const l = g.j.legs[k], from = [l.from[1], l.from[2]], to = [l.to[1], l.to[2]];
+    const dF = geoDist([pos.lat, pos.lon], from), dT = geoDist([pos.lat, pos.lon], to);
+    const off = Math.min(...routePts(l).map(q => geoDist([pos.lat, pos.lon], q)));
+    if (g.st[k] === 0 && dF < 250) { g.st[k] = 1; g.atStation = {dist: Math.round(dF), acc: pos.acc, at: pos.at}; }
+    if (g.st[k] <= 1 && dF > 400 && off < 700 && dT < legLen(l) + 200) setBoarded(g, k);
+    if (g.st[k] === 2 && dT < 300) setArrived(g, k);
+  }
+  drawGuideMap(false); drawCtx();
+}
+function setBoarded(g, k) {
+  g.st[k] = 2;
+  // Check-in automatique d'un train (numéro connu) : le voyage arrive dans « Mon espace », prêt pour un justificatif
+  const l = g.j.legs[k], inf = l.info || {};
+  if (!inf.num || g.saved.some(x => x.k === k)) return;
+  const nearest = stations.filter(s => s.kind !== "metro").map(s => [geoDist([s.lat, s.lon], [l.from[1], l.from[2]]), s]).sort((x, y) => x[0] - y[0])[0];
+  const st = nearest && nearest[0] < 600 ? nearest[1] : null;
+  const v = {id: Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, "0")).join(""),
+    day: new Date(l.dep * 1000).toLocaleDateString("fr-CA", {timeZone: "Europe/Paris"}).replace(/-/g, ""),
+    net: l.net || (st && st.net) || "sncf", num: inf.num, mode: inf.mode, line: inf.line, dest: inf.dest, sched: l.dep,
+    from: {name: l.from[0], id: st ? st.id : null, net: st ? st.net : l.net, lat: l.from[1], lon: l.from[2]}, checkin: Math.floor(Date.now() / 1000),
+    geo: g.atStation ? {dist: g.atStation.dist, acc: g.atStation.acc, at: g.atStation.at} : null, to: null, via: "trajet"};
+  try { const all = JSON.parse(localStorage.getItem("lpa-voyages") || "[]"); all.push(v); localStorage.setItem("lpa-voyages", JSON.stringify(all.slice(-200))); g.saved.push({k, id: v.id}); } catch (e) {}
+}
+function setArrived(g, k) {
+  g.st[k] = 3;
+  const n = g.j.legs[k + 1];
+  if (n && g.pos && geoDist([g.pos.lat, g.pos.lon], [n.from[1], n.from[2]]) < 300) g.st[k + 1] = 1;
+  if (curLeg(g) < 0) { g.arrivedAt = Math.floor(Date.now() / 1000); clearInterval(g.timer); }
+}
+// Chaque minute : retards réels des trains du trajet, puis contrôle des correspondances
+async function refreshGuide(g) {
+  if (!guideOn(g)) return;
+  await Promise.all(g.j.legs.map(async (l, k) => {
+    const inf = l.info || {}; if (!inf.num || g.st[k] === 3 || g.j.est) return;
+    let t = null; try { t = await rpc("public_train", {p_num: inf.num}); } catch (e) { return; }
+    if (!t || !t.stops) return;
+    const fi = t.stops.findIndex(x => normName(x[0]) === normName(l.from[0])), ti = t.stops.findIndex(x => normName(x[0]) === normName(l.to[0]));
+    const lv = {};
+    if (fi >= 0) { lv.dep_delay = t.stops[fi][4] ?? t.stops[fi][3] ?? 0; lv.skipFrom = !!t.stops[fi][5]; }
+    if (ti >= 0) { lv.arr_delay = t.stops[ti][3] ?? t.stops[ti][4] ?? 0; lv.skipTo = !!t.stops[ti][5]; }
+    lv.cancelled = /CANCEL|DELETED/i.test(t.status || "") || lv.skipFrom || lv.skipTo;
+    g.live[k] = lv;
+  }));
+  if (!guideOn(g)) return;
+  const k = curLeg(g), now = Math.floor(Date.now() / 1000);
+  let why = null, from = null, after = now, avoid = null;
+  if (k >= 0) {
+    const l = g.j.legs[k], lv = g.live[k] || {};
+    if (g.st[k] < 2 && lv.cancelled) { why = "cancel"; from = l.from; avoid = l.info && l.info.num; }
+    else if (g.st[k] < 2 && !g.j.est && now > legDep(g, k) + 180) { why = "missed"; from = l.from; avoid = l.info && l.info.num; }
+    else {
+      for (let i = Math.max(k, 0); i < g.j.legs.length - 1; i++) {
+        const nx = g.j.legs[i + 1], nlv = g.live[i + 1] || {};
+        if (nx.est || g.j.est) break;
+        const slack = legDep(g, i + 1) - legArr(g, i) - (g.j.walk_s || 0);
+        if (slack < 120 || nlv.cancelled) { why = nlv.cancelled ? "cancel" : "risk"; from = g.j.legs[i].to; after = legArr(g, i) + 120 + (g.j.walk_s || 0); avoid = nx.info && nx.info.num; break; }
+      }
+    }
+  }
+  const keyB = why ? `${why}|${from[0]}` : null;
+  if (why && g.planBKey !== keyB) { g.planBKey = keyB; g.msg = why; g.planB = "wait"; drawCtx(); g.planB = await findPlanB(from, after, avoid); }
+  if (!why && g.planB && g.planB !== "wait" && !g.forceB) { g.planB = null; g.msg = null; g.planBKey = null; }
+  if (guideOn(g)) drawCtx();
+}
+async function findPlanB(pt, after, avoid) {
+  const p = [pt[1], pt[2]];
+  const near = stations.filter(s => s.kind !== "metro").map(s => [geoDist([s.lat, s.lon], p) - (normName(s.name) === normName(pt[0]) ? 300 : 0), s]).sort((x, y) => x[0] - y[0]).slice(0, 2).map(x => x[1]);
+  const b = ctx.b, out = [];
+  for (const s of near) {
+    let r = null; try { r = await rpc("public_journey", {p_from_net: s.net, p_from_id: s.id, p_to_net: b.net, p_to_id: b.id}); } catch (e) {}
+    ((r && r.journeys) || []).forEach(j => { if (realT(j.legs[0].dep, j.legs[0].dep_delay) >= after && !j.legs.some(l => l.info && l.info.num && l.info.num === avoid)) out.push(j); });
+    if (out.length) break;
+  }
+  try { const m = await metroJourney({lat: p[0], lon: p[1], name: pt[0]}, b); if (m && m.legs[0].dep >= after - 60) out.push(m); } catch (e) {}
+  if (!out.length) return null;
+  return out.sort((x, y) => realT(x.arr, x.arr_delay) - realT(y.arr, y.arr_delay))[0];
+}
+function takePlanB(g) {
+  const j = g.planB; if (!j || j === "wait") return;
+  g.j = j; g.st = j.legs.map(() => 0); g.live = {}; g.planB = null; g.msg = "planB"; g.planBKey = null; g.forceB = false;
+  if (g.pos && geoDist([g.pos.lat, g.pos.lon], [j.legs[0].from[1], j.legs[0].from[2]]) < 300) g.st[0] = 1;
+  ctx.data = {journeys: [j], line_ids: j.legs.map(l => l.info && l.info.line_id).filter(Boolean)};
+  drawGuideMap(true); drawCtx(); refreshGuide(g);
+}
+function drawGuideMap(fit) {
+  if (!ctx || ctx.type !== "guide") return;
+  const g = ctx.g, j = g.j, pts = [];
+  ctxLayer.clearLayers();
+  j.legs.forEach((l, k) => {
+    const path = routePts(l), done = g.st[k] === 3;
+    L.polyline(path, {color: legColor(l), weight: 6, opacity: done ? .35 : .95}).addTo(ctxLayer); pts.push(...path);
+    [[l.from, k ? 5 : 7], [l.to, k === j.legs.length - 1 ? 7 : 5]].forEach(([q, r]) => L.circleMarker([q[1], q[2]], {radius: r, color: "#fff", weight: 2, fillColor: legColor(l), fillOpacity: 1}).bindTooltip(esc(q[0])).addTo(ctxLayer));
+  });
+  if (meMarker) { meMarker.remove(); meMarker = null; }
+  if (g.pos) { meMarker = L.marker([g.pos.lat, g.pos.lon], {icon: L.divIcon({className: "", html: '<div class="medot"></div>', iconSize: [18, 18], iconAnchor: [9, 9]}), keyboard: false, interactive: false}).addTo(map);
+    if (!fit && !map.getBounds().pad(-.1).contains([g.pos.lat, g.pos.lon])) map.panTo([g.pos.lat, g.pos.lon]); }
+  if (pts.length) ctx.bounds = L.latLngBounds(pts).pad(.15);
+  if (fit && pts.length) map.fitBounds(ctx.bounds);
+}
+function guideHtml() {
+  const T = L_(), g = ctx.g, j = g.j, n = j.legs.length, k = curLeg(g), now = Math.floor(Date.now() / 1000);
+  const dl = s => (s || 0) >= 60 ? " " + badge(s, false) : "";
+  const est = j.est ? "≈ " : "";
+  // Rail de progression : départ, correspondances, arrivée ; le point avance avec la position
+  const stops = [j.legs[0].from, ...j.legs.map(l => l.to)];
+  let prog = 0;
+  if (k < 0) prog = 1;
+  else { const l = j.legs[k]; let f = 0;
+    if (g.st[k] === 2) { f = .15; if (g.pos) { const dF = geoDist([g.pos.lat, g.pos.lon], [l.from[1], l.from[2]]), dT = geoDist([g.pos.lat, g.pos.lon], [l.to[1], l.to[2]]); f = Math.max(.08, Math.min(.95, dF / (dF + dT || 1))); } }
+    prog = (k + f) / n; }
+  const pct = x => (x * 100).toFixed(1) + "%";
+  const trk = `<div class="trk" aria-hidden="true"><span class="rl"></span><span class="fl" style="width:${pct(prog)}"></span>` +
+    stops.map((_, i) => `<span class="st${i / n <= prog + 1e-6 ? " on" : ""}" style="left:${pct(i / n)}"></span>`).join("") + `<span class="me" style="left:${pct(prog)}"></span></div>` +
+    `<div class="names"><span>${esc(stops[0][0])}</span>${n > 1 ? `<span>${esc(stops[1][0])}</span>` : ""}<span>${esc(stops[n][0])}</span></div>`;
+  // L'étape en cours, en grand
+  let now1 = "";
+  if (k < 0) {
+    const late = Math.max(0, legArr(g, n - 1) - j.legs[n - 1].arr);
+    now1 = `<div class="now"><span class="k">${T.gArrived} ✓</span><b>${T.gArrivedAt} ${esc(stops[n][0])}</b><span>${T.gTotal} ${est}${hhmm(legArr(g, n - 1))}${dl(late)}</span></div>`;
+  } else {
+    const l = j.legs[k], pic = legPic(l), dest = l.info && l.info.dest ? ` ${T.towards} ${esc(l.info.dest)}` : "";
+    if (g.st[k] === 0) now1 = `<div class="now"><span class="k">${T.gKick}</span><b>${k === 0 ? T.gGoTo : T.changeAt} ${esc(l.from[0])}</b><span>${pic}${dest} · ${T.gDepAt} ${est}${hhmm(l.dep)}${dl(legDelay(g, k, "dep"))}</span></div>`;
+    else if (g.st[k] === 1) now1 = `<div class="now"><span class="k">${T.gAtSt} ✓</span><b>${T.gBoard} ${pic}${dest}</b><span>${T.gDepAt} ${est}${hhmm(l.dep)}${dl(legDelay(g, k, "dep"))}</span></div>`;
+    else now1 = `<div class="now"><span class="k">${T.gOnBoard} ✓</span><b>${T.gGetOff} ${esc(l.to[0])}</b><span>${T.gArrAt} ${est}${hhmm(l.arr)}${dl(legDelay(g, k, "arr"))}${l.stops ? ` · ${l.stops} ${l.stops > 1 ? T.stopsN : T.stop1}` : ""}</span></div>`;
+  }
+  // Alerte et plan B
+  let alert = "";
+  if (g.msg && g.msg !== "planB") {
+    const title = g.msg === "risk" ? T.gRisk : g.msg === "missed" ? T.gMissed : T.gCancel;
+    const b = g.planB;
+    alert = `<div class="card warn"><b>${title}</b>` + (b === "wait" ? `<span>${T.gReplan}</span>` : !b ? `<span>${T.gNoB}</span>` :
+      `<span>${T.gPlanB} : ${b.legs.map(legPic).join(" › ")} · ${b.est ? "≈ " : ""}${hhmm(realT(b.legs[0].dep, b.legs[0].dep_delay))} → ${b.est ? "≈ " : ""}${hhmm(realT(b.arr, b.arr_delay))} · ${esc(b.legs[0].from[0])}</span>` +
+        `<div class="row2"><button class="btn primary" type="button" data-act="takeb">${T.gTakeB}</button></div>`) + `</div>`;
+  } else if (g.msg === "planB") alert = `<div class="card ok"><b>${T.gPlanBOn} ✓</b></div>`;
+  // Étapes validées une à une
+  const steps = `<ol>` + j.legs.map((l, i) => {
+    const s = g.st[i], cls = s === 3 ? "done" : i === k ? "cur" : "";
+    return `<li class="${cls}"><span class="ck">${s === 3 ? "✓" : i + 1}</span><span>${legPic(l)} ${esc(l.from[0])} → ${esc(l.to[0])}</span><span>${est}${hhmm(l.dep)}</span></li>`;
+  }).join("") + `</ol>`;
+  // Fin : voyage enregistré, justificatif en un geste
+  let end = "";
+  if (k < 0 && g.saved.length) end = `<div class="card ok"><b>${T.gSaved} ✓</b><div class="row2"><a class="btn primary" href="app.html#/voyage/${g.saved[g.saved.length - 1].id}">${T.gProof}</a></div></div>`;
+  const btns = k < 0 ? `<button class="btn" type="button" data-act="gstop">${T.gEnd}</button>`
+    : `${g.st[k] < 2 ? `<button class="btn" type="button" data-act="gboard">${T.gBoardBtn}</button>` : `<button class="btn" type="button" data-act="goff">${T.gOffBtn}</button>`}<button class="btn ghost" type="button" data-act="gstop">${T.gStop}</button>`;
+  const gps = g.gps === "on" ? T.gGps : g.gps === "off" ? T.gNoGps : T.locating;
+  return head(T.gKick, `${esc(endLabel(ctx.a))} → ${esc(endLabel(ctx.b))}`) +
+    `<div class="gd">${trk}${now1}${alert}${end}${steps}<div class="row2">${btns}</div><p class="gps">${gps}${j.est ? "" : ` · ${T.gLive}`}</p></div>`;
+}
+const mins0 = s => Math.round((s || 0) / 60);
 async function openTrip(a, b) {
   setCtx({type: "trip", a, b, data: null, sel: 0});
+  addRecent({t: "trip", a, b, name: `${endLabel(a)} → ${endLabel(b)}`});
   const me = ctx;
   let d = null;
   try { d = await rpc("public_journey", {p_from_net: a.net, p_from_id: a.id, p_to_net: b.net, p_to_id: b.id}); } catch (e) { d = null; }
@@ -1614,7 +1841,7 @@ function updateSheet() {
 }
 byId("menuBtn").addEventListener("click", () => { panel = panel === "menu" ? null : "menu"; updateSheet(); });
 byId("newsBtn").addEventListener("click", () => {
-  if (ctx && panel !== "menu") newsOpen = !newsOpen; else panel = panel === "news" ? null : "news";
+  if (ctx) { panel = null; newsOpen = true; } else panel = "news";
   updateSheet();
 });
 byId("newsToggle").addEventListener("click", () => { newsOpen = !newsOpen; updateSheet(); });
@@ -1627,13 +1854,28 @@ byId("handle").addEventListener("click", () => byId("sheet").classList.toggle("f
 byId("legendBtn").addEventListener("click", () => {
   const c = byId("legendCard"); c.hidden = !c.hidden; byId("legendBtn").setAttribute("aria-expanded", String(!c.hidden));
 });
-function regionLabel() { const r = regionById(myRegion); byId("regionBtnLbl").textContent = r ? r.name : L_().regionBtn; }
-byId("regionBtn").addEventListener("click", () => {
-  if (myRegion) { panel = null; openRegion(myRegion); }
-  else { panel = "menu"; updateSheet(); byId("region").focus(); }
-});
+function regionLabel() { /* plus de bouton « Ma région » : la région se choisit dans le menu */ }
 byId("locBtn").addEventListener("click", () => { panel = null; openAround(); });
 byId("favBtn").addEventListener("click", () => { panel = panel === "favs" ? null : "favs"; updateSheet(); });
+// Dernières recherches (gare, ligne, région, trajet) et derniers favoris : deux raccourcis à côté de « Favoris »
+function recents() { try { return JSON.parse(store.get("lp-recent") || "[]"); } catch (e) { return []; } }
+function addRecent(f) {
+  if (!f || !f.name) return;
+  const all = recents().filter(x => favKey(x) !== favKey(f)); all.unshift(f);
+  store.set("lp-recent", JSON.stringify(all.slice(0, 6))); drawRecent();
+}
+function drawRecent() {
+  const el = byId("recent"); if (!el) return;
+  const seen = new Set(), list = [];
+  const r = recents(), fv = favs();
+  [[r[0], "r"], [fv[0], "f"], [fv[1], "f"], [r[1], "r"]].forEach(([f, k]) => { if (!f || list.length >= 2) return; const id = favKey(f); if (seen.has(id)) return; seen.add(id); list.push([f, k]); });
+  const ic = k => k === "f" ? '<span class="star" aria-hidden="true">★</span>'
+    : '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  el.innerHTML = list.map(([f, k], i) => `<button type="button" data-recent="${i}" title="${esc(f.name)}">${ic(k)}<span class="rl">${esc(f.name)}</span></button>`).join("");
+  el._list = list.map(x => x[0]);
+}
+byId("recent").addEventListener("click", e => { const b = e.target.closest("[data-recent]"); if (!b) return; panel = null; openFav(byId("recent")._list[+b.dataset.recent]); });
+drawRecent();
 byId("favList").addEventListener("click", e => {
   const u = e.target.closest("[data-unfav]");
   if (u) { const all = favs(); all.splice(+u.dataset.unfav, 1); store.set("lp-favs", JSON.stringify(all)); drawFavs(); return; }
