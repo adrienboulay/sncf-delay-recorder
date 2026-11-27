@@ -27,3 +27,14 @@ for (const model of cands.slice(0, 6)) {
   console.log(`${model} : HTTP ${r.status}${call ? ` | outil appele : ${call.name} ${call.arguments}` : ""}${!r.ok ? ` | ${JSON.stringify(j).slice(0, 160)}` : ""}`);
   if (r.ok && call) { console.log(`MODELE RETENU : ${model}`); break; }
 }
+
+// Appel complet comme en production : consignes + tous nos outils, pour voir l'erreur exacte du fournisseur.
+const { geminiChat, LlmError } = await import("./llm.ts");
+const { TOOLS } = await import("./tools.ts");
+const { systemPrompt } = await import("./prompt.ts");
+try {
+  const r = await geminiChat(key)([{ role: "system", content: systemPrompt() }, { role: "user", content: "Le RER B est-il à l'heure ?" }], TOOLS);
+  console.log("APPEL COMPLET OK | outils :", r.toolCalls.map((c) => c.function.name).join(", ") || "aucun", "| texte :", r.text.slice(0, 80));
+} catch (e) {
+  console.log("APPEL COMPLET ECHEC :", e instanceof LlmError ? `${e.status} ${e.message}` : String(e));
+}
