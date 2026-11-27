@@ -1,0 +1,21 @@
+[toolchain]
+package_manager = "npm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+lateproof = "8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu"
+
+[programs.localnet]
+lateproof = "8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu"
+
+[provider]
+cluster = "devnet"
+wallet = "~/keys/admin.json"
+
+[scripts]
+test = "cargo test"
+
+[hooks]

@@ -1,0 +1,9 @@
+node_modules/
+target/
+.anchor/
+.env
+.env.*
+!.env.example
+*.keypair.json
+keys/
+.DS_Store
