@@ -37,5 +37,6 @@ for (const url of urls) {
   const { paiement, ...rest } = body;
   console.log(JSON.stringify(rest, null, 2).slice(0, 1500));
   console.log(`Transaction Solana : https://explorer.solana.com/tx/${pr?.transaction || paiement?.transaction}?cluster=devnet`);
+  console.log(`Journal des paiements : ${paiement?.journal}`);
 }
 if (failed) process.exit(1);

@@ -51,13 +51,17 @@ async function svmExtra() {
   return feePayer;
 }
 
-async function logPayment(tx: string, payer: string | undefined, amount: string, route: string) {
-  if (!SERVICE_KEY) return;
-  await fetch(`${SB}/rest/v1/x402_payments`, {
-    method: "POST", signal: AbortSignal.timeout(6_000),
-    headers: { ...keyHeaders(SERVICE_KEY), "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ tx, payer: payer || null, amount, asset: USDC_DEVNET, network: NETWORK, route }),
-  }).catch(() => {});
+// Journal public des paiements réglés (la page « API » les liste). Renvoie "ok" ou la raison de l'échec.
+async function logPayment(tx: string, payer: string | undefined, amount: string, route: string): Promise<string> {
+  if (!SERVICE_KEY) return "sans clé de service";
+  try {
+    const r = await fetch(`${SB}/rest/v1/rpc/x402_log`, {
+      method: "POST", signal: AbortSignal.timeout(6_000),
+      headers: { ...keyHeaders(SERVICE_KEY), "Content-Type": "application/json" },
+      body: JSON.stringify({ p_tx: tx, p_payer: payer || null, p_amount: amount, p_asset: USDC_DEVNET, p_network: NETWORK, p_route: route }),
+    });
+    return r.ok ? "ok" : `${r.status} ${(await r.text()).slice(0, 120)}`;
+  } catch (e) { return (e as Error).message; }
 }
 
 export type Paid = {
@@ -105,8 +109,8 @@ export function serve(p: Paid) {
     try { result = await p.answer(url); } catch (e) { return json(503, { error: `Service indisponible, rien n'a été prélevé : ${(e as Error).message}` }); }
     const s = await post("settle");
     if (!s.j?.success) return paymentRequired(`Règlement impossible : ${s.j?.errorReason || s.j?.errorMessage || `facilitateur ${s.status}`}`);
-    await logPayment(s.j.transaction, s.j.payer || v.j.payer, p.price, p.route);
-    return json(200, { ...result, paiement: { transaction: s.j.transaction, reseau: NETWORK, montant_usdc: Number(p.price) / 1e6,
+    const journal = await logPayment(s.j.transaction, s.j.payer || v.j.payer, p.price, p.route);
+    return json(200, { ...result, paiement: { transaction: s.j.transaction, reseau: NETWORK, montant_usdc: Number(p.price) / 1e6, journal,
       explorateur: `https://explorer.solana.com/tx/${s.j.transaction}?cluster=devnet` } }, { "PAYMENT-RESPONSE": b64(s.j) });
   });
 }
