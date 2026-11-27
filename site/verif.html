@@ -193,7 +193,7 @@ async function crossCheck(F) {
     const st = (t.stops || []).find(s => s.stop === stop);
     if (st && st.rec === r) same++; else diff.push(num);
   }
-  if (!seen) return setCross("w", L("Relevés de ce jour plus en détail dans notre base : ils sont scellés dans l'empreinte de la nuit (preuve Solana bientôt).", "This day's detailed records are no longer in our database: they are sealed in that night's fingerprint (Solana proof coming soon)."));
+  if (!seen) return setCross("w", L("Relevés de ce jour plus en détail dans notre base : ils sont scellés dans l'empreinte de la nuit (publiée chaque nuit sur Solana).", "This day's detailed records are no longer in our database: they are sealed in that night's fingerprint (published every night on Solana)."));
   if (diff.length) return setCross("x", L(`Écart avec nos relevés pour le train ${esc(diff.join(", "))} : le retard a pu évoluer après la signature.`, `Differs from our records for train ${esc(diff.join(", "))}: the delay may have changed after signing.`));
   setCross("", L(`<b>Identique aux relevés officiels</b> enregistrés par LateProof (${same} relevé${same > 1 ? "s" : ""}).`, `<b>Matches the official records</b> kept by LateProof (${same} record${same > 1 ? "s" : ""}).`));
 }
