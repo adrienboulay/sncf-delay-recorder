@@ -22,7 +22,7 @@ export function mistralChat(apiKey: string, model = "mistral-small-latest", fetc
 }
 
 /** Groq : offre gratuite sans carte bancaire, meme format que Mistral/OpenAI, appels d'outils pris en charge. */
-export function groqChat(apiKey: string, model = "llama-3.3-70b-versatile", fetchImpl: typeof fetch = fetch): Chat {
+export function groqChat(apiKey: string, model = "openai/gpt-oss-120b", fetchImpl: typeof fetch = fetch): Chat {
   return openAiChat("https://api.groq.com/openai/v1/chat/completions", apiKey, model, fetchImpl);
 }
 

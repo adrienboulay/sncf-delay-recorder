@@ -33,7 +33,7 @@ const rpc: Rpc = (fn, body) => (PUBLIC_KEY ? pub(fn, body) : Promise.reject(new 
 const stt = pickStt({ groq: env("GROQ_API_KEY"), elevenlabs: env("ELEVENLABS_API_KEY"), mistral: env("MISTRAL_API_KEY") });
 // Modele : Groq (gratuit) si sa cle est posee, sinon Mistral. LLM_MODEL permet de changer de modele sans toucher au code.
 const chat = env("GROQ_API_KEY")
-  ? groqChat(env("GROQ_API_KEY"), env("LLM_MODEL", "llama-3.3-70b-versatile"))
+  ? groqChat(env("GROQ_API_KEY"), env("LLM_MODEL", "openai/gpt-oss-120b"))
   : mistralChat(env("MISTRAL_API_KEY"), env("LLM_MODEL", env("MISTRAL_MODEL", "mistral-small-latest")));
 const perUser = parseInt(env("ASSISTANT_DAILY_PER_USER", "30"));
 const total = parseInt(env("ASSISTANT_DAILY_TOTAL", "800"));

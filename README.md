@@ -36,7 +36,7 @@ Program: [`program/`](program/) (Rust, Anchor). It stores **fingerprints only**:
 
 ## APIs and services
 - **Data:** SNCF open data (GTFS / GTFS-RT via transport.data.gouv.fr), Île-de-France Mobilités PRIM, Base Adresse Nationale (address search). Licence Mobilités / ODbL.
-- **LLM:** any "chat completions" provider with tool calling. Groq (free tier, Llama 3.3 70B) when `GROQ_API_KEY` is set, Mistral otherwise.
+- **LLM:** any "chat completions" provider with tool calling. Groq (free tier, `openai/gpt-oss-120b`) when `GROQ_API_KEY` is set, Mistral otherwise.
 - **Voice:**
   - Speech to text: the browser's own dictation (Web Speech API) first.
   - Server fallback for browsers without dictation, in this order: Groq Whisper, then the **ElevenLabs Speech-to-Text API (Scribe, `/v1/speech-to-text`)**, then Mistral Voxtral, depending on which key is set.

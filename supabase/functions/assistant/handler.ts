@@ -91,7 +91,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           action = { type: "itineraire", depart: String(args.depart || "ma position").slice(0, 120), arrivee: String(args.arrivee).slice(0, 120) };
         }
         const out = await runTool(deps.rpc, c.function.name, args);
-        messages.push({ role: "tool", tool_call_id: c.id, name: c.function.name, content: JSON.stringify(out).slice(0, 12_000) });
+        messages.push({ role: "tool", tool_call_id: c.id, name: c.function.name, content: JSON.stringify(out).slice(0, 5_000) });
       }
     }
     return reply(200, { reply: "Je n'ai pas réussi à trouver la réponse, peux-tu reformuler ?", tools: used, ...(action ? { action } : {}) });

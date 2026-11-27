@@ -282,6 +282,6 @@ Deno.test("groqChat : meme format, autre adresse et autre modele", async () => {
   }) as unknown as typeof fetch;
   const r = await groqChat("cle", undefined, fakeFetch)([{ role: "user", content: "q" }], []);
   assertEquals(url, "https://api.groq.com/openai/v1/chat/completions");
-  assertEquals(body.model, "llama-3.3-70b-versatile");
+  assertEquals(body.model, "openai/gpt-oss-120b");
   assertEquals(r.text, "ok");
 });
