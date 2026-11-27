@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
 
   let req0;
   try { req0 = await requirements(); } catch (e) { return json(503, { error: `Paiement indisponible : ${(e as Error).message}` }); }
-  const resource = { url: `https://lateproof.app/api/advice?de=${encodeURIComponent(de)}&vers=${encodeURIComponent(vers)}`,
+  const resource = { url: `${SB.replace(/\/+$/, "")}/functions/v1/advice?de=${encodeURIComponent(de)}&vers=${encodeURIComponent(vers)}`,
     description: "LateProof : conseil de trajet en direct (meilleure option, risque de correspondance, retards relevés)", mimeType: "application/json" };
   const paymentRequired = (error: string) => json(402, {}, { "PAYMENT-REQUIRED": b64({ x402Version: 2, error, resource, accepts: [req0] }) });
 

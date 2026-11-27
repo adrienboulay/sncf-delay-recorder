@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>API pour agents · LateProof</title>
+<meta name="description" content="L'API LateProof payée à l'appel avec x402 : 0,01 USDC sur Solana, sans compte ni clé.">
+<meta name="theme-color" content="#121417">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+  --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:ui-monospace,"Cascadia Code",Consolas,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{position:relative;margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 var(--display)}
+:focus-visible{outline:3px solid var(--lime);outline-offset:3px;border-radius:8px}
+a{color:var(--lime)}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em;line-height:1.08;margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:16px;padding-inline:4px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:700 1.25rem var(--head);letter-spacing:-.02em}
+.nav{display:flex;align-items:center;gap:18px}
+.lp-aurora.page{height:min(800px,100vh);bottom:auto}
+.intro{max-width:46rem;padding-block:44px 36px}
+.kick{font:800 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+.intro h1{margin-top:12px;font-size:clamp(2.1rem,5vw,3.6rem)}
+.intro p{margin:18px 0 0;font-size:1.12rem;color:#C9CCD3}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.card{padding:26px;border-radius:28px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06);display:grid;gap:12px;align-content:start;min-width:0}
+.card h2{font-size:1.35rem}
+.card p{margin:0;color:#C9CCD3}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start;color:#C9CCD3}
+.steps li::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--surface3);color:var(--lime);font:800 .9rem var(--head)}
+.steps b{color:var(--fg)}
+pre{margin:0;padding:16px;border-radius:16px;background:#0D0F12;color:#D6D8DC;font:500 .8rem/1.55 var(--mono);overflow:auto;white-space:pre;max-height:420px}
+code{font-family:var(--mono);font-size:.88em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;border-radius:999px;font:800 .95rem var(--display);text-decoration:none;border:0;cursor:pointer;background:var(--lime);color:#0B0C0F;justify-self:start}
+.btn.line{background:var(--surface2);color:var(--fg)}
+.status{display:inline-flex;align-items:center;gap:8px;font:800 .8rem var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.pays{display:grid;gap:8px}
+.pays a{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--surface2);color:var(--fg);text-decoration:none;font-size:.9rem}
+.pays a:hover{background:var(--surface3)}
+.pays .amt{font-weight:800;color:var(--lime)}
+.pays .tx{font-family:var(--mono);font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.muted{color:var(--muted)}
+.full{grid-column:1/-1}
+footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="lp-ui.css">
+</head>
+<body data-lpn-sticky>
+<div class="lp-aurora page" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./" aria-label="LateProof">
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
+      lateproof
+    </a>
+    <nav class="nav"></nav>
+  </header>
+
+  <main>
+    <div class="intro">
+      <span class="kick" data-en="API for agents · x402">API pour agents · x402</span>
+      <h1 data-en="Live trip advice, paid per call.">Le conseil de trajet en direct, payé à l'appel.</h1>
+      <p data-en="An app, an assistant or an AI agent asks LateProof for the best way to get from A to B right now. No account, no API key: each call costs 0.01 USDC, paid on Solana with the open x402 standard (HTTP 402).">Une appli, un assistant ou un agent IA demande à LateProof la meilleure façon d'aller de A à B, maintenant. Pas de compte, pas de clé d'API : chaque appel coûte 0,01 USDC, payé sur Solana avec le standard ouvert x402 (HTTP 402).</p>
+    </div>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="tHow">
+        <h2 id="tHow" data-en="How it works">Comment ça marche</h2>
+        <ol class="steps">
+          <li><span data-en="<b>The agent calls</b> <code>GET /advice?de=…&amp;vers=…</code>."><b>L'agent appelle</b> <code>GET /advice?de=…&amp;vers=…</code>.</span></li>
+          <li><span data-en="<b>LateProof answers 402</b> with its terms in the <code>PAYMENT-REQUIRED</code> header: 0.01 USDC, Solana network, recipient address."><b>LateProof répond 402</b> avec ses conditions dans l'en-tête <code>PAYMENT-REQUIRED</code> : 0,01 USDC, réseau Solana, adresse du destinataire.</span></li>
+          <li><span data-en="<b>The agent signs</b> the USDC transfer and calls again with <code>PAYMENT-SIGNATURE</code>."><b>L'agent signe</b> le transfert d'USDC et rappelle avec <code>PAYMENT-SIGNATURE</code>.</span></li>
+          <li><span data-en="<b>The payment is checked, the advice computed</b> from live SNCF and Île-de-France Mobilités data, <b>then settled on Solana</b>. The answer carries the transaction (<code>PAYMENT-RESPONSE</code>)."><b>Le paiement est vérifié, le conseil calculé</b> avec les données SNCF et Île-de-France Mobilités du moment, <b>puis réglé sur Solana</b>. La réponse porte la transaction (<code>PAYMENT-RESPONSE</code>).</span></li>
+        </ol>
+        <p class="muted" data-en="If the advice can't be computed, nothing is charged: settlement only happens after the answer is ready. The network fees in SOL are paid by the x402 facilitator.">Si le conseil ne peut pas être calculé, rien n'est prélevé : le règlement n'a lieu qu'une fois la réponse prête. Les frais de réseau en SOL sont payés par le facilitateur x402.</p>
+      </section>
+
+      <section class="card" aria-labelledby="tTry">
+        <h2 id="tTry" data-en="Try it: the real 402">Essayer : le vrai 402</h2>
+        <p data-en="Calls the API without paying, from your browser. You get the real terms the server sends to agents.">Appelle l'API sans payer, depuis ton navigateur. Tu obtiens les vraies conditions que le serveur envoie aux agents.</p>
+        <button class="btn" type="button" id="try" data-en="Call without paying">Appeler sans payer</button>
+        <span class="status" id="st" hidden></span>
+        <pre id="out" hidden></pre>
+      </section>
+
+      <section class="card full" aria-labelledby="tPays">
+        <h2 id="tPays" data-en="Latest paid calls, settled on Solana">Derniers appels payés, réglés sur Solana</h2>
+        <div class="pays" id="pays"><p class="muted" data-en="Loading…">Chargement…</p></div>
+      </section>
+
+      <section class="card full" aria-labelledby="tCode">
+        <h2 id="tCode" data-en="For an agent (Node.js, official x402 libraries)">Pour un agent (Node.js, bibliothèques x402 officielles)</h2>
+<pre>import { wrapFetchWithPayment } from "@x402/fetch";
+import { x402Client } from "@x402/core/client";
+import { ExactSvmScheme } from "@x402/svm/exact/client";
+import { createKeyPairSignerFromBytes } from "@solana/kit";
+
+const signer = await createKeyPairSignerFromBytes(secretKey);   // un portefeuille avec quelques USDC
+const client = new x402Client();
+client.register("solana:*", new ExactSvmScheme(signer));
+const pay = wrapFetchWithPayment(fetch, client);
+
+const r = await pay("<span id="ep">…/functions/v1/advice</span>?de=Paris Gare de Lyon&amp;vers=Lyon Part-Dieu");
+console.log((await r.json()).conseil);</pre>
+        <p class="muted" data-en="Demo on Solana devnet (test USDC). Source code: supabase/functions/advice and x402/agent.mjs in the public repository.">Démonstration sur Solana devnet (USDC de test). Code source : <code>supabase/functions/advice</code> et <code>x402/agent.mjs</code> dans le <a href="https://github.com/adrienboulay/lateproof" target="_blank" rel="noopener">dépôt public</a>.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span data-en="LateProof, a project in progress.">LateProof, projet en construction.</span>
+    <span data-en="Data: SNCF open data, Île-de-France Mobilités.">Données : SNCF open data, Île-de-France Mobilités.</span>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script src="lp-i18n.js"></script>
+<script src="lp-ui.js"></script>
+<script src="lp-core.js"></script>
+<script>
+const {L, locale} = LPI, CFG = window.LP_CONFIG || {}, $ = id => document.getElementById(id);
+const base = (CFG.url || "").replace(/\/+$/, ""), EP = `${base}/functions/v1/advice`;
+$("ep").textContent = EP;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+$("try").addEventListener("click", async () => {
+  const st = $("st"), out = $("out"); st.hidden = false; out.hidden = false; st.textContent = "…"; out.textContent = "";
+  try {
+    const r = await fetch(`${EP}?de=${encodeURIComponent("Paris Gare de Lyon")}&vers=${encodeURIComponent("Lyon Part-Dieu")}`);
+    st.textContent = `HTTP ${r.status} ${r.status === 402 ? "Payment Required" : ""}`;
+    const h = r.headers.get("PAYMENT-REQUIRED");
+    out.textContent = h ? `PAYMENT-REQUIRED (base64, ${L("décodé", "decoded")}) :\n` + JSON.stringify(JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(h), c => c.charCodeAt(0)))), null, 2) : await r.text();
+  } catch (e) { st.textContent = L("Appel impossible", "Call failed"); out.textContent = String(e); }
+});
+(async () => {
+  let list = [];
+  try { list = await LP.rpc("public_x402_payments", {}); } catch (e) {}
+  $("pays").innerHTML = (list || []).length ? list.map(p => `<a href="https://explorer.solana.com/tx/${esc(p.tx)}?cluster=devnet" target="_blank" rel="noopener">` +
+      `<span class="amt">${(Number(p.amount) / 1e6).toLocaleString(locale, {minimumFractionDigits: 2})} USDC</span><span class="tx">${esc(p.tx)}</span>` +
+      `<span class="muted">${new Date(p.at * 1000).toLocaleString(locale, {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"})} ↗</span></a>`).join("")
+    : `<p class="muted">${L("Aucun appel payé pour l'instant.", "No paid call yet.")}</p>`;
+})();
+</script>
+</body>
+</html>

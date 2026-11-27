@@ -7,6 +7,7 @@
     {href: "./#comment", fr: "Comment ça marche", en: "How it works"},
     {href: "./#avis", fr: "Avis", en: "Reviews"},
     {href: "./#faq", fr: "Questions", en: "FAQ"},
+    {href: "api.html", fr: "API", en: "API"},
     {href: "carte.html", fr: "Ouvrir l'appli", en: "Open the app", cta: true},
   ];
   const lang = () => (document.documentElement.lang === "en" ? "en" : "fr");
