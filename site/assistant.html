@@ -157,7 +157,9 @@ textarea,.field input{background:var(--surface);border-color:var(--surface3)}
 </div>
 
 <script src="config.js"></script>
+<script src="lp-core.js"></script>
 <script src="gus.js"></script>
+<script src="gus-local.js"></script>
 <script>
 const CFG = window.LP_CONFIG || {};
 const ENDPOINT = () => (CFG.url ? `${CFG.url}/functions/v1/assistant` : null);
@@ -174,8 +176,10 @@ let busy = false;
 const SUGGESTIONS = [
   "De Lyon Part-Dieu à Grenoble",
   "Je veux aller à Massy-Palaiseau",
-  "Mon trajet habituel est-il perturbé ?",
   "Le RER B est-il à l'heure aujourd'hui ?",
+  "Prochains départs à Gare de Lyon",
+  "Y a-t-il des grèves cette semaine ?",
+  "Mon trajet habituel est-il perturbé ?",
   "Mon TGV a 1 h de retard, quels sont mes droits ?",
 ];
 
@@ -229,7 +233,7 @@ function typing() {
 }
 function renderAll() {
   chat.textContent = "";
-  if (!history.length) bubble("bot", "Salut, moi c'est Gus, ton copilote de trajet ! Dis-moi où tu vas, par exemple « de Lyon à Grenoble » ou « je veux aller à Massy », et je t'ouvre l'itinéraire. Tu peux aussi me demander l'état d'une ligne.");
+  if (!history.length) bubble("bot", "Salut, moi c'est Gus, ton copilote de trajet ! Dis-moi où tu vas, par exemple « de Lyon à Grenoble » ou « je veux aller à Massy », et je t'ouvre l'itinéraire. Tu peux aussi me demander l'état d'une ligne, les prochains départs d'une gare, un numéro de train ou tes droits.");
   history.forEach((m) => bubble(m.role, m.content));
   $("chips").hidden = history.length > 0;
 }
@@ -244,7 +248,8 @@ const SEP = "(?:à|au|aux|jusqu'à|jusqu'au|jusqu'aux|vers|pour|direction)";
 const VERB = /\b(aller|vais|va|vas|allons|rendre|rends|rentre|rentrer|itin[ée]raire|trajet|emm[eè]ne|am[eè]ne|chemin|partir|pars|rejoindre|direction|go)\b/;
 function cleanPlace(p) {
   return p.replace(/^(?:la |le |les |l')(?=gare|station|ville)/, "").replace(/^(?:la |le |l')/, "")
-    .replace(/\s+(?:en (?:train|rer|métro|metro|tram|transilien|ter|tgv)|s'il te pla[iî]t|stp|maintenant|ce soir|ce matin|demain|aujourd'hui|tout de suite)$/g, "")
+    .replace(/\s+en (?:train|rer|métro|metro|tram|transilien|ter|tgv)(?:\s+[a-z]?\d{0,2}[a-z]?)?$/, "")
+    .replace(/\s+(?:s'il te pla[iî]t|stp|maintenant|ce soir|ce matin|demain|aujourd'hui|tout de suite)$/g, "")
     .replace(/["«»]/g, "").trim();
 }
 function parseTrip(raw) {
@@ -270,8 +275,18 @@ async function goTrip(t, spoken) {
   setTimeout(() => { location.href = tripUrl(t); }, spoken ? 200 : 1400);
 }
 
-const NO_AI = "Je ne sais pas encore répondre à ce genre de question : mon intelligence artificielle n'est pas encore branchée. " +
-  "Par contre je t'ouvre déjà les itinéraires : dis par exemple « de Lyon Part-Dieu à Grenoble » ou « je veux aller à Massy ».";
+const HELP = "Je n'ai pas compris. Je sais répondre à : « de Lyon à Grenoble » ou « je veux aller à Massy » (itinéraire), " +
+  "« le RER B est-il à l'heure ? », « prochains départs à Gare de Lyon », « train 6611 », « y a-t-il des grèves cette semaine ? », " +
+  "« mon trajet habituel est-il perturbé ? » et « quels sont mes droits ? ».";
+
+function reply(text, answer, opts = {}) {
+  bubble("bot", answer.text, {mood: answer.mood, link: answer.link || null});
+  history.push({role: "user", content: text}, {role: "assistant", content: answer.text}); store.set("lp-chat", history.slice(-20));
+  busy = false; send.disabled = false;
+  const spoken = opts.speak ? say(answer.text) : null;
+  setMood(answer.mood || "content", 9000);
+  if (spoken && handsBox.checked) spoken.then(() => { if (!leaving && !busy) startListening(); });
+}
 
 async function ask(text, opts = {}) {
   text = (text || "").trim();
@@ -283,9 +298,9 @@ async function ask(text, opts = {}) {
   q.value = ""; grow();
   const speakIt = opts.voice || speakBox.checked;
 
-  // 1. Un trajet ? On l'ouvre tout de suite sur la carte, sans attendre l'IA.
+  // 1. Un trajet ? On l'ouvre tout de suite sur la carte (sauf si le « lieu » parle d'heure, de retard ou d'une ligne).
   const trip = parseTrip(text);
-  if (trip) {
+  if (trip && !GusLocal.badPlace(trip.to) && (trip.from === "ma position" || !GusLocal.badPlace(trip.from))) {
     const msg = tripText(trip);
     bubble("bot", msg, {mood: "bravo", link: {href: tripUrl(trip), label: "Voir l'itinéraire →"}});
     history.push({role: "user", content: text}, {role: "assistant", content: msg}); store.set("lp-chat", history.slice(-20));
@@ -294,36 +309,44 @@ async function ask(text, opts = {}) {
     return;
   }
 
-  // 2. Sinon : l'IA, avec les données en direct.
-  history.push({role: "user", content: text});
   const wait = typing();
   setMood("reflexion");
-  let answer, err = false, action = null;
+
+  // 2. Les questions courantes : réponse directe avec nos données en direct, sans IA (rien d'inventé).
+  let local = null;
+  try { local = await GusLocal.answer(text, {trajet: trajetIn.value.trim()}); } catch (e) { local = null; }
+  if (local) { wait.remove(); reply(text, local, {speak: speakIt}); return; }
+
+  // 3. Le reste : l'IA du serveur si elle est en place, sinon la liste de ce que Gus sait faire.
+  history.push({role: "user", content: text});
+  let answer = null, action = null;
   try {
-    if (!ENDPOINT()) throw new Error("hors ligne");
-    const r = await fetch(ENDPOINT(), {
-      method: "POST",
-      headers: {"Content-Type": "application/json", apikey: CFG.key},
-      body: JSON.stringify({messages: history.slice(-12), trajet: trajetIn.value.trim()}),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (r.status === 404 || (r.status === 502 && j.error === "fournisseur")) { answer = NO_AI; err = true; }
-    else { answer = j.reply || "Je n'ai pas pu répondre, réessaie dans un instant."; err = !r.ok; action = j.action; }
-  } catch (e) {
-    // Hors ligne : vraie panne de connexion. En ligne : le service IA n'est pas encore en place (fonction absente).
-    answer = navigator.onLine === false ? "Je n'arrive pas à joindre le copilote. Vérifie ta connexion et réessaie." : NO_AI;
-    err = true;
-  }
+    if (ENDPOINT()) {
+      const r = await fetch(ENDPOINT(), {
+        method: "POST",
+        headers: {"Content-Type": "application/json", apikey: CFG.key},
+        body: JSON.stringify({messages: history.slice(-12), trajet: trajetIn.value.trim()}),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.reply) { answer = j.reply; action = j.action; }
+      else if (r.status === 429 && j.reply) answer = j.reply;
+    }
+  } catch (e) { /* service IA absent ou hors ligne : on retombe sur l'aide ci-dessous */ }
+  history.pop();
   wait.remove();
+  if (!answer) {
+    reply(text, {text: navigator.onLine === false ? "Je n'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie." : HELP, mood: "neutre"}, {speak: speakIt});
+    return;
+  }
   const trip2 = action && action.type === "itineraire" && action.arrivee ? {from: action.depart || "ma position", to: action.arrivee} : null;
-  bubble("bot", answer, {err: err && answer !== NO_AI, mood: answer === NO_AI ? "neutre" : undefined, link: trip2 ? {href: tripUrl(trip2), label: "Voir l'itinéraire →"} : null});
-  if (!err) { history.push({role: "assistant", content: answer}); store.set("lp-chat", history.slice(-20)); }
-  else history.pop();                          // la question pourra etre reposee
+  history.push({role: "user", content: text});
+  bubble("bot", answer, {link: trip2 ? {href: tripUrl(trip2), label: "Voir l'itinéraire →"} : null});
+  history.push({role: "assistant", content: answer}); store.set("lp-chat", history.slice(-20));
   busy = false; send.disabled = false;
   const spoken = speakIt ? say(answer) : null;
   if (trip2) { goTrip(trip2, spoken); return; }
-  setMood(err ? "neutre" : moodFor(answer), 9000);
-  if (spoken && handsBox.checked && !err) spoken.then(() => { if (!leaving && !busy) startListening(); });
+  setMood(moodFor(answer), 9000);
+  if (spoken && handsBox.checked) spoken.then(() => { if (!leaving && !busy) startListening(); });
 }
 
 form.addEventListener("submit", (e) => { e.preventDefault(); ask(q.value); });
