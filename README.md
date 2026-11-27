@@ -9,7 +9,8 @@ Train delay assistant on Solana: it warns you before your trip, proves your dela
 - **During:** listed here as it is built.
 
 ## Solana program
-Program id: `8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu` (devnet deployment pending).
+Program id: `8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu`, **deployed on devnet** on 2026-11-27 ([explorer](https://explorer.solana.com/address/8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu?cluster=devnet)).
+Config account: `8i5uNfUeytmbgExRg5Kw621L15MMRqEPuuhXkwYHQqCJ` ([initialize transaction](https://explorer.solana.com/tx/W7PJY6AD6JHNmJ74gqJox44Y6fKubv38aPwHfnePNC7YDdxoEGrgc53p97mpyfBZxg5TGixDua1LBVnndAmFwLR?cluster=devnet)), oracle `2f97V5ZQoatB2Yrowkh7ZLYh93cXxzf2mkr8m9Rab1P1`.
 
 It stores **fingerprints only** (no names, e-mails or locations):
 - `post_delay_root`: once a day, the oracle publishes the Merkle root of every train delay recorded that day. One root per day, immutable.
