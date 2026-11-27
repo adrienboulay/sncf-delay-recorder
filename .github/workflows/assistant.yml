@@ -31,6 +31,10 @@ jobs:
       - name: Outils sur les vraies donnees (lecture seule)
         if: env.SUPABASE_URL != ''
         run: deno run --allow-net --allow-env supabase/functions/assistant/live_check.ts
+      - name: Cle Gemini et modele (la cle n'est jamais affichee)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: deno run --allow-net --allow-env supabase/functions/assistant/probe_llm.ts
 
   deploy:
     needs: test
