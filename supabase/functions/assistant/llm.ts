@@ -26,8 +26,24 @@ export function groqChat(apiKey: string, model = "openai/gpt-oss-120b", fetchImp
   return openAiChat("https://api.groq.com/openai/v1/chat/completions", apiKey, model, fetchImpl);
 }
 
+/** Gemini (Google) par son point d'acces compatible OpenAI. Plusieurs modeles : si l'un est sature (503),
+ *  retire (404) ou en limite (429), on essaie le suivant. */
+export function geminiChat(apiKey: string, models = ["gemini-flash-latest", "gemini-flash-lite-latest"], fetchImpl: typeof fetch = fetch): Chat {
+  const chats = models.map((m) => openAiChat("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", apiKey, m, fetchImpl, false));
+  return async (messages, tools) => {
+    let last: unknown = null;
+    for (const c of chats) {
+      try { return await c(messages, tools); } catch (e) {
+        last = e;
+        if (!(e instanceof LlmError) || ![404, 429, 500, 503].includes(e.status)) throw e;
+      }
+    }
+    throw last;
+  };
+}
+
 /** Tout fournisseur au format « chat completions » (Mistral, Groq, OpenAI, GitHub Models, Cerebras...). */
-export function openAiChat(url: string, apiKey: string, model: string, fetchImpl: typeof fetch = fetch): Chat {
+export function openAiChat(url: string, apiKey: string, model: string, fetchImpl: typeof fetch = fetch, parallel = true): Chat {
   return async (messages, tools) => {
     const res = await fetchImpl(url, {
       method: "POST",
@@ -35,7 +51,7 @@ export function openAiChat(url: string, apiKey: string, model: string, fetchImpl
       body: JSON.stringify({
         model, messages, temperature: 0.3, max_tokens: 700,
         ...(tools.length ? {
-          tool_choice: "auto", parallel_tool_calls: true,
+          tool_choice: "auto", ...(parallel ? { parallel_tool_calls: true } : {}),
           tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } })),
         } : {}),
       }),

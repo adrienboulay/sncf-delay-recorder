@@ -36,7 +36,7 @@ Program: [`program/`](program/) (Rust, Anchor). It stores **fingerprints only**:
 
 ## APIs and services
 - **Data:** SNCF open data (GTFS / GTFS-RT via transport.data.gouv.fr), Île-de-France Mobilités PRIM, Base Adresse Nationale (address search). Licence Mobilités / ODbL.
-- **Copilot answers:** built-in rules in the browser ([`site/gus-local.js`](site/gus-local.js)) call the same public database functions as the map. Optionally, any "chat completions" LLM with tool calling (Mistral or Groq) on the server for free-form questions.
+- **Copilot answers:** built-in rules in the browser ([`site/gus-local.js`](site/gus-local.js)) call the same public database functions as the map. Optionally, a "chat completions" LLM with tool calling on the server for free-form questions: Google Gemini (flash models, with automatic fallback), Groq or Mistral.
 - **Voice:**
   - Speech to text: the browser's own dictation (Web Speech API) first.
   - Server fallback for browsers without dictation, in this order: Groq Whisper, then the **ElevenLabs Speech-to-Text API (Scribe, `/v1/speech-to-text`)**, then Mistral Voxtral, depending on which key is set.

@@ -2,7 +2,7 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { _resetCache, hhmm, type Json, matchLine, norm, runTool, type Rpc } from "./tools.ts";
 import { handle, type Deps } from "./handler.ts";
-import { type Chat, groqChat, LlmError, mistralChat, type Msg } from "./llm.ts";
+import { type Chat, geminiChat, groqChat, LlmError, mistralChat, type Msg } from "./llm.ts";
 import { systemPrompt } from "./prompt.ts";
 
 const NOW = Math.floor(Date.now() / 1000);
@@ -283,5 +283,20 @@ Deno.test("groqChat : meme format, autre adresse et autre modele", async () => {
   const r = await groqChat("cle", undefined, fakeFetch)([{ role: "user", content: "q" }], []);
   assertEquals(url, "https://api.groq.com/openai/v1/chat/completions");
   assertEquals(body.model, "openai/gpt-oss-120b");
+  assertEquals(r.text, "ok");
+});
+
+Deno.test("geminiChat : passe au modele suivant si le premier est sature, sans parallel_tool_calls", async () => {
+  const seen: string[] = [];
+  let parallel: unknown = "absent";
+  const fakeFetch = ((_u: string, init: RequestInit) => {
+    const b = JSON.parse(String(init.body));
+    seen.push(b.model); parallel = b.parallel_tool_calls;
+    if (b.model === "a") return Promise.resolve(new Response("sature", { status: 503 }));
+    return Promise.resolve(new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }));
+  }) as unknown as typeof fetch;
+  const r = await geminiChat("cle", ["a", "b"], fakeFetch)([{ role: "user", content: "q" }], [{ name: "train", description: "d", parameters: {} }]);
+  assertEquals(seen, ["a", "b"]);
+  assertEquals(parallel, undefined);
   assertEquals(r.text, "ok");
 });
