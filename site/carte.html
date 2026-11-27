@@ -83,13 +83,34 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .newsToggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--fg);font:700 .9rem var(--display);padding:12px 14px;cursor:pointer;text-align:left}
 .newsToggle .chev{color:var(--muted);transition:transform .15s}
 .newsToggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.mctl{position:absolute;z-index:900;bottom:16px;display:flex;gap:8px}
+.mctl-l{left:12px;align-items:flex-end}
+.mctl-r{right:12px;flex-direction:column;align-items:center}
+.mbtn{display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--surface);color:var(--fg);cursor:pointer;
+  box-shadow:inset 0 1px 0 rgb(255 255 255/.07),0 4px 14px rgb(0 0 0/.35);transition:background-color .2s,color .2s}
+.mbtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mbtn:hover{background:var(--surface2)}
+.mbtn[aria-expanded="true"]{background:var(--surface3);color:var(--blue)}
+.mzoom{display:flex;flex-direction:column;border-radius:22px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.07),0 4px 14px rgb(0 0 0/.35);overflow:hidden}
+.mzoom .mbtn{box-shadow:none;border-radius:0;background:none}
+.mzoom .mbtn+.mbtn{border-top:1px solid var(--line)}
+.mzoom .mbtn:hover{background:var(--surface2)}
+.mbox{position:relative}
+.mmenu{position:absolute;left:0;bottom:54px;min-width:200px;display:grid;gap:2px;padding:8px;border-radius:18px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.07),0 14px 40px rgb(0 0 0/.45)}
+.mmenu .mh{margin:2px 8px 6px;font:800 .7rem var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.mmenu button{display:flex;align-items:center;gap:10px;border:0;border-radius:12px;background:none;color:var(--fg);font:600 .9rem var(--display);padding:10px 10px;cursor:pointer;text-align:left}
+.mmenu button:hover{background:var(--surface2)}
+.mmenu .ck{width:16px;color:var(--blue);font-weight:800}
+.legendcard .srcs{font-size:.72rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.legendcard .srcs a{color:var(--muted)}
+@media (min-width:721px){.mctl-l{left:424px}.legendcard{left:424px}}
 .mapinfo{position:absolute;z-index:900;left:50%;transform:translateX(-50%);bottom:24px;display:flex;gap:6px;align-items:center;max-width:calc(100% - 140px)}
 .pill{display:flex;flex-wrap:wrap;gap:2px 12px;background:var(--surface);border:0;border-radius:999px;padding:6px 14px;box-shadow:0 1px 4px rgb(0 0 0/.22);font:500 .78rem var(--display);color:var(--muted)}
 .pill b{font:700 .84rem var(--mono);color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
 .pill .late b{color:var(--amber)}
 button.pill{cursor:pointer;color:var(--fg);font-weight:700;flex:none}
 button.pill[aria-expanded="true"]{background:var(--fg);color:var(--bg)}
-.legendcard{position:absolute;z-index:950;bottom:58px;left:50%;transform:translateX(-50%);width:min(460px,calc(100% - 24px));background:var(--surface);border-radius:12px;box-shadow:0 4px 16px rgb(0 0 0/.22);padding:12px 14px;margin:0}
+.legendcard{position:absolute;z-index:950;bottom:70px;left:12px;width:min(460px,calc(100% - 24px));background:var(--surface);border-radius:12px;box-shadow:0 4px 16px rgb(0 0 0/.22);padding:12px 14px;margin:0}
 .pickbar{position:absolute;z-index:1002;top:118px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:var(--fg);color:var(--bg);border-radius:999px;padding:7px 7px 7px 16px;font-weight:600;font-size:.9rem;box-shadow:0 4px 14px rgb(0 0 0/.3);max-width:calc(100% - 24px)}
 .pickbar button{flex:none;border:0;border-radius:999px;background:var(--bg);color:var(--fg);font:700 .82rem var(--display);padding:6px 12px;cursor:pointer}
 .app.picking #map,.app.picking .leaflet-interactive{cursor:crosshair!important}
@@ -122,7 +143,7 @@ button.pill[aria-expanded="true"]{background:var(--fg);color:var(--bg)}
   .sheet .handle{display:block;flex:none;width:100%;height:30px;border:0;cursor:grab;background:var(--surface);touch-action:none}
   .sheet .handle::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--muted);opacity:.6;margin:12px auto}
   .mapinfo{left:8px;transform:none;max-width:calc(100% - 66px);bottom:24px}
-  .app.sheet-open .mapinfo,.app.sheet-open .legendcard{display:none}
+  .app.sheet-open .mapinfo,.app.sheet-open .legendcard,.app.sheet-open .mctl{display:none}
   .legendcard{left:8px;transform:none;width:calc(100% - 16px)}
   .nav a.hide-sm{display:none}
   .app.picking .sheet{display:none}
@@ -379,14 +400,21 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
   </div>
 
   <div class="pickbar" id="pickBar" role="status" hidden><span id="pickTxt"></span><button type="button" id="pickCancel" data-i18n="cancel">Annuler</button></div>
-  <div class="mapinfo">
-    <button class="pill" type="button" id="legendBtn" aria-expanded="false" aria-controls="legendCard" data-i18n="legendBtn">Légende</button>
+  <div class="mctl mctl-l">
+    <div class="mbox"><button type="button" class="mbtn" id="baseBtn" aria-expanded="false" aria-controls="baseMenu" data-i18n-aria="layers" aria-label="Fond de carte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></button>
+      <div class="mmenu" id="baseMenu" role="menu" hidden></div></div>
+    <button type="button" class="mbtn" id="legendBtn" aria-expanded="false" aria-controls="legendCard" data-i18n-aria="legendSrc" aria-label="Légende et sources"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.5"/></svg></button>
+  </div>
+  <div class="mctl mctl-r">
+    <button type="button" class="mbtn" id="meBtn" data-i18n-aria="locate" aria-label="Me localiser"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg></button>
+    <div class="mzoom"><button type="button" class="mbtn" id="zIn" data-i18n-aria="zoomIn" aria-label="Zoomer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button><button type="button" class="mbtn" id="zOut" data-i18n-aria="zoomOut" aria-label="Dézoomer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button></div>
   </div>
   <div class="legendcard legend" id="legendCard" hidden>
     <span class="grad"><span data-i18n="lg0">fluide</span><i class="bar" aria-hidden="true"></i><span data-i18n="lg2">très perturbé</span></span>
     <span><i class="ev ev-incident lg" aria-hidden="true"></i><span data-i18n="lgE">perturbation annoncée ici</span></span>
     <span data-i18n="lgM">Trains : retard moyen, trains à +15 min et suppressions du jour. Métro, tram : intervalle entre deux rames comparé au prévu. Clique une ligne ou une gare pour le détail.</span>
     <span data-i18n="lgZ">Vue large : les gares voisines sont regroupées (taille = trafic). Zoome pour le détail et le tracé des lignes.</span>
+    <span class="srcs" id="srcs"></span>
   </div>
 </main>
 
@@ -394,7 +422,7 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
 <script src="config.js"></script>
 <script src="lp-ui.js"></script>
 <script src="gus.js"></script>
-<script>Gus.fab({bottom: "calc(178px + var(--lpt-h, 0px))", z: 960});</script>
+<script>Gus.fab({bottom: "calc(170px + var(--lpt-h, 0px))", z: 960});</script>
 <script>
 // ================================================================= Textes FR / EN
 const EN = {navApp:"My space", navCopilot:"Copilot", signup:"News", h1:"Train delays live, and what's coming", sub:"Search your region, your line or your trip: the map shows today's delays, the list the strikes and works that affect you.",
@@ -420,7 +448,7 @@ const EN = {navApp:"My space", navCopilot:"Copilot", signup:"News", h1:"Train de
   scopeRegion:" · region", scopeLine:" · this line", scopeTrip:" · this trip", scopeStation:" · this station", scopeAround:" · around me", noData:"No train recorded on this line today.", loadingCtx:"Loading…",
   newsBtn:"Disruptions", regionBtn:"My region", settings:"Settings", legendBtn:"Legend", menu:"Settings", expand:"Expand", newsHere:"Disruptions",
   direct:"Direct", oneChange:"1 change", changeAt:"Change at", walk:"walk", waitFor:"wait", tight:"Tight connection", missed:"Connection at risk",
-  towards:"towards", journeys:"Options in the next 3 hours", launch:"Start my trip", notFound:"place not found", collapse:"Collapse", gKick:"On my way", gStop:"Stop", gGoTo:"Head to", gDepAt:"departs", gAtSt:"You're at the station", gBoard:"Board", gOnBoard:"On board", gGetOff:"Get off at", gArrAt:"arrival", gArrived:"Arrived", gArrivedAt:"You've arrived at", gBoardBtn:"I'm on board", gOffBtn:"I've got off", gNoGps:"Location off: confirm each step with the buttons.", gGps:"Your position confirms each step.", gLate:"late", gRisk:"Connection at risk", gPlanB:"Plan B", gTakeB:"Take this plan B", gReplan:"Looking for another route…", gNoB:"No other route found for now. Ask staff on the platform.", gMissed:"Your train has left", gCancel:"Train cancelled", gSaved:"Trip saved in My space", gProof:"Create my certificate", gTotal:"Arrival", gWalk:"Walk to", gStep:"stop", gLive:"Live, updated every minute", gPlanBOn:"Plan B adopted", gEnd:"Done",
+  towards:"towards", journeys:"Options in the next 3 hours", launch:"Start my trip", layers:"Map style", legendSrc:"Legend and sources", locate:"Show my location", zoomIn:"Zoom in", zoomOut:"Zoom out", sources:"Map", traces:"Lines", dataSrc:"live data SNCF open data and Île-de-France Mobilités", notFound:"place not found", collapse:"Collapse", gKick:"On my way", gStop:"Stop", gGoTo:"Head to", gDepAt:"departs", gAtSt:"You're at the station", gBoard:"Board", gOnBoard:"On board", gGetOff:"Get off at", gArrAt:"arrival", gArrived:"Arrived", gArrivedAt:"You've arrived at", gBoardBtn:"I'm on board", gOffBtn:"I've got off", gNoGps:"Location off: confirm each step with the buttons.", gGps:"Your position confirms each step.", gLate:"late", gRisk:"Connection at risk", gPlanB:"Plan B", gTakeB:"Take this plan B", gReplan:"Looking for another route…", gNoB:"No other route found for now. Ask staff on the platform.", gMissed:"Your train has left", gCancel:"Train cancelled", gSaved:"Trip saved in My space", gProof:"Create my certificate", gTotal:"Arrival", gWalk:"Walk to", gStep:"stop", gLive:"Live, updated every minute", gPlanBOn:"Plan B adopted", gEnd:"Done",
   noJourney:"No route found in the next 3 hours (trains, RER, Transilien, metro and tram).", changes:"changes", stopsN:"stops", stop1:"stop", estNote:"Times estimated from the network map: metro and tram publish no timetable.", liveFirst:"next departure live", estimated:"estimated times",
   journeyNote:"Times and delays from live data. Connection checked with the known delays.", arrLate:"late on arrival", arrOk:"on time on arrival", leaveAt:"Leave", arriveAt:"arrive",
   dur:"min", hr:"h", trainN:"train", origFr:"original in French",
@@ -449,7 +477,7 @@ Object.assign(FR, {tabGL:"TGV & Intercités", tabTER:"TER & régionaux", noHour:
   scopeRegion:" · région", scopeLine:" · cette ligne", scopeTrip:" · ce trajet", scopeStation:" · cette gare", scopeAround:" · autour de moi", noData:"Aucun train enregistré sur cette ligne aujourd'hui.", loadingCtx:"Chargement…",
   tripBtn:"Mon trajet", menu:"Préférences", expand:"Agrandir", newsHere:"Perturbations",
   direct:"Direct", oneChange:"1 correspondance", changeAt:"Correspondance à", walk:"à pied", waitFor:"attente", tight:"Correspondance juste", missed:"Correspondance compromise",
-  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", launch:"Lancer mon trajet", notFound:"lieu introuvable", collapse:"Réduire", posPh:"Adresse ou gare", gKick:"En route", gStop:"Arrêter", gGoTo:"Rejoins", gDepAt:"départ", gAtSt:"Tu es à la gare", gBoard:"Monte dans le", gOnBoard:"À bord", gGetOff:"Descends à", gArrAt:"arrivée", gArrived:"Arrivé", gArrivedAt:"Tu es arrivé à", gBoardBtn:"Je suis à bord", gOffBtn:"Je suis descendu", gNoGps:"Position désactivée : valide chaque étape avec les boutons.", gGps:"Ta position valide chaque étape.", gLate:"de retard", gRisk:"Correspondance compromise", gPlanB:"Plan B", gTakeB:"Prendre ce plan B", gReplan:"Je cherche un autre itinéraire…", gNoB:"Pas d'autre itinéraire pour l'instant. Demande au personnel en gare.", gMissed:"Ton train est parti", gCancel:"Train supprimé", gSaved:"Voyage enregistré dans Mon espace", gProof:"Créer mon justificatif", gTotal:"Arrivée", gWalk:"Marche jusqu'à", gStep:"arrêt", gLive:"En direct, mis à jour chaque minute", gPlanBOn:"Plan B adopté", gEnd:"Terminer",
+  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", launch:"Lancer mon trajet", layers:"Fond de carte", legendSrc:"Légende et sources", locate:"Me localiser", zoomIn:"Zoomer", zoomOut:"Dézoomer", sources:"Fond de carte", traces:"Tracés", dataSrc:"données en direct SNCF open data et Île-de-France Mobilités", notFound:"lieu introuvable", collapse:"Réduire", posPh:"Adresse ou gare", gKick:"En route", gStop:"Arrêter", gGoTo:"Rejoins", gDepAt:"départ", gAtSt:"Tu es à la gare", gBoard:"Monte dans le", gOnBoard:"À bord", gGetOff:"Descends à", gArrAt:"arrivée", gArrived:"Arrivé", gArrivedAt:"Tu es arrivé à", gBoardBtn:"Je suis à bord", gOffBtn:"Je suis descendu", gNoGps:"Position désactivée : valide chaque étape avec les boutons.", gGps:"Ta position valide chaque étape.", gLate:"de retard", gRisk:"Correspondance compromise", gPlanB:"Plan B", gTakeB:"Prendre ce plan B", gReplan:"Je cherche un autre itinéraire…", gNoB:"Pas d'autre itinéraire pour l'instant. Demande au personnel en gare.", gMissed:"Ton train est parti", gCancel:"Train supprimé", gSaved:"Voyage enregistré dans Mon espace", gProof:"Créer mon justificatif", gTotal:"Arrivée", gWalk:"Marche jusqu'à", gStep:"arrêt", gLive:"En direct, mis à jour chaque minute", gPlanBOn:"Plan B adopté", gEnd:"Terminer",
   noJourney:"Aucun itinéraire trouvé dans les 3 prochaines heures (train, RER, Transilien, métro et tram).", changes:"correspondances", stopsN:"arrêts", stop1:"arrêt", estNote:"Horaires estimés d'après le plan du réseau : le métro et le tram ne publient pas d'horaires.", liveFirst:"prochain passage en direct", estimated:"horaires estimés",
   journeyNote:"Horaires et retards en temps réel. Correspondance vérifiée avec les retards connus.", arrLate:"de retard à l'arrivée", arrOk:"à l'heure à l'arrivée", leaveAt:"Départ", arriveAt:"arrivée",
   dur:"min", hr:"h", trainN:"train", origFr:"texte d'origine en français",
@@ -618,8 +646,7 @@ REGIONS.forEach(r => regionSel.add(new Option(r.name, r.id)));
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const dark = true;   // direction artistique : toujours sombre
 // Un seul calque de dessin pour lignes + gares : sinon le calque du dessus capte tous les clics.
-const map = L.map("map", {preferCanvas: true, renderer: L.canvas({tolerance: 5}), zoomSnap: .5, zoomControl: false}).setView([46.6, 2.4], 5.5);
-L.control.zoom({position: "bottomright"}).addTo(map);
+const map = L.map("map", {preferCanvas: true, renderer: L.canvas({tolerance: 5}), zoomSnap: .5, zoomControl: false, attributionControl: false}).setView([46.6, 2.4], 5.5);
 // Fonds de carte (sans cle). Par defaut « Plan » (Esri World Street Map) : lisible comme un plan type Google (rues, quartiers,
 // reperes), sans relief ni satellite. En option : gris clair, gris sombre (fond + noms des lieux), ou OpenStreetMap detaille.
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/", EATTR = "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap";
@@ -632,13 +659,18 @@ const BASES = {plan: esri("World_Street_Map"), light: gray("Light"), dark: gray(
 let baseKey = store.get("lp-base"); if (!BASES[baseKey]) baseKey = dark ? "dark" : "plan";
 BASES[baseKey].addTo(map);
 let baseCtl = null;
+void baseCtl;
+// Boutons de la carte (dessinés dans le style du site) : fond de carte, légende + sources, ma position, zoom
 function baseControl() {
-  if (baseCtl) baseCtl.remove();
-  const T = L_(), names = {plan: T.bPlan, light: T.bLight, dark: T.bDark, osm: T.bOsm}, o = {};
-  Object.keys(BASES).forEach(k => o[names[k]] = BASES[k]);
-  baseCtl = L.control.layers(o, null, {position: "bottomright"}).addTo(map);
+  const T = L_(), names = {plan: T.bPlan, light: T.bLight, dark: T.bDark, osm: T.bOsm};
+  byId("baseMenu").innerHTML = `<p class="mh">${T.layers}</p>` + Object.keys(BASES).map(k => `<button type="button" role="menuitemradio" aria-checked="${k === baseKey}" data-base="${k}"><span class="ck" aria-hidden="true">${k === baseKey ? "✓" : ""}</span>${esc(names[k])}</button>`).join("");
+  byId("srcs").innerHTML = `${T.sources} : ${baseKey === "osm" ? "© OpenStreetMap" : "© Esri, HERE, Garmin, © OpenStreetMap"} · ${T.traces} © Île-de-France Mobilités, SNCF Réseau · ${T.dataSrc} · <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>`;
 }
-map.on("baselayerchange", e => { const k = Object.keys(BASES).find(k => BASES[k] === e.layer); if (k) store.set("lp-base", k); });
+function setBase(k) {
+  if (!BASES[k] || k === baseKey) return;
+  map.removeLayer(BASES[baseKey]); BASES[k].addTo(map); baseKey = k; store.set("lp-base", k); baseControl();
+}
+
 map.createPane("seg").style.zIndex = 350;   // troncons sous les gares
 const segRenderer = L.canvas({pane: "seg"});
 const segLayer = L.layerGroup().addTo(map), stationLayer = L.layerGroup().addTo(map), evLayer = L.layerGroup().addTo(map),
@@ -1893,6 +1925,12 @@ byId("sheet").addEventListener("click", e => {
   h.addEventListener("keydown", e => { if (e.key === "ArrowUp") { setFull(); sheet.dataset.pos = sheet.dataset.pos === "mini" ? "mid" : "full"; } if (e.key === "ArrowDown") sheet.dataset.pos = sheet.dataset.pos === "full" ? "mid" : "mini"; });
   h.addEventListener("click", e => { if (e.detail === 0) { setFull(); sheet.dataset.pos = sheet.dataset.pos === "full" ? "mid" : "full"; } });   // clavier (Entrée)
 })();
+byId("zIn").addEventListener("click", () => map.zoomIn());
+byId("zOut").addEventListener("click", () => map.zoomOut());
+byId("meBtn").addEventListener("click", async () => { const p = await geolocate(); if (p) { myPos = p; store.set("lp-pos", JSON.stringify(p)); showPos(); map.setView([p.lat, p.lon], Math.max(map.getZoom(), 13)); } });
+byId("baseBtn").addEventListener("click", e => { e.stopPropagation(); const m = byId("baseMenu"); m.hidden = !m.hidden; byId("baseBtn").setAttribute("aria-expanded", String(!m.hidden)); if (!byId("legendCard").hidden) byId("legendBtn").click(); });
+byId("baseMenu").addEventListener("click", e => { const b = e.target.closest("[data-base]"); if (!b) return; setBase(b.dataset.base); byId("baseMenu").hidden = true; byId("baseBtn").setAttribute("aria-expanded", "false"); });
+document.addEventListener("click", e => { if (!byId("baseMenu").hidden && !e.target.closest(".mbox")) { byId("baseMenu").hidden = true; byId("baseBtn").setAttribute("aria-expanded", "false"); } });
 byId("legendBtn").addEventListener("click", () => {
   const c = byId("legendCard"); c.hidden = !c.hidden; byId("legendBtn").setAttribute("aria-expanded", String(!c.hidden));
 });
@@ -1956,7 +1994,7 @@ const CFG = window.LP_CONFIG || {};
 const rpc = (fn, body = {}) => fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {method: "POST", body: JSON.stringify(body),
   headers: {apikey: CFG.key, "Content-Type": "application/json"}}).then(r => r.ok ? r.json() : Promise.reject(r.status));
 let booted = false;
-map.attributionControl.addAttribution("Tracés &copy; Île-de-France Mobilités, SNCF Réseau");
+
 function markCovered() {
   if (!idfGeo || !idfGeo.stops || !stations.length) return;
   const grid = new Map(), cellK = (a, b) => Math.round(a * 200) + ":" + Math.round(b * 140);
