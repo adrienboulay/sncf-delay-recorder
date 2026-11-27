@@ -148,39 +148,42 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 <div class="wrap">
   <header class="top">
     <a class="brand" href="#/"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
-    <nav class="nav"><a href="carte.html">Carte</a><a href="assistant.html">Copilote</a></nav>
+    <nav class="nav"><a href="carte.html" data-en="Map">Carte</a><a href="assistant.html" data-en="Copilot">Copilote</a></nav>
   </header>
   <main id="view" class="stack" aria-live="polite"></main>
 </div>
-<div class="tabs"><nav aria-label="Navigation principale">
-  <a href="#/" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8.5a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>Aujourd'hui</a>
-  <a href="#/voyages" data-tab="voyages"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="4"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/></svg>Voyages</a>
-  <a href="#/justificatifs" data-tab="certs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z"/><circle cx="12" cy="11.5" r="3"/><path d="M12 11.5l1.6 1"/></svg>Justificatifs</a>
-  <a href="#/profil" data-tab="profil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.2-6 8-6s6.8 2 8 6"/></svg>Profil</a>
+<div class="tabs"><nav aria-label="Navigation principale" data-en-label="Main navigation">
+  <a href="#/" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8.5a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg><span data-en="Today">Aujourd'hui</span></a>
+  <a href="#/voyages" data-tab="voyages"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="4"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/></svg><span data-en="Trips">Voyages</span></a>
+  <a href="#/justificatifs" data-tab="certs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z"/><circle cx="12" cy="11.5" r="3"/><path d="M12 11.5l1.6 1"/></svg><span data-en="Proofs">Justificatifs</span></a>
+  <a href="#/profil" data-tab="profil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.2-6 8-6s6.8 2 8 6"/></svg><span data-en="Profile">Profil</span></a>
 </nav></div>
 
 <script src="config.js"></script>
+<script src="lp-i18n.js"></script>
 <script src="lp-core.js"></script>
 <script src="gus.js"></script>
 <script>Gus.fab({bottom: "92px"});</script>
 <script>
 "use strict";
 const {rpc, store, fmt, esc, passkey} = LP;
+const {L, locale} = LPI;
+document.title = L("Mon espace · LateProof", "My space · LateProof");
 const $ = id => document.getElementById(id);
 const view = $("view");
 const now = () => Math.floor(Date.now() / 1000);
 const GL = ["OUI", "OGO", "IC", "ICN", "LYR", "ICE", "TGV", "ES"];
-const MODES = {OUI: "TGV INOUI", OGO: "OUIGO", IC: "Intercités", ICN: "Intercités de nuit", LYR: "Lyria", ICE: "ICE", TT: "Tram-train", TER: "TER",
-  RER: "RER", TRANSILIEN: "Transilien", METRO: "Métro", TRAM: "Tram"};
+const MODES = {OUI: "TGV INOUI", OGO: "OUIGO", IC: "Intercités", ICN: L("Intercités de nuit", "Intercités night train"), LYR: "Lyria", ICE: "ICE", TT: "Tram-train", TER: "TER",
+  RER: "RER", TRANSILIEN: "Transilien", METRO: L("Métro", "Metro"), TRAM: "Tram"};
 const modeName = (m, line) => { const n = MODES[m] || m || "Train"; return line && !/^\d{3}[A-Z]$/.test(line) && n !== line ? `${n} ${line}` : n; };
 function toast(t) { const el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 2600); }
 function badge(delay, cancelled) {
-  if (cancelled) return `<span class="d d-bad">supprimé</span>`;
+  if (cancelled) return `<span class="d d-bad">${L("supprimé", "cancelled")}</span>`;
   const m = fmt.min(delay);
-  if (m < 1) return `<span class="d d-ok">à l'heure</span>`;
+  if (m < 1) return `<span class="d d-ok">${L("à l'heure", "on time")}</span>`;
   return `<span class="d ${m >= 15 ? "d-bad" : m >= 5 ? "d-mid" : "d-ok"}">+${m} min</span>`;
 }
-const spinner = txt => `<p class="muted"><span class="spin" aria-hidden="true"></span> ${esc(txt || "Chargement…")}</p>`;
+const spinner = txt => `<p class="muted"><span class="spin" aria-hidden="true"></span> ${esc(txt || L("Chargement…", "Loading…"))}</p>`;
 
 // ================================================================= Donnees locales (restent sur l'appareil)
 const db = {
@@ -215,7 +218,7 @@ function stationField(id, label, value, onPick, placeholder) {
     list.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
     input.addEventListener("blur", () => setTimeout(close, 150));
   });
-  return `<label class="field" for="${id}">${esc(label)}<div class="combo"><input id="${id}" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="${id}L" placeholder="${esc(placeholder || "Nom de la gare")}" value="${esc(value || "")}"><ul class="sugg" id="${id}L" role="listbox" hidden></ul></div></label>`;
+  return `<label class="field" for="${id}">${esc(label)}<div class="combo"><input id="${id}" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="${id}L" placeholder="${esc(placeholder || L("Nom de la gare", "Station name"))}" value="${esc(value || "")}"><ul class="sugg" id="${id}L" role="listbox" hidden></ul></div></label>`;
 }
 
 // ================================================================= Routeur
@@ -242,21 +245,27 @@ route(/^\/bienvenue$/, () => {
   let step = 0; const tmp = {a: null, b: null};
   const draw = () => {
     const dots = `<div class="steps" aria-hidden="true">${[0, 1, 2].map(i => `<span class="${i <= step ? "on" : ""}">${i + 1}</span>`).join("")}</div>`;
-    const GUS = [["salut", "content", "Salut, moi c'est Gus ! Je surveille tes trains et je composte la preuve quand ils sont en retard."],
-      ["billet", "neutre", "Dis-moi quel train tu prends : je le surveille chaque matin pour toi."],
-      ["repos", "content", "Ta clé signe tes justificatifs. Même moi, je ne peux pas en faire à ta place."]][step];
+    const GUS = [["salut", "content", L("Salut, moi c'est Gus ! Je surveille tes trains et je composte la preuve quand ils sont en retard.", "Hi, I'm Gus! I watch your trains and stamp the proof when they run late.")],
+      ["billet", "neutre", L("Dis-moi quel train tu prends : je le surveille chaque matin pour toi.", "Tell me which train you take: I'll watch it for you every morning.")],
+      ["repos", "content", L("Ta clé signe tes justificatifs. Même moi, je ne peux pas en faire à ta place.", "Your key signs your certificates. Not even I can make one for you.")]][step];
     const gusIntro = `<div class="gus-intro"><div class="gus-fig">${Gus.svg({pose: GUS[0], mood: GUS[1], size: 118})}</div><p class="gus-say">${GUS[2]}</p></div>`;
-    if (step === 0) view.innerHTML = dots + gusIntro + `<h1>Bienvenue sur LateProof</h1>
+    if (step === 0) view.innerHTML = dots + gusIntro + L(`<h1>Bienvenue sur LateProof</h1>
       <div class="card"><p><b>Ton copilote quand le train déraille.</b> Le retard de ton trajet en direct, un plan B, et quand tu arrives en retard, un <b>justificatif infalsifiable</b> que ton employeur ou ton prof vérifie en 3 secondes, sans rien installer.</p>
       <p class="muted small">Tes trajets, tes justificatifs et ta clé restent sur ce téléphone. Tu décides seul de ce que tu montres, et à qui.</p></div>
-      <button class="btn primary big" id="next">Commencer</button><button class="btn ghost" id="skip">Passer</button>`;
-    if (step === 1) view.innerHTML = dots + gusIntro + `<h1>Ton trajet habituel</h1><p class="sub">Pour te prévenir dès qu'il y a un problème. Tu pourras le changer plus tard.</p>
-      <div class="card">${stationField("oa", "Départ", tmp.a && tmp.a.name, s => tmp.a = s)}${stationField("ob", "Arrivée", tmp.b && tmp.b.name, s => tmp.b = s)}</div>
-      <button class="btn primary big" id="next">Continuer</button><button class="btn ghost" id="skip">Plus tard</button>`;
-    if (step === 2) view.innerHTML = dots + gusIntro + `<h1>La clé de ton téléphone</h1>
+      <button class="btn primary big" id="next">Commencer</button><button class="btn ghost" id="skip">Passer</button>`, `<h1>Welcome to LateProof</h1>
+      <div class="card"><p><b>Your copilot when the train goes off the rails.</b> Your trip's delay live, a plan B, and when you arrive late, a <b>tamper-proof certificate</b> your employer or teacher checks in 3 seconds, with nothing to install.</p>
+      <p class="muted small">Your trips, your certificates and your key stay on this phone. You alone decide what you show, and to whom.</p></div>
+      <button class="btn primary big" id="next">Get started</button><button class="btn ghost" id="skip">Skip</button>`);
+    if (step === 1) view.innerHTML = dots + gusIntro + `<h1>${L("Ton trajet habituel", "Your usual trip")}</h1><p class="sub">${L("Pour te prévenir dès qu'il y a un problème. Tu pourras le changer plus tard.", "So I can warn you as soon as there's a problem. You can change it later.")}</p>
+      <div class="card">${stationField("oa", L("Départ", "From"), tmp.a && tmp.a.name, s => tmp.a = s)}${stationField("ob", L("Arrivée", "To"), tmp.b && tmp.b.name, s => tmp.b = s)}</div>
+      <button class="btn primary big" id="next">${L("Continuer", "Continue")}</button><button class="btn ghost" id="skip">${L("Plus tard", "Later")}</button>`;
+    if (step === 2) view.innerHTML = dots + gusIntro + L(`<h1>La clé de ton téléphone</h1>
       <div class="card"><p>Tes justificatifs sont <b>signés par ton téléphone</b>, avec ton visage, ton empreinte ou ton code, comme pour un paiement. Personne d'autre ne peut en créer à ton nom, pas même LateProof.</p>
       <p class="muted small">La clé ne quitte jamais ton téléphone. Tu peux aussi la créer au moment de ton premier justificatif.</p></div>
-      <button class="btn primary big" id="next">Créer ma clé</button><button class="btn ghost" id="skip">Plus tard</button>`;
+      <button class="btn primary big" id="next">Créer ma clé</button><button class="btn ghost" id="skip">Plus tard</button>`, `<h1>Your phone's key</h1>
+      <div class="card"><p>Your certificates are <b>signed by your phone</b>, with your face, fingerprint or PIN, like a payment. Nobody else can create one in your name, not even LateProof.</p>
+      <p class="muted small">The key never leaves your phone. You can also create it when you make your first certificate.</p></div>
+      <button class="btn primary big" id="next">Create my key</button><button class="btn ghost" id="skip">Later</button>`);
     $("next").onclick = async () => {
       if (step === 1 && tmp.a && tmp.b) store.set("lpa-home", tmp);
       if (step === 2) { if (await ensureKey()) finish(); return; }
@@ -272,11 +281,11 @@ route(/^\/bienvenue$/, () => {
 async function ensureKey() {
   if (passkey.get()) return passkey.get();
   try {
-    if (passkey.supported()) { const k = await passkey.create(db.email() || "Mon téléphone"); toast("Clé créée sur ce téléphone"); return k; }
+    if (passkey.supported()) { const k = await passkey.create(db.email() || L("Mon téléphone", "My phone")); toast(L("Clé créée sur ce téléphone", "Key created on this phone")); return k; }
   } catch (e) {
-    if (!confirm("La clé sécurisée du téléphone (passkey) n'a pas pu être créée sur cet appareil.\n\nUtiliser une clé du navigateur à la place ? Elle fonctionne, mais sans déverrouillage par visage ou empreinte, et le justificatif l'indiquera.")) return null;
+    if (!confirm(L("La clé sécurisée du téléphone (passkey) n'a pas pu être créée sur cet appareil.\n\nUtiliser une clé du navigateur à la place ? Elle fonctionne, mais sans déverrouillage par visage ou empreinte, et le justificatif l'indiquera.", "The phone's secure key (passkey) could not be created on this device.\n\nUse a browser key instead? It works, but without face or fingerprint unlock, and the certificate will say so."))) return null;
   }
-  try { const k = await passkey.createBrowserKey(); toast("Clé du navigateur créée"); return k; } catch (e) { toast("Impossible de créer une clé sur ce navigateur"); return null; }
+  try { const k = await passkey.createBrowserKey(); toast(L("Clé du navigateur créée", "Browser key created")); return k; } catch (e) { toast(L("Impossible de créer une clé sur ce navigateur", "Could not create a key in this browser")); return null; }
 }
 
 // ================================================================= Aujourd'hui
@@ -284,16 +293,16 @@ route(/^\/$/, async () => {
   const home = db.home(), today = fmt.ymd(now());
   const running = db.voyages().filter(v => v.day === today && now() - v.checkin < 5 * 3600).slice(-1)[0];
   view.innerHTML = `<h1>${esc(cap(fmt.day(now())))}</h1>
-    ${running ? `<a class="card hero" href="#/voyage/${running.id}" style="text-decoration:none;color:inherit"><span class="kicker">En cours</span>
+    ${running ? `<a class="card hero" href="#/voyage/${running.id}" style="text-decoration:none;color:inherit"><span class="kicker">${L("En cours", "Now")}</span>
       <div class="between"><b>${esc(modeName(running.mode, running.line))} · ${esc(running.num)}</b><span id="runSt">${spinnerInline()}</span></div>
-      <span class="muted small">Depuis ${esc(running.from.name)}${running.dest ? ` vers ${esc(running.dest)}` : ""}</span></a>` : ""}
-    <a class="btn primary big" href="#/checkin">Je suis à bord</a>
-    <section class="card" aria-labelledby="hT"><div class="between"><h2 id="hT">Mon trajet</h2>${home ? `<a class="small" href="carte.html#trajet=${encodeURIComponent(home.a.net + "|" + home.a.id + ">" + home.b.net + "|" + home.b.id)}">Sur la carte</a>` : ""}</div>
-      ${home ? `<p class="muted small" style="margin:0">${esc(home.a.name)} → ${esc(home.b.name)}</p><div id="opts">${spinner("Prochains départs…")}</div>`
-        : `<p class="muted" style="margin:0">Indique ton trajet habituel pour voir son état chaque matin.</p><a class="btn" href="#/profil">Choisir mon trajet</a>`}
+      <span class="muted small">${L("Depuis", "From")} ${esc(running.from.name)}${running.dest ? ` ${L("vers", "to")} ${esc(running.dest)}` : ""}</span></a>` : ""}
+    <a class="btn primary big" href="#/checkin">${L("Je suis à bord", "I'm on board")}</a>
+    <section class="card" aria-labelledby="hT"><div class="between"><h2 id="hT">${L("Mon trajet", "My trip")}</h2>${home ? `<a class="small" href="carte.html#trajet=${encodeURIComponent(home.a.net + "|" + home.a.id + ">" + home.b.net + "|" + home.b.id)}">${L("Sur la carte", "On the map")}</a>` : ""}</div>
+      ${home ? `<p class="muted small" style="margin:0">${esc(home.a.name)} → ${esc(home.b.name)}</p><div id="opts">${spinner(L("Prochains départs…", "Next departures…"))}</div>`
+        : `<p class="muted" style="margin:0">${L("Indique ton trajet habituel pour voir son état chaque matin.", "Set your usual trip to see its status every morning.")}</p><a class="btn" href="#/profil">${L("Choisir mon trajet", "Choose my trip")}</a>`}
     </section>
-    <section class="card" aria-labelledby="pT" id="disrCard" hidden><h2 id="pT">Perturbations sur mon trajet</h2><div id="disr"></div></section>
-    <div class="row"><a class="btn" href="assistant.html">Demander au copilote</a><a class="btn" href="carte.html">Carte des retards</a></div>`;
+    <section class="card" aria-labelledby="pT" id="disrCard" hidden><h2 id="pT">${L("Perturbations sur mon trajet", "Disruptions on my trip")}</h2><div id="disr"></div></section>
+    <div class="row"><a class="btn" href="assistant.html">${L("Demander au copilote", "Ask the copilot")}</a><a class="btn" href="carte.html">${L("Carte des retards", "Delay map")}</a></div>`;
   if (running) refreshRunning(running);
   if (!home) return;
   try {
@@ -302,16 +311,16 @@ route(/^\/$/, async () => {
     $("opts").innerHTML = js.length ? `<div class="list">${js.map(j => {
       const f = j.legs[0], l = j.legs[j.legs.length - 1];
       return `<div class="item" style="cursor:default"><span class="t">${fmt.time(f.dep)} → ${fmt.time(l.arr)}</span><span class="r">${badge(l.arr_delay, false)}</span>
-        <span class="s">${j.legs.map(x => esc(modeName(x.info && x.info.mode, x.info && x.info.line))).join(" › ")}${j.legs.length > 1 ? ` · correspondance à ${esc(j.legs[1].from[0])}` : " · direct"}</span></div>`; }).join("")}</div>`
-      : `<p class="muted" style="margin:0">Aucun train trouvé dans les 3 prochaines heures (trains, RER, Transilien).</p>`;
+        <span class="s">${j.legs.map(x => esc(modeName(x.info && x.info.mode, x.info && x.info.line))).join(" › ")}${j.legs.length > 1 ? ` · ${L("correspondance à", "change at")} ${esc(j.legs[1].from[0])}` : " · direct"}</span></div>`; }).join("")}</div>`
+      : `<p class="muted" style="margin:0">${L("Aucun train trouvé dans les 3 prochaines heures (trains, RER, Transilien).", "No train found in the next 3 hours (trains, RER, Transilien).")}</p>`;
     const ids = new Set(js.flatMap(j => j.legs.map(x => x.info && x.info.line_id)).filter(Boolean));
     const d = await rpc("public_disruptions", {days: 1});
     const mine = (d.items || []).filter(x => (x.line_ids || []).some(id => ids.has(id))).slice(0, 4);
     if (mine.length) { $("disrCard").hidden = false; $("disr").innerHTML = `<div class="list">${mine.map(x => `<div class="small"><span class="d ${x.severity === "bloquant" ? "d-bad" : "d-mid"}">${esc(x.kind)}</span> ${esc(x.title)}</div>`).join("")}</div>`; }
-  } catch (e) { $("opts").innerHTML = `<p class="muted">Données indisponibles pour le moment.</p>`; }
+  } catch (e) { $("opts").innerHTML = `<p class="muted">${L("Données indisponibles pour le moment.", "Data unavailable right now.")}</p>`; }
 }, "home");
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-const spinnerInline = () => `<span class="spin" aria-label="Chargement"></span>`;
+const spinnerInline = () => `<span class="spin" aria-label="${L("Chargement", "Loading")}"></span>`;
 function best(js) {   // partir plus tard ET arriver plus tot : on ne garde que les meilleures options
   const rt = (t, d) => t + Math.max(d || 0, 0), dep = j => rt(j.legs[0].dep, j.legs[0].dep_delay), arr = j => rt(j.arr, j.arr_delay);
   const s = [...js].sort((a, b) => dep(a) - dep(b)); const out = []; let b = Infinity;
@@ -331,31 +340,31 @@ route(/^\/checkin$/, () => {
   const ck = {station: null, ids: [], deps: null, geo: null};
   const home = db.home();
   const step1 = () => {
-    view.innerHTML = `<div class="steps" aria-hidden="true"><span class="on">Gare</span><span>Train</span><span>C'est parti</span></div>
-      <h1>Tu montes où ?</h1>
-      <button class="btn primary big" id="geo">Me localiser</button>
+    view.innerHTML = `<div class="steps" aria-hidden="true"><span class="on">${L("Gare", "Station")}</span><span>Train</span><span>${L("C'est parti", "Go")}</span></div>
+      <h1>${L("Tu montes où ?", "Where are you boarding?")}</h1>
+      <button class="btn primary big" id="geo">${L("Me localiser", "Locate me")}</button>
       <div id="near"></div>
-      <div class="card">${stationField("cs", "Ou cherche ta gare", "", s => step2(s))}
-        ${home ? `<div class="row"><span class="muted small">Raccourcis :</span><button class="btn" data-h="a">${esc(home.a.name)}</button><button class="btn" data-h="b">${esc(home.b.name)}</button></div>` : ""}</div>
-      <p class="muted small">Ta position sert uniquement à trouver ta gare et à noter que tu y étais au moment du check-in. Elle n'est envoyée à personne.</p>`;
+      <div class="card">${stationField("cs", L("Ou cherche ta gare", "Or search for your station"), "", s => step2(s))}
+        ${home ? `<div class="row"><span class="muted small">${L("Raccourcis :", "Shortcuts:")}</span><button class="btn" data-h="a">${esc(home.a.name)}</button><button class="btn" data-h="b">${esc(home.b.name)}</button></div>` : ""}</div>
+      <p class="muted small">${L("Ta position sert uniquement à trouver ta gare et à noter que tu y étais au moment du check-in. Elle n'est envoyée à personne.", "Your location is only used to find your station and to note that you were there at check-in. It is sent to no one.")}</p>`;
     view.querySelectorAll("[data-h]").forEach(b => b.onclick = () => step2(home[b.dataset.h]));
     $("geo").onclick = () => {
-      if (!navigator.geolocation) return toast("Localisation indisponible");
-      $("near").innerHTML = spinner("Localisation…");
+      if (!navigator.geolocation) return toast(L("Localisation indisponible", "Location unavailable"));
+      $("near").innerHTML = spinner(L("Localisation…", "Locating…"));
       navigator.geolocation.getCurrentPosition(async p => {
         ck.geo = {lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy), at: now()};
         let near = []; try { near = await rpc("public_nearest_stops", {p_lat: ck.geo.lat, p_lon: ck.geo.lon}); } catch (e) {}
         $("near").innerHTML = near.length ? `<div class="list">${near.map((s, i) => `<button class="item" data-n="${i}"><span class="t">${esc(s.name)}</span><span class="r muted small">${s.dist} m</span><span class="s">${s.net === "idf" ? "Île-de-France" : "SNCF"}</span></button>`).join("")}</div>`
-          : `<p class="muted">Aucune gare de train à moins de 3 km.</p>`;
+          : `<p class="muted">${L("Aucune gare de train à moins de 3 km.", "No train station within 3 km.")}</p>`;
         $("near").querySelectorAll("[data-n]").forEach(b => b.onclick = () => { const s = near[+b.dataset.n]; step2({net: s.net, id: s.id, name: s.name, lat: +s.lat, lon: +s.lon}); });
-      }, () => { $("near").innerHTML = `<p class="muted">Position refusée ou indisponible : cherche ta gare ci-dessous.</p>`; }, {enableHighAccuracy: true, timeout: 12000, maximumAge: 30000});
+      }, () => { $("near").innerHTML = `<p class="muted">${L("Position refusée ou indisponible : cherche ta gare ci-dessous.", "Location denied or unavailable: search for your station below.")}</p>`; }, {enableHighAccuracy: true, timeout: 12000, maximumAge: 30000});
     };
   };
   const step2 = async s => {
     ck.station = s;
-    view.innerHTML = `<div class="steps" aria-hidden="true"><span class="on">Gare</span><span class="on">Train</span><span>C'est parti</span></div>
-      <h1>Quel train ?</h1><p class="sub">${esc(s.name)} · départs autour de maintenant</p><div id="deps">${spinner("Départs en direct…")}</div>
-      <button class="btn ghost" id="back">← Changer de gare</button>`;
+    view.innerHTML = `<div class="steps" aria-hidden="true"><span class="on">${L("Gare", "Station")}</span><span class="on">Train</span><span>${L("C'est parti", "Go")}</span></div>
+      <h1>${L("Quel train ?", "Which train?")}</h1><p class="sub">${esc(s.name)} · ${L("départs autour de maintenant", "departures around now")}</p><div id="deps">${spinner(L("Départs en direct…", "Live departures…"))}</div>
+      <button class="btn ghost" id="back">${L("← Changer de gare", "← Change station")}</button>`;
     $("back").onclick = step1;
     try {
       let group = []; try { group = await rpc("public_nearby_ids", {p_lat: s.lat, p_lon: s.lon, p_name: s.name}); } catch (e) {}
@@ -366,10 +375,10 @@ route(/^\/checkin$/, () => {
         .filter(x => { const k = x.net + x.num; if (seen.has(k)) return false; seen.add(k); return true; })
         .sort((a, b) => a.sched - b.sched).slice(0, 25);
       ck.deps = deps;
-      $("deps").innerHTML = deps.length ? `<div class="list">${deps.map((x, i) => `<button class="item" data-d="${i}"><span class="t">${fmt.time(x.sched)} · ${esc(modeName(x.mode, x.line))}</span><span class="r">${badge(x.delay, x.cancelled)}</span><span class="s">vers ${esc(x.dest || "?")} · n° ${esc(x.num)}</span></button>`).join("")}</div>`
-        : `<p class="muted">Aucun train connu en temps réel ici dans l'heure. Le métro et le tram ne publient pas d'horaires : pas de justificatif possible pour eux pour l'instant.</p>`;
+      $("deps").innerHTML = deps.length ? `<div class="list">${deps.map((x, i) => `<button class="item" data-d="${i}"><span class="t">${fmt.time(x.sched)} · ${esc(modeName(x.mode, x.line))}</span><span class="r">${badge(x.delay, x.cancelled)}</span><span class="s">${L("vers", "to")} ${esc(x.dest || "?")} · n° ${esc(x.num)}</span></button>`).join("")}</div>`
+        : `<p class="muted">${L("Aucun train connu en temps réel ici dans l'heure. Le métro et le tram ne publient pas d'horaires : pas de justificatif possible pour eux pour l'instant.", "No live train known here within the hour. Metro and tram publish no timetable: no certificate is possible for them yet.")}</p>`;
       $("deps").querySelectorAll("[data-d]").forEach(b => b.onclick = () => step3(deps[+b.dataset.d]));
-    } catch (e) { $("deps").innerHTML = `<p class="muted">Départs indisponibles pour le moment.</p>`; }
+    } catch (e) { $("deps").innerHTML = `<p class="muted">${L("Départs indisponibles pour le moment.", "Departures unavailable right now.")}</p>`; }
   };
   const step3 = x => {
     const s = ck.station;
@@ -379,22 +388,22 @@ route(/^\/checkin$/, () => {
       from: {name: s.name, id: s.id, net: s.net, lat: s.lat, lon: s.lon}, checkin: now(),
       geo: ck.geo ? {dist, acc: ck.geo.acc, at: ck.geo.at} : null, to: null};
     const all = db.voyages(); all.push(v); db.saveVoyages(all.slice(-200));
-    view.innerHTML = `<div class="steps" aria-hidden="true"><span class="on">Gare</span><span class="on">Train</span><span class="on">C'est parti</span></div>
-      <h1>Check-in enregistré</h1>
-      <div class="card"><b>${esc(modeName(x.mode, x.line))} n° ${esc(x.num)}</b><span class="muted">Départ ${esc(s.name)} à ${fmt.time(x.sched)}${x.dest ? ` · vers ${esc(x.dest)}` : ""}</span>
+    view.innerHTML = `<div class="steps" aria-hidden="true"><span class="on">${L("Gare", "Station")}</span><span class="on">Train</span><span class="on">${L("C'est parti", "Go")}</span></div>
+      <h1>${L("Check-in enregistré", "Checked in")}</h1>
+      <div class="card"><b>${esc(modeName(x.mode, x.line))} n° ${esc(x.num)}</b><span class="muted">${L("Départ", "Departs")} ${esc(s.name)} ${L("à", "at")} ${fmt.time(x.sched)}${x.dest ? ` · ${L("vers", "to")} ${esc(x.dest)}` : ""}</span>
         <span>${presenceHtml(v)}</span></div>
-      <p class="muted small">On suit ton train. En cas de retard, ton justificatif sera prêt en deux gestes.</p>
-      <a class="btn primary big" href="#/voyage/${v.id}">Suivre mon train</a>`;
+      <p class="muted small">${L("On suit ton train. En cas de retard, ton justificatif sera prêt en deux gestes.", "We're tracking your train. If it's late, your certificate is two taps away.")}</p>
+      <a class="btn primary big" href="#/voyage/${v.id}">${L("Suivre mon train", "Follow my train")}</a>`;
   };
   step1();
 }, "home");
 
 // Niveau de presence, dit honnetement
 function presenceLevel(v) {
-  if (v.geo && v.geo.dist != null && v.geo.dist <= 500 && Math.abs(v.geo.at - v.checkin) < 900) return {k: "argent", name: "Argent", txt: `position du téléphone à ${v.geo.dist} m de la gare au check-in`};
-  return {k: "bronze", name: "Bronze", txt: "check-in déclaré dans le train"};
+  if (v.geo && v.geo.dist != null && v.geo.dist <= 500 && Math.abs(v.geo.at - v.checkin) < 900) return {k: "argent", name: "Argent", txt: L(`position du téléphone à ${v.geo.dist} m de la gare au check-in`, `phone was ${v.geo.dist} m from the station at check-in`)};
+  return {k: "bronze", name: "Bronze", txt: L("check-in déclaré dans le train", "check-in declared on the train")};
 }
-const presenceHtml = v => { const p = presenceLevel(v); return `<span class="level lv-${p.k}"><i aria-hidden="true"></i>Présence ${p.name}</span> <span class="muted small">· ${esc(p.txt)}</span>`; };
+const presenceHtml = v => { const p = presenceLevel(v); return `<span class="level lv-${p.k}"><i aria-hidden="true"></i>${L("Présence", "Presence")} ${p.name}</span> <span class="muted small">· ${esc(p.txt)}</span>`; };
 
 // ================================================================= Voyages
 const trainCache = new Map();
@@ -408,11 +417,11 @@ async function trainOf(v) {
 route(/^\/voyages$/, () => {
   const all = db.voyages().slice().reverse();
   const byDay = {}; all.forEach(v => (byDay[v.day] = byDay[v.day] || []).push(v));
-  view.innerHTML = `<h1>Mes voyages</h1><p class="sub">Chaque check-in, avec le retard relevé. Gardés sur ce téléphone.</p>` +
+  view.innerHTML = `<h1>${L("Mes voyages", "My trips")}</h1><p class="sub">${L("Chaque check-in, avec le retard relevé. Gardés sur ce téléphone.", "Every check-in, with the recorded delay. Kept on this phone.")}</p>` +
     (all.length ? Object.entries(byDay).map(([d, vs]) => `<section class="stack"><h2 class="kicker">${esc(dayLabel(d))}</h2><div class="list">${vs.map(v =>
       `<a class="item" href="#/voyage/${v.id}"><span class="t">${fmt.time(v.sched)} · ${esc(modeName(v.mode, v.line))} n° ${esc(v.num)}</span><span class="r">${v.result ? badge(v.result.delay, v.result.cancelled) : ""}</span>
-        <span class="s">${esc(v.from.name)} → ${esc(v.to ? v.to.name : v.dest || "?")}${v.group ? " · correspondance" : ""}</span></a>`).join("")}</div></section>`).join("")
-      : `<div class="empty">Pas encore de voyage. Le jour où tu prends le train, touche <b>Je suis à bord</b>.<br><br><a class="btn primary" href="#/checkin">Je suis à bord</a></div>`);
+        <span class="s">${esc(v.from.name)} → ${esc(v.to ? v.to.name : v.dest || "?")}${v.group ? L(" · correspondance", " · connection") : ""}</span></a>`).join("")}</div></section>`).join("")
+      : L(`<div class="empty">Pas encore de voyage. Le jour où tu prends le train, touche <b>Je suis à bord</b>.<br><br><a class="btn primary" href="#/checkin">Je suis à bord</a></div>`, `<div class="empty">No trips yet. The day you take the train, tap <b>I'm on board</b>.<br><br><a class="btn primary" href="#/checkin">I'm on board</a></div>`));
 }, "voyages");
 const dayLabel = d => { const t = Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8), 12) / 1000; return cap(fmt.day(t)); };
 
@@ -421,13 +430,13 @@ const legsOf = v => v.group ? db.voyages().filter(x => x.group === v.group).sort
 
 route(/^\/voyage\/(\w+)$/, async id => {
   const v = voyageById(id); if (!v) { location.replace("#/voyages"); return; }
-  view.innerHTML = `<button class="btn ghost" onclick="history.length > 1 ? history.back() : location.hash='#/voyages'">← Retour</button>
-    <h1>${esc(modeName(v.mode, v.line))} n° ${esc(v.num)}</h1><p class="sub">${esc(dayLabel(v.day))} · départ ${esc(v.from.name)} ${fmt.time(v.sched)}</p>
-    <div id="vbody">${spinner("Horaires et retards en direct…")}</div>`;
+  view.innerHTML = `<button class="btn ghost" onclick="history.length > 1 ? history.back() : location.hash='#/voyages'">${L("← Retour", "← Back")}</button>
+    <h1>${esc(modeName(v.mode, v.line))} n° ${esc(v.num)}</h1><p class="sub">${esc(dayLabel(v.day))} · ${L("départ", "departs")} ${esc(v.from.name)} ${fmt.time(v.sched)}</p>
+    <div id="vbody">${spinner(L("Horaires et retards en direct…", "Live times and delays…"))}</div>`;
   let t, after, to, toStop;
   try { ({t, after, to, toStop} = await resolveLeg(v)); } catch (e) {
-    $("vbody").innerHTML = `<div class="notice">Ce train n'est plus dans nos relevés détaillés (ils sont gardés 2 jours) ou n'a pas encore circulé. Le justificatif doit être créé dans les 48 h.</div>
-      <button class="btn danger" id="del">Supprimer ce voyage</button>`;
+    $("vbody").innerHTML = `<div class="notice">${L("Ce train n'est plus dans nos relevés détaillés (ils sont gardés 2 jours) ou n'a pas encore circulé. Le justificatif doit être créé dans les 48 h.", "This train is no longer in our detailed records (kept for 2 days) or has not run yet. The certificate must be created within 48 h.")}</div>
+      <button class="btn danger" id="del">${L("Supprimer ce voyage", "Delete this trip")}</button>`;
     $("del").onclick = () => delVoyage(v); return;
   }
   // Les autres etapes du meme trajet (correspondances) : retard a jour aussi
@@ -435,23 +444,23 @@ route(/^\/voyage\/(\w+)$/, async id => {
   const legs = legsOf(voyageById(v.id));
   const trip = tripTotal(legs);
   $("vbody").innerHTML = `
-    <section class="card hero"><span class="kicker">${legs.length > 1 ? `Trajet en ${legs.length} étapes` : "Arrivée à " + esc(to ? to.name : "?")}</span>
-      <div class="big-num"><b class="${trip.delay < 60 && !trip.cancelled ? "ok" : ""}">${trip.cancelled ? "Supprimé" : trip.delay < 60 ? "À l'heure" : "+" + fmt.min(trip.delay)}</b>${trip.delay >= 60 && !trip.cancelled ? `<span>min ${legs.length > 1 ? "au total" : "de retard"}</span>` : ""}</div>
-      ${trip.planned ? `<span>Arrivée prévue <b>${fmt.time(trip.planned)}</b>${trip.real ? `, réelle <b>${fmt.time(trip.real)}</b>` : ""}${trip.declared ? " <span class=\"muted small\">(heure prévue déclarée)</span>" : ""}</span>` : ""}
+    <section class="card hero"><span class="kicker">${legs.length > 1 ? L(`Trajet en ${legs.length} étapes`, `${legs.length}-leg trip`) : L("Arrivée à ", "Arriving at ") + esc(to ? to.name : "?")}</span>
+      <div class="big-num"><b class="${trip.delay < 60 && !trip.cancelled ? "ok" : ""}">${trip.cancelled ? L("Supprimé", "Cancelled") : trip.delay < 60 ? L("À l'heure", "On time") : "+" + fmt.min(trip.delay)}</b>${trip.delay >= 60 && !trip.cancelled ? `<span>min ${legs.length > 1 ? L("au total", "in total") : L("de retard", "late")}</span>` : ""}</div>
+      ${trip.planned ? `<span>${L("Arrivée prévue", "Scheduled arrival")} <b>${fmt.time(trip.planned)}</b>${trip.real ? `, ${L("réelle", "actual")} <b>${fmt.time(trip.real)}</b>` : ""}${trip.declared ? ` <span class="muted small">${L("(heure prévue déclarée)", "(declared scheduled time)")}</span>` : ""}</span>` : ""}
       <span>${presenceHtml(v)}</span>
     </section>
-    ${legs.length > 1 ? `<section class="card"><h2>Étape par étape</h2>${trip.rows.map(r => `<div class="between small"><span>${r.label}</span><span>${r.badge}</span></div>`).join("")}
-      <label class="field">Heure d'arrivée prévue de ton trajet complet (si tu as raté une correspondance)<input type="time" id="planned" value="${trip.plannedInput || ""}"></label></section>` : ""}
-    <section class="card"><h2>Où descends-tu ?</h2><p class="muted small" style="margin:0">Touche ta gare d'arrivée.</p>
+    ${legs.length > 1 ? `<section class="card"><h2>${L("Étape par étape", "Leg by leg")}</h2>${trip.rows.map(r => `<div class="between small"><span>${r.label}</span><span>${r.badge}</span></div>`).join("")}
+      <label class="field">${L("Heure d'arrivée prévue de ton trajet complet (si tu as raté une correspondance)", "Scheduled arrival of your whole trip (if you missed a connection)")}<input type="time" id="planned" value="${trip.plannedInput || ""}"></label></section>` : ""}
+    <section class="card"><h2>${L("Où descends-tu ?", "Where do you get off?")}</h2><p class="muted small" style="margin:0">${L("Touche ta gare d'arrivée.", "Tap your arrival station.")}</p>
       <ol class="tl">${after.map((s, i) => `<li class="${i === 0 ? "me" : ""}${s.skipped ? " skip" : ""}${toStop && s.stop === toStop.stop ? " dest" : ""}">
         <span class="tm">${fmt.time(s.sched_dep || s.sched_arr)}</span><span class="rail"></span>
         ${i === 0 ? `<span class="nm">${esc(s.name || "?")}</span>` : `<button data-to="${esc(s.stop)}"><span class="nm">${esc(s.name || "?")}</span></button>`}
         <span>${i === 0 ? badge(s.dep_delay, s.skipped) : (s.arr_delay ?? 0) >= 60 || s.skipped ? badge(s.arr_delay, s.skipped) : ""}</span></li>`).join("")}</ol></section>
     ${rightsHtml(legs, trip)}
     <div class="stack">
-      ${trip.delay >= 60 || trip.cancelled ? `<a class="btn primary big" href="#/nouveau/${v.id}">Créer mon justificatif de retard</a>` : `<p class="muted small">Pas de retard pour l'instant : rien à justifier. Le retard se met à jour en direct.</p>`}
-      <a class="btn" href="#/checkin" id="addLeg">+ J'ai pris une correspondance</a>
-      <button class="btn danger" id="del">Supprimer ce voyage</button>
+      ${trip.delay >= 60 || trip.cancelled ? `<a class="btn primary big" href="#/nouveau/${v.id}">${L("Créer mon justificatif de retard", "Create my delay certificate")}</a>` : `<p class="muted small">${L("Pas de retard pour l'instant : rien à justifier. Le retard se met à jour en direct.", "No delay so far: nothing to prove. The delay updates live.")}</p>`}
+      <a class="btn" href="#/checkin" id="addLeg">${L("+ J'ai pris une correspondance", "+ I took a connection")}</a>
+      <button class="btn danger" id="del">${L("Supprimer ce voyage", "Delete this trip")}</button>
     </div>`;
   $("vbody").querySelectorAll("[data-to]").forEach(b => b.onclick = () => { const s = after.find(x => x.stop === b.dataset.to); updateVoyage(v.id, {to: {stop: s.stop, name: s.name}}); render(); });
   $("addLeg").onclick = () => { const g = v.group || v.id; legs.forEach(x => updateVoyage(x.id, {group: g})); store.set("lpa-pending-group", g); };
@@ -474,7 +483,7 @@ async function resolveLeg(v) {
   return {t, after, to, toStop};
 }
 const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-function delVoyage(v) { if (!confirm("Supprimer ce voyage de ce téléphone ?")) return; db.saveVoyages(db.voyages().filter(x => x.id !== v.id)); location.hash = "#/voyages"; }
+function delVoyage(v) { if (!confirm(L("Supprimer ce voyage de ce téléphone ?", "Delete this trip from this phone?"))) return; db.saveVoyages(db.voyages().filter(x => x.id !== v.id)); location.hash = "#/voyages"; }
 
 // Retard du trajet complet : heure d'arrivee reelle - heure d'arrivee prevue (pas une simple addition).
 // Par defaut, l'arrivee prevue = horaire du dernier train pris ; si une correspondance a ete ratee, la personne indique
@@ -493,7 +502,7 @@ function tripTotal(legs) {
     const rr = l.result || {};
     const prev = i > 0 ? legs[i - 1].result : null;
     const wait = prev && prev.sched_arr ? l.sched - (prev.sched_arr + Math.max(prev.delay || 0, 0)) : null;
-    return {label: `${esc(modeName(l.mode, l.line))} n° ${esc(l.num)} · ${esc(l.from.name)} → ${esc(l.to ? l.to.name : "?")}${wait != null ? ` <span class="muted">(attente ${Math.max(0, fmt.min(wait))} min)</span>` : ""}`,
+    return {label: `${esc(modeName(l.mode, l.line))} n° ${esc(l.num)} · ${esc(l.from.name)} → ${esc(l.to ? l.to.name : "?")}${wait != null ? ` <span class="muted">(${L("attente", "wait")} ${Math.max(0, fmt.min(wait))} min)</span>` : ""}`,
             badge: badge(rr.delay, rr.cancelled)};
   });
   return {delay, real, planned, declared, plannedInput, cancelled: !!r.cancelled, rows};
@@ -503,24 +512,28 @@ function tripTotal(legs) {
 function rightsHtml(legs, trip) {
   const min = fmt.min(trip.delay), modes = legs.map(l => l.mode), out = [];
   const gl = modes.some(m => GL.includes(m)), ter = modes.some(m => m === "TER" || m === "TT"), idf = legs.some(l => l.net === "idf" && l.mode !== "TER");
-  if (gl && min >= 30) out.push(`<b>Garantie G30</b> (TGV INOUI, Intercités) : compensation possible dès 30 min de retard. À demander en ligne dans ton espace SNCF Connect, dans un délai limité.`);
-  if ((gl || ter) && min >= 60) out.push(`<b>Règlement européen 2021/782</b> : ${min >= 120 ? "50 %" : "25 %"} du prix du billet pour ${min >= 120 ? "2 h" : "1 h"} de retard ou plus à l'arrivée.`);
-  if (idf) out.push(`<b>Île-de-France (Navigo)</b> : pas d'indemnisation trajet par trajet ; des dédommagements des abonnés sont parfois annoncés par Île-de-France Mobilités après de fortes perturbations.`);
-  if (min >= 5) out.push(`<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.`);
+  if (gl && min >= 30) out.push(L(`<b>Garantie G30</b> (TGV INOUI, Intercités) : compensation possible dès 30 min de retard. À demander en ligne dans ton espace SNCF Connect, dans un délai limité.`, `<b>G30 guarantee</b> (TGV INOUI, Intercités): compensation possible from 30 min late. Claim it online in your SNCF Connect account, within a limited time.`));
+  if ((gl || ter) && min >= 60) out.push(L(`<b>Règlement européen 2021/782</b> : ${min >= 120 ? "50 %" : "25 %"} du prix du billet pour ${min >= 120 ? "2 h" : "1 h"} de retard ou plus à l'arrivée.`, `<b>EU regulation 2021/782</b>: ${min >= 120 ? "50%" : "25%"} of the ticket price for ${min >= 120 ? "2 h" : "1 h"} late or more on arrival.`));
+  if (idf) out.push(L(`<b>Île-de-France (Navigo)</b> : pas d'indemnisation trajet par trajet ; des dédommagements des abonnés sont parfois annoncés par Île-de-France Mobilités après de fortes perturbations.`, `<b>Paris region (Navigo)</b>: no compensation per trip; Île-de-France Mobilités sometimes announces refunds for pass holders after major disruptions.`));
+  if (min >= 5) out.push(L(`<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.`, `<b>At work or school</b>: your LateProof certificate proves the delay and that you were on the train. In France, a justified transport delay should not be sanctioned.`));
   if (!out.length) return "";
   const claim = legs.map(l => `${modeName(l.mode, l.line)} n° ${l.num} du ${l.day.slice(6, 8)}/${l.day.slice(4, 6)}/${l.day.slice(0, 4)}, ${l.from.name} → ${l.to ? l.to.name : "?"}${l.result ? `, retard à l'arrivée ${fmt.min(l.result.delay)} min` : ""}`).join("\n");
-  setTimeout(() => { const b = $("copyClaim"); if (b) b.onclick = () => navigator.clipboard.writeText(claim).then(() => toast("Informations copiées"), () => toast("Copie impossible")); });
-  return `<section class="card"><h2>Tes droits</h2>${out.map(x => `<p class="small" style="margin:0">${x}</p>`).join("")}
-    <p class="muted small" style="margin:0">Résumé général, à vérifier sur le site de l'opérateur.</p>
-    ${gl || ter ? `<button class="btn" id="copyClaim">Copier les infos pour ma demande</button>` : ""}</section>`;
+  setTimeout(() => { const b = $("copyClaim"); if (b) b.onclick = () => navigator.clipboard.writeText(claim).then(() => toast(L("Informations copiées", "Details copied")), () => toast(L("Copie impossible", "Copy failed"))); });
+  return `<section class="card"><h2>${L("Tes droits", "Your rights")}</h2>${out.map(x => `<p class="small" style="margin:0">${x}</p>`).join("")}
+    <p class="muted small" style="margin:0">${L("Résumé général, à vérifier sur le site de l'opérateur.", "General summary, check with the operator.")}</p>
+    ${gl || ter ? `<button class="btn" id="copyClaim">${L("Copier les infos pour ma demande", "Copy the details for my claim")}</button>` : ""}</section>`;
 }
 
 // ================================================================= Nouveau justificatif
-const FIELD_INFO = {
+const FIELD_INFO = L({
   date: ["Date du trajet", "Toujours visible"], trains: ["Trains et lignes", ""], arrivee: ["Gare d'arrivée", ""], depart: ["Gare de départ", "Cachée par défaut : elle peut révéler où tu habites"],
   etapes: ["Détail étape par étape", "Retard de chaque train, attente en correspondance"], checkin: ["Heure du check-in", ""], presence: ["Niveau de présence", ""],
   titulaire: ["Titulaire (e-mail masqué)", "Ex. p•••@entreprise.fr"], releves: ["Relevés officiels du retard", "Pour la preuve publique sur Solana"],
-};
+}, {
+  date: ["Trip date", "Always shown"], trains: ["Trains and lines", ""], arrivee: ["Arrival station", ""], depart: ["Departure station", "Hidden by default: it can reveal where you live"],
+  etapes: ["Leg by leg", "Each train's delay, connection wait"], checkin: ["Check-in time", ""], presence: ["Presence level", ""],
+  titulaire: ["Holder (masked e-mail)", "e.g. p•••@company.com"], releves: ["Official delay records", "For the public proof on Solana"],
+});
 route(/^\/nouveau\/(\w+)$/, id => {
   const v = voyageById(id); if (!v || !v.result) { location.replace("#/voyage/" + id); return; }
   const legs = legsOf(v), trip = tripTotal(legs), first = legs[0], last = legs[legs.length - 1];
@@ -542,21 +555,21 @@ route(/^\/nouveau\/(\w+)$/, id => {
   ];
   const hidden = new Set(store.get("lpa-hidden", ["depart"]));
   const optional = ["trains", "arrivee", "depart", "etapes", "checkin", "presence", ...(email ? ["titulaire"] : []), "releves"];
-  view.innerHTML = `<button class="btn ghost" onclick="history.back()">← Retour</button>
-    <h1>Mon justificatif</h1><p class="sub">Choisis ce que tu montres. Ce que tu caches reste scellé : personne ne peut le lire, mais le justificatif reste vérifiable.</p>
-    <section class="card hero"><div class="big-num"><b>+${fmt.min(trip.delay)}</b><span>min${legs.length > 1 ? " au total" : ""}</span></div>
+  view.innerHTML = `<button class="btn ghost" onclick="history.back()">${L("← Retour", "← Back")}</button>
+    <h1>${L("Mon justificatif", "My certificate")}</h1><p class="sub">${L("Choisis ce que tu montres. Ce que tu caches reste scellé : personne ne peut le lire, mais le justificatif reste vérifiable.", "Choose what you show. What you hide stays sealed: nobody can read it, but the certificate can still be checked.")}</p>
+    <section class="card hero"><div class="big-num"><b>+${fmt.min(trip.delay)}</b><span>min${legs.length > 1 ? L(" au total", " in total") : ""}</span></div>
       <span class="muted small">${esc(dayLabel(first.day))} · ${esc(fields[4].v)}</span></section>
-    <section class="card"><h2>Ce que verra ton employeur ou ton prof</h2>
+    <section class="card"><h2>${L("Ce que verra ton employeur ou ton prof", "What your employer or teacher will see")}</h2>
       ${optional.map(n => `<div class="toggle"><span class="lbl">${esc(FIELD_INFO[n][0])}<small>${esc(FIELD_INFO[n][1])}</small></span>
-        <label class="switch"><input type="checkbox" data-f="${n}" ${hidden.has(n) ? "" : "checked"} aria-label="Montrer : ${esc(FIELD_INFO[n][0])}"><span></span></label></div>`).join("")}
-      ${email ? "" : `<p class="muted small" style="margin:0">Pour ajouter ton e-mail masqué (il rassure l'employeur que c'est bien toi), renseigne-le dans <a href="#/profil">Profil</a>.</p>`}
+        <label class="switch"><input type="checkbox" data-f="${n}" ${hidden.has(n) ? "" : "checked"} aria-label="${L("Montrer :", "Show:")} ${esc(FIELD_INFO[n][0])}"><span></span></label></div>`).join("")}
+      ${email ? "" : L(`<p class="muted small" style="margin:0">Pour ajouter ton e-mail masqué (il rassure l'employeur que c'est bien toi), renseigne-le dans <a href="#/profil">Profil</a>.</p>`, `<p class="muted small" style="margin:0">To add your masked e-mail (it reassures your employer it's really you), enter it in <a href="#/profil">Profile</a>.</p>`)}
     </section>
-    <button class="btn primary big" id="sign">Signer avec mon téléphone</button>
-    <p class="muted small">Le justificatif est scellé maintenant : impossible de le modifier ensuite sans que ça se voie.</p>`;
+    <button class="btn primary big" id="sign">${L("Signer avec mon téléphone", "Sign with my phone")}</button>
+    <p class="muted small">${L("Le justificatif est scellé maintenant : impossible de le modifier ensuite sans que ça se voie.", "The certificate is sealed now: it cannot be changed later without it showing.")}</p>`;
   view.querySelectorAll("[data-f]").forEach(c => c.onchange = () => { c.checked ? hidden.delete(c.dataset.f) : hidden.add(c.dataset.f); store.set("lpa-hidden", [...hidden]); });
   $("sign").onclick = async () => {
     const key = await ensureKey(); if (!key) return;
-    $("sign").disabled = true; $("sign").innerHTML = `<span class="spin" aria-hidden="true"></span> Signature…`;
+    $("sign").disabled = true; $("sign").innerHTML = `<span class="spin" aria-hidden="true"></span> ${L("Signature…", "Signing…")}`;
     try {
       const cert = await LP.buildCert(fields, [...hidden]);
       const url = new URL("verif.html", location.href).href + "#c=" + LP.certToHash(cert);
@@ -565,8 +578,8 @@ route(/^\/nouveau\/(\w+)$/, id => {
       db.saveCerts(all.slice(0, 100));
       location.hash = "#/justificatif/" + all[0].id;
     } catch (e) {
-      $("sign").disabled = false; $("sign").textContent = "Signer avec mon téléphone";
-      toast(e && e.name === "NotAllowedError" ? "Signature annulée" : "Signature impossible : " + (e.message || e));
+      $("sign").disabled = false; $("sign").textContent = L("Signer avec mon téléphone", "Sign with my phone");
+      toast(e && e.name === "NotAllowedError" ? L("Signature annulée", "Signing cancelled") : L("Signature impossible : ", "Signing failed: ") + (e.message || e));
     }
   };
 }, "voyages");
@@ -574,57 +587,57 @@ route(/^\/nouveau\/(\w+)$/, id => {
 // ================================================================= Justificatifs
 route(/^\/justificatifs$/, () => {
   const all = db.certs();
-  view.innerHTML = `<h1>Mes justificatifs</h1><p class="sub">Chacun se vérifie avec son lien, sans compte ni appli.</p>` +
+  view.innerHTML = `<h1>${L("Mes justificatifs", "My certificates")}</h1><p class="sub">${L("Chacun se vérifie avec son lien, sans compte ni appli.", "Each one is checked with its link, no account or app needed.")}</p>` +
     (all.length ? `<div class="list">${all.map(c => `<a class="item" href="#/justificatif/${c.id}"><span class="t">+${fmt.min(c.delay)} min · ${esc(c.label)}</span><span class="r"><span class="d d-ok">${esc(c.code)}</span></span>
       <span class="s">${esc(dayLabel(c.day))}${c.to ? " · " + esc(c.to) : ""}</span></a>`).join("")}</div>`
-      : `<div class="empty">Pas encore de justificatif. Après un trajet en retard, ouvre-le dans <a href="#/voyages">Voyages</a>.</div>`);
+      : L(`<div class="empty">Pas encore de justificatif. Après un trajet en retard, ouvre-le dans <a href="#/voyages">Voyages</a>.</div>`, `<div class="empty">No certificate yet. After a late trip, open it in <a href="#/voyages">Trips</a>.</div>`));
 }, "certs");
 route(/^\/justificatif\/(\w+)$/, id => {
   const c = db.certs().find(x => x.id === id); if (!c) { location.replace("#/justificatifs"); return; }
-  const text = `Bonjour, mon trajet du ${c.day.slice(6, 8)}/${c.day.slice(4, 6)} a eu ${fmt.min(c.delay)} min de retard (${c.label}). Justificatif vérifiable : ${c.url}`;
-  view.innerHTML = `<button class="btn ghost" onclick="location.hash='#/justificatifs'">← Mes justificatifs</button>
-    <h1>Justificatif prêt</h1>
-    <section class="card hero"><div class="big-num"><b>+${fmt.min(c.delay)}</b><span>min de retard</span></div>
-      <span class="muted small">${esc(dayLabel(c.day))} · ${esc(c.label)} · code <b>${esc(c.code)}</b></span></section>
-    <section class="card"><h2>Le message à envoyer</h2><div class="msg">${esc(text)}</div>
-      <div class="row"><button class="btn primary" id="share">Envoyer</button><button class="btn" id="copy">Copier le message</button><button class="btn" id="copyUrl">Copier le lien</button></div></section>
-    <a class="btn big" href="${esc(c.url)}" target="_blank" rel="noopener">Voir ce que verra la personne</a>
-    <p class="muted small">Le lien contient tout le justificatif : rien n'est stocké sur un serveur. Il reste vérifiable même si tu supprimes l'appli.</p>
-    <button class="btn danger" id="del">Supprimer de ce téléphone</button>`;
-  $("share").onclick = async () => { try { if (navigator.share) { await navigator.share({title: "Justificatif de retard", text}); return; } } catch (e) { return; } $("copy").click(); };
-  $("copy").onclick = () => navigator.clipboard.writeText(text).then(() => toast("Message copié"), () => toast("Copie impossible"));
-  $("copyUrl").onclick = () => navigator.clipboard.writeText(c.url).then(() => toast("Lien copié"), () => toast("Copie impossible"));
-  $("del").onclick = () => { if (!confirm("Supprimer ce justificatif de ce téléphone ? Le lien déjà envoyé restera vérifiable.")) return; db.saveCerts(db.certs().filter(x => x.id !== c.id)); location.hash = "#/justificatifs"; };
+  const text = L(`Bonjour, mon trajet du ${c.day.slice(6, 8)}/${c.day.slice(4, 6)} a eu ${fmt.min(c.delay)} min de retard (${c.label}). Justificatif vérifiable : ${c.url}`, `Hello, my trip on ${c.day.slice(6, 8)}/${c.day.slice(4, 6)} was ${fmt.min(c.delay)} min late (${c.label}). Verifiable certificate: ${c.url}`);
+  view.innerHTML = `<button class="btn ghost" onclick="location.hash='#/justificatifs'">${L("← Mes justificatifs", "← My certificates")}</button>
+    <h1>${L("Justificatif prêt", "Certificate ready")}</h1>
+    <section class="card hero"><div class="big-num"><b>+${fmt.min(c.delay)}</b><span>${L("min de retard", "min late")}</span></div>
+      <span class="muted small">${esc(dayLabel(c.day))} · ${esc(c.label)} · ${L("code", "code")} <b>${esc(c.code)}</b></span></section>
+    <section class="card"><h2>${L("Le message à envoyer", "The message to send")}</h2><div class="msg">${esc(text)}</div>
+      <div class="row"><button class="btn primary" id="share">${L("Envoyer", "Send")}</button><button class="btn" id="copy">${L("Copier le message", "Copy the message")}</button><button class="btn" id="copyUrl">${L("Copier le lien", "Copy the link")}</button></div></section>
+    <a class="btn big" href="${esc(c.url)}" target="_blank" rel="noopener">${L("Voir ce que verra la personne", "See what they will see")}</a>
+    <p class="muted small">${L("Le lien contient tout le justificatif : rien n'est stocké sur un serveur. Il reste vérifiable même si tu supprimes l'appli.", "The link contains the whole certificate: nothing is stored on a server. It stays verifiable even if you delete the app.")}</p>
+    <button class="btn danger" id="del">${L("Supprimer de ce téléphone", "Delete from this phone")}</button>`;
+  $("share").onclick = async () => { try { if (navigator.share) { await navigator.share({title: L("Justificatif de retard", "Delay certificate"), text}); return; } } catch (e) { return; } $("copy").click(); };
+  $("copy").onclick = () => navigator.clipboard.writeText(text).then(() => toast(L("Message copié", "Message copied")), () => toast(L("Copie impossible", "Copy failed")));
+  $("copyUrl").onclick = () => navigator.clipboard.writeText(c.url).then(() => toast(L("Lien copié", "Link copied")), () => toast(L("Copie impossible", "Copy failed")));
+  $("del").onclick = () => { if (!confirm(L("Supprimer ce justificatif de ce téléphone ? Le lien déjà envoyé restera vérifiable.", "Delete this certificate from this phone? A link already sent stays verifiable."))) return; db.saveCerts(db.certs().filter(x => x.id !== c.id)); location.hash = "#/justificatifs"; };
 }, "certs");
 
 // ================================================================= Profil
 route(/^\/profil$/, () => {
   const home = db.home() || {}, pk = passkey.get(), tmp = {...home};
-  view.innerHTML = `<h1>Profil</h1>
-    <section class="card"><h2>Mon trajet habituel</h2>
-      ${stationField("pa", "Départ", home.a && home.a.name, s => { tmp.a = s; saveHome(); })}
-      ${stationField("pb", "Arrivée", home.b && home.b.name, s => { tmp.b = s; saveHome(); })}</section>
-    <section class="card"><h2>Mon e-mail (facultatif)</h2>
-      <label class="field" for="em">Affiché masqué sur tes justificatifs, si tu le choisis (ex. p•••@entreprise.fr)<input id="em" type="email" autocomplete="email" value="${esc(db.email())}"></label></section>
-    <section class="card"><h2>Clé de signature</h2>
-      ${pk ? `<p style="margin:0">✓ ${pk.kind === "browser" ? "Clé du navigateur (sans biométrie)" : "Clé sécurisée du téléphone (passkey)"}, créée le ${new Date(pk.created).toLocaleDateString("fr-FR")}.</p>
-        <button class="btn" id="resetKey">Remplacer la clé</button>` : `<p style="margin:0">Pas encore de clé sur ce téléphone.</p><button class="btn primary" id="mkKey">Créer ma clé</button>`}
-      <p class="muted small" style="margin:0">Elle signe tes justificatifs. Elle ne quitte jamais ce téléphone. Les justificatifs déjà envoyés restent valables si tu la remplaces.</p></section>
-    <section class="card"><h2>Position et favoris</h2><p class="muted small" style="margin:0">Ta position, tes gares et tes trajets favoris se gèrent sur la carte.</p><a class="btn" href="carte.html">Ouvrir la carte</a></section>
-    <section class="card"><h2>Alertes du matin</h2><p class="muted small" style="margin:0">Bientôt : une notification quand ton trajet habituel est perturbé, avec le plan B.</p></section>
-    <section class="card"><h2>Mes données</h2><p class="muted small" style="margin:0">Tout est gardé sur ce téléphone : ${db.voyages().length} voyage(s), ${db.certs().length} justificatif(s).</p>
-      <div class="row"><button class="btn" id="exp">Exporter (fichier)</button><button class="btn danger" id="wipe">Tout effacer</button></div></section>`;
-  function saveHome() { if (tmp.a && tmp.b) { store.set("lpa-home", {a: tmp.a, b: tmp.b}); toast("Trajet habituel enregistré"); } }
-  $("em").onchange = () => { store.set("lpa-email", $("em").value.trim()); toast("E-mail enregistré"); };
+  view.innerHTML = `<h1>${L("Profil", "Profile")}</h1>
+    <section class="card"><h2>${L("Mon trajet habituel", "My usual trip")}</h2>
+      ${stationField("pa", L("Départ", "From"), home.a && home.a.name, s => { tmp.a = s; saveHome(); })}
+      ${stationField("pb", L("Arrivée", "To"), home.b && home.b.name, s => { tmp.b = s; saveHome(); })}</section>
+    <section class="card"><h2>${L("Mon e-mail (facultatif)", "My e-mail (optional)")}</h2>
+      <label class="field" for="em">${L("Affiché masqué sur tes justificatifs, si tu le choisis (ex. p•••@entreprise.fr)", "Shown masked on your certificates, if you choose (e.g. p•••@company.com)")}<input id="em" type="email" autocomplete="email" value="${esc(db.email())}"></label></section>
+    <section class="card"><h2>${L("Clé de signature", "Signing key")}</h2>
+      ${pk ? `<p style="margin:0">✓ ${pk.kind === "browser" ? L("Clé du navigateur (sans biométrie)", "Browser key (no biometrics)") : L("Clé sécurisée du téléphone (passkey)", "Phone's secure key (passkey)")}, ${L("créée le", "created on")} ${new Date(pk.created).toLocaleDateString(locale)}.</p>
+        <button class="btn" id="resetKey">${L("Remplacer la clé", "Replace the key")}</button>` : `<p style="margin:0">${L("Pas encore de clé sur ce téléphone.", "No key on this phone yet.")}</p><button class="btn primary" id="mkKey">${L("Créer ma clé", "Create my key")}</button>`}
+      <p class="muted small" style="margin:0">${L("Elle signe tes justificatifs. Elle ne quitte jamais ce téléphone. Les justificatifs déjà envoyés restent valables si tu la remplaces.", "It signs your certificates. It never leaves this phone. Certificates already sent stay valid if you replace it.")}</p></section>
+    <section class="card"><h2>${L("Position et favoris", "Location and favourites")}</h2><p class="muted small" style="margin:0">${L("Ta position, tes gares et tes trajets favoris se gèrent sur la carte.", "Your location, favourite stations and trips are managed on the map.")}</p><a class="btn" href="carte.html">${L("Ouvrir la carte", "Open the map")}</a></section>
+    <section class="card"><h2>${L("Alertes du matin", "Morning alerts")}</h2><p class="muted small" style="margin:0">${L("Bientôt : une notification quand ton trajet habituel est perturbé, avec le plan B.", "Coming soon: a notification when your usual trip is disrupted, with the plan B.")}</p></section>
+    <section class="card"><h2>${L("Mes données", "My data")}</h2><p class="muted small" style="margin:0">${L("Tout est gardé sur ce téléphone :", "Everything is kept on this phone:")} ${db.voyages().length} ${L("voyage(s)", "trip(s)")}, ${db.certs().length} ${L("justificatif(s)", "certificate(s)")}.</p>
+      <div class="row"><button class="btn" id="exp">${L("Exporter (fichier)", "Export (file)")}</button><button class="btn danger" id="wipe">${L("Tout effacer", "Erase everything")}</button></div></section>`;
+  function saveHome() { if (tmp.a && tmp.b) { store.set("lpa-home", {a: tmp.a, b: tmp.b}); toast(L("Trajet habituel enregistré", "Usual trip saved")); } }
+  $("em").onchange = () => { store.set("lpa-email", $("em").value.trim()); toast(L("E-mail enregistré", "E-mail saved")); };
   if ($("mkKey")) $("mkKey").onclick = async () => { if (await ensureKey()) render(); };
-  if ($("resetKey")) $("resetKey").onclick = async () => { if (!confirm("Créer une nouvelle clé ? L'ancienne ne servira plus pour les prochains justificatifs.")) return; store.set("lp-passkey", null); if (await ensureKey()) render(); };
+  if ($("resetKey")) $("resetKey").onclick = async () => { if (!confirm(L("Créer une nouvelle clé ? L'ancienne ne servira plus pour les prochains justificatifs.", "Create a new key? The old one will no longer be used for future certificates."))) return; store.set("lp-passkey", null); if (await ensureKey()) render(); };
   $("exp").onclick = () => {
     const data = {exported: new Date().toISOString(), home: db.home(), voyages: db.voyages(), certs: db.certs(), email: db.email()};
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
     a.download = "lateproof-mes-donnees.json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
   $("wipe").onclick = async () => {
-    if (!confirm("Effacer tous tes voyages, justificatifs, ton trajet et ta clé de ce téléphone ? Les liens déjà envoyés resteront vérifiables.")) return;
+    if (!confirm(L("Effacer tous tes voyages, justificatifs, ton trajet et ta clé de ce téléphone ? Les liens déjà envoyés resteront vérifiables.", "Erase all your trips, certificates, usual trip and key from this phone? Links already sent stay verifiable."))) return;
     ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group"].forEach(k => store.set(k, null));
     try { await LP.idb.del("browser-key"); } catch (e) {}
     location.hash = "#/bienvenue";
