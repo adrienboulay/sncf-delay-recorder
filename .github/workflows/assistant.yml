@@ -75,11 +75,11 @@ jobs:
           [ -n "$GROQ_API_KEY" ] && printf 'GROQ_API_KEY=%s\n' "$GROQ_API_KEY" >> /tmp/fn.env
           [ -n "$GEMINI_API_KEY" ] && printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" >> /tmp/fn.env
           [ -n "$ELEVENLABS_API_KEY" ] && printf 'ELEVENLABS_API_KEY=%s\n' "$ELEVENLABS_API_KEY" >> /tmp/fn.env
-          supabase secrets set --project-ref "${{ steps.ok.outputs.ref }}" --env-file /tmp/fn.env
+          supabase secrets set --project-ref "${{ steps.ok.outputs.ref }}" --env-file /tmp/fn.env --yes
           rm -f /tmp/fn.env
       - name: Deployer la fonction
         if: steps.ok.outputs.go == '1'
-        run: supabase functions deploy assistant --project-ref "${{ steps.ok.outputs.ref }}" --no-verify-jwt --use-api
+        run: supabase functions deploy assistant --project-ref "${{ steps.ok.outputs.ref }}" --no-verify-jwt --use-api --yes
       - name: Question de test
         if: steps.ok.outputs.go == '1' && github.event_name == 'workflow_dispatch' && inputs.question != ''
         env:
