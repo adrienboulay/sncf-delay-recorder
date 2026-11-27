@@ -46,6 +46,7 @@ jobs:
         run: |
           REF=$(printf '%s' "$SUPABASE_URL" | sed -nE 's#^https://([a-z0-9]+)[.]supabase[.]co.*#\1#p')
           supabase functions deploy advice --project-ref "$REF" --no-verify-jwt --use-api --yes
+          supabase functions deploy reseau --project-ref "$REF" --no-verify-jwt --use-api --yes
   agent:
     needs: [setup, deploy]
     runs-on: ubuntu-latest

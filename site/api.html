@@ -39,6 +39,7 @@ pre{margin:0;padding:16px;border-radius:16px;background:#0D0F12;color:#D6D8DC;fo
 code{font-family:var(--mono);font-size:.88em}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;border-radius:999px;font:800 .95rem var(--display);text-decoration:none;border:0;cursor:pointer;background:var(--lime);color:#0B0C0F;justify-self:start}
 .btn.line{background:var(--surface2);color:var(--fg)}
+.price{justify-self:start;display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:rgb(212 255 58/.12);color:var(--lime);font:800 .82rem var(--display)}
 .status{display:inline-flex;align-items:center;gap:8px;font:800 .8rem var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
 .pays{display:grid;gap:8px}
 .pays a{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--surface2);color:var(--fg);text-decoration:none;font-size:.9rem}
@@ -66,16 +67,33 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
   <main>
     <div class="intro">
       <span class="kick" data-en="API for agents · x402">API pour agents · x402</span>
-      <h1 data-en="Live trip advice, paid per call.">Le conseil de trajet en direct, payé à l'appel.</h1>
-      <p data-en="An app, an assistant or an AI agent asks LateProof for the best way to get from A to B right now. No account, no API key: each call costs 0.01 USDC, paid on Solana with the open x402 standard (HTTP 402).">Une appli, un assistant ou un agent IA demande à LateProof la meilleure façon d'aller de A à B, maintenant. Pas de compte, pas de clé d'API : chaque appel coûte 0,01 USDC, payé sur Solana avec le standard ouvert x402 (HTTP 402).</p>
+      <h1 data-en="Live rail data, paid per call.">Les données du rail en direct, payées à l'appel.</h1>
+      <p data-en="An app, an assistant or an AI agent asks LateProof for the best way to get from A to B, or for the state of the network. No account, no API key: each call is paid in USDC on Solana with the open x402 standard (HTTP 402).">Une appli, un assistant ou un agent IA demande à LateProof le meilleur trajet de A à B, ou l'état du réseau. Pas de compte, pas de clé d'API : chaque appel se paie en USDC sur Solana avec le standard ouvert x402 (HTTP 402).</p>
     </div>
 
     <div class="grid">
+      <section class="card" aria-labelledby="tAdv">
+        <span class="price">0,01 USDC</span>
+        <h2 id="tAdv" data-en="Trip advice">Conseil de trajet</h2>
+        <p data-en="The best option to leave now, with the connection risk and the delays recorded on each train.">La meilleure option pour partir maintenant, avec le risque de correspondance et les retards relevés sur chaque train.</p>
+        <pre>GET /functions/v1/advice?de=Lyon Part-Dieu&amp;vers=Grenoble</pre>
+        <button class="btn" type="button" data-try="advice?de=Paris%20Gare%20de%20Lyon&amp;vers=Lyon%20Part-Dieu" data-en="See the real 402">Voir le vrai 402</button>
+      </section>
+      <section class="card" aria-labelledby="tNet">
+        <span class="price">0,005 USDC</span>
+        <h2 id="tNet" data-en="Network status">État du réseau</h2>
+        <p data-en="Today's delays and cancellations, and announced strikes, engineering works and incidents: for all of France, one line or one station.">Les retards et suppressions du jour, et les grèves, travaux et incidents annoncés : pour toute la France, une ligne ou une gare.</p>
+        <pre>GET /functions/v1/reseau
+GET /functions/v1/reseau?ligne=RER B&amp;jours=7
+GET /functions/v1/reseau?gare=Lyon Part-Dieu
+    &amp;type=greve|travaux|incident</pre>
+        <button class="btn" type="button" data-try="reseau?ligne=RER%20B" data-en="See the real 402">Voir le vrai 402</button>
+      </section>
       <section class="card" aria-labelledby="tHow">
         <h2 id="tHow" data-en="How it works">Comment ça marche</h2>
         <ol class="steps">
-          <li><span data-en="<b>The agent calls</b> <code>GET /advice?de=…&amp;vers=…</code>."><b>L'agent appelle</b> <code>GET /advice?de=…&amp;vers=…</code>.</span></li>
-          <li><span data-en="<b>LateProof answers 402</b> with its terms in the <code>PAYMENT-REQUIRED</code> header: 0.01 USDC, Solana network, recipient address."><b>LateProof répond 402</b> avec ses conditions dans l'en-tête <code>PAYMENT-REQUIRED</code> : 0,01 USDC, réseau Solana, adresse du destinataire.</span></li>
+          <li><span data-en="<b>The agent calls</b> one of the APIs, with no key."><b>L'agent appelle</b> l'une des API, sans clé.</span></li>
+          <li><span data-en="<b>LateProof answers 402</b> with its terms in the <code>PAYMENT-REQUIRED</code> header: price in USDC, Solana network, recipient address."><b>LateProof répond 402</b> avec ses conditions dans l'en-tête <code>PAYMENT-REQUIRED</code> : prix en USDC, réseau Solana, adresse du destinataire.</span></li>
           <li><span data-en="<b>The agent signs</b> the USDC transfer and calls again with <code>PAYMENT-SIGNATURE</code>."><b>L'agent signe</b> le transfert d'USDC et rappelle avec <code>PAYMENT-SIGNATURE</code>.</span></li>
           <li><span data-en="<b>The payment is checked, the advice computed</b> from live SNCF and Île-de-France Mobilités data, <b>then settled on Solana</b>. The answer carries the transaction (<code>PAYMENT-RESPONSE</code>)."><b>Le paiement est vérifié, le conseil calculé</b> avec les données SNCF et Île-de-France Mobilités du moment, <b>puis réglé sur Solana</b>. La réponse porte la transaction (<code>PAYMENT-RESPONSE</code>).</span></li>
         </ol>
@@ -84,8 +102,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
 
       <section class="card" aria-labelledby="tTry">
         <h2 id="tTry" data-en="Try it: the real 402">Essayer : le vrai 402</h2>
-        <p data-en="Calls the API without paying, from your browser. You get the real terms the server sends to agents.">Appelle l'API sans payer, depuis ton navigateur. Tu obtiens les vraies conditions que le serveur envoie aux agents.</p>
-        <button class="btn" type="button" id="try" data-en="Call without paying">Appeler sans payer</button>
+        <p data-en="The buttons above call the API without paying, from your browser. Here are the real terms the server sends to agents.">Les boutons ci-dessus appellent l'API sans payer, depuis ton navigateur. Voici les vraies conditions que le serveur envoie aux agents.</p>
         <span class="status" id="st" hidden></span>
         <pre id="out" hidden></pre>
       </section>
@@ -129,20 +146,21 @@ const {L, locale} = LPI, CFG = window.LP_CONFIG || {}, $ = id => document.getEle
 const base = (CFG.url || "").replace(/\/+$/, ""), EP = `${base}/functions/v1/advice`;
 $("ep").textContent = EP;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
-$("try").addEventListener("click", async () => {
+document.querySelectorAll("[data-try]").forEach(b => b.addEventListener("click", async () => {
   const st = $("st"), out = $("out"); st.hidden = false; out.hidden = false; st.textContent = "…"; out.textContent = "";
+  st.scrollIntoView({block: "nearest", behavior: "smooth"});
   try {
-    const r = await fetch(`${EP}?de=${encodeURIComponent("Paris Gare de Lyon")}&vers=${encodeURIComponent("Lyon Part-Dieu")}`);
+    const r = await fetch(`${base}/functions/v1/${b.dataset.try}`);
     st.textContent = `HTTP ${r.status} ${r.status === 402 ? "Payment Required" : ""}`;
     const h = r.headers.get("PAYMENT-REQUIRED");
     out.textContent = h ? `PAYMENT-REQUIRED (base64, ${L("décodé", "decoded")}) :\n` + JSON.stringify(JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(h), c => c.charCodeAt(0)))), null, 2) : await r.text();
   } catch (e) { st.textContent = L("Appel impossible", "Call failed"); out.textContent = String(e); }
-});
+}));
 (async () => {
   let list = [];
   try { list = await LP.rpc("public_x402_payments", {}); } catch (e) {}
   $("pays").innerHTML = (list || []).length ? list.map(p => `<a href="https://explorer.solana.com/tx/${esc(p.tx)}?cluster=devnet" target="_blank" rel="noopener">` +
-      `<span class="amt">${(Number(p.amount) / 1e6).toLocaleString(locale, {minimumFractionDigits: 2})} USDC</span><span class="tx">${esc(p.tx)}</span>` +
+      `<span class="amt">${(Number(p.amount) / 1e6).toLocaleString(locale, {minimumFractionDigits: 2, maximumFractionDigits: 3})} USDC</span><span class="tx">${esc(p.route)} · ${esc(p.tx)}</span>` +
       `<span class="muted">${new Date(p.at * 1000).toLocaleString(locale, {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"})} ↗</span></a>`).join("")
     : `<p class="muted">${L("Aucun appel payé pour l'instant.", "No paid call yet.")}</p>`;
 })();
