@@ -1,5 +1,6 @@
 # Données enregistrées : notre avantage, jamais dans un dépôt public
-data/
+/data/
+/recorder/data/
 *.db
 *.log
 
@@ -16,9 +17,15 @@ __pycache__/
 .env
 .env.*
 
-# depot du projet LateProof (depot git separe)
+# anciennes copies locales des depots fusionnes ici (programme -> program/, site -> site/)
 /lateproof/
 
 # essais d apprentissage (non soumis)
 /bac_a_sable/
 /lateproof-site/
+
+# Programme Solana : sorties de compilation et cles (les cles ne vont JAMAIS dans le depot)
+/program/target/
+/program/node_modules/
+*-keypair.json
+/site/public/
