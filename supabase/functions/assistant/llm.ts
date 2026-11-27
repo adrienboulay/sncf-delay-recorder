@@ -28,14 +28,15 @@ export function groqChat(apiKey: string, model = "openai/gpt-oss-120b", fetchImp
 
 /** Gemini (Google) par son point d'acces compatible OpenAI. Plusieurs modeles : si l'un est sature (503),
  *  retire (404) ou en limite (429), on essaie le suivant. */
-export function geminiChat(apiKey: string, models = ["gemini-flash-latest", "gemini-flash-lite-latest"], fetchImpl: typeof fetch = fetch): Chat {
+export function geminiChat(apiKey: string, models = ["gemini-flash-lite-latest", "gemini-flash-latest"], fetchImpl: typeof fetch = fetch): Chat {
   const chats = models.map((m) => openAiChat("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", apiKey, m, fetchImpl, false));
   return async (messages, tools) => {
     let last: unknown = null;
     for (const c of chats) {
       try { return await c(messages, tools); } catch (e) {
         last = e;
-        if (!(e instanceof LlmError) || ![404, 429, 500, 503].includes(e.status)) throw e;
+        // Modele sature, retire, en limite ou trop lent : on passe au suivant. Une requete invalide (400, 401, 403) echoue tout de suite.
+        if (e instanceof LlmError && [400, 401, 403].includes(e.status)) throw e;
       }
     }
     throw last;
