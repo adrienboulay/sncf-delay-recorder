@@ -66,6 +66,9 @@ export function openAiChat(url: string, apiKey: string, model: string, fetchImpl
     }));
     const text = typeof m.content === "string" ? m.content
       : Array.isArray(m.content) ? m.content.map((p: Json) => p?.text || "").join("") : "";
-    return { text, toolCalls, raw: { role: "assistant", content: text || null, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) } };
+    // On renvoie au fournisseur ses appels d'outils tels quels : Gemini y joint une « signature de pensee »
+    // (extra_content) qu'il exige au tour suivant.
+    const rawCalls = Array.isArray(m.tool_calls) && m.tool_calls.length ? m.tool_calls.map((c: Json) => ({ ...c, type: "function" })) : null;
+    return { text, toolCalls, raw: { role: "assistant", content: text || null, ...(rawCalls ? { tool_calls: rawCalls } : {}) } };
   };
 }

@@ -35,6 +35,12 @@ const { systemPrompt } = await import("./prompt.ts");
 try {
   const r = await geminiChat(key)([{ role: "system", content: systemPrompt() }, { role: "user", content: "Le RER B est-il à l'heure ?" }], TOOLS);
   console.log("APPEL COMPLET OK | outils :", r.toolCalls.map((c) => c.function.name).join(", ") || "aucun", "| texte :", r.text.slice(0, 80));
+  if (r.toolCalls.length) {
+    const msgs = [{ role: "system" as const, content: systemPrompt() }, { role: "user" as const, content: "Le RER B est-il à l'heure ?" }, r.raw,
+      ...r.toolCalls.map((c) => ({ role: "tool" as const, tool_call_id: c.id, name: c.function.name, content: JSON.stringify({ ligne: "RER B", trains_du_jour: 500, retards_15min: 16, supprimes: 0 }) }))];
+    const r2 = await geminiChat(key)(msgs, TOOLS);
+    console.log("DEUXIEME TOUR OK | texte :", r2.text.slice(0, 160));
+  }
 } catch (e) {
   console.log("APPEL COMPLET ECHEC :", e instanceof LlmError ? `${e.status} ${e.message}` : String(e));
 }
