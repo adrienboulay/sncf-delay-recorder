@@ -624,35 +624,93 @@ route(/^\/justificatif\/(\w+)$/, id => {
   $("del").onclick = () => { if (!confirm(L("Supprimer ce justificatif de ce téléphone ? Le lien déjà envoyé restera vérifiable.", "Delete this certificate from this phone? A link already sent stays verifiable."))) return; db.saveCerts(db.certs().filter(x => x.id !== c.id)); location.hash = "#/justificatifs"; };
 }, "certs");
 
-// ================================================================= Profil
-route(/^\/profil$/, () => {
+// ================================================================= Réglages : toutes les préférences au même endroit
+// (langue, trajet habituel, position, favoris, carte, Gus et micro, e-mail, clé, données). Tout reste sur ce téléphone.
+// Formats : la carte garde lp-profile / lp-region / lp-base / lp-pos / lp-favs en texte brut ; Gus garde lp-speak, lp-handsfree,
+// lp-stt, lp-trajet en JSON ; Mon espace passe par LP.store (JSON).
+const raw = {get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+             set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }};
+const REGIONS = [["", L("Toute la France", "All of France")], ["idf", "Île-de-France"], ["hdf", "Hauts-de-France"], ["nor", "Normandie"], ["ges", "Grand Est"], ["bre", "Bretagne"],
+  ["pdl", "Pays de la Loire"], ["cvl", "Centre-Val de Loire"], ["bfc", "Bourgogne-Franche-Comté"], ["naq", "Nouvelle-Aquitaine"], ["ara", "Auvergne-Rhône-Alpes"],
+  ["occ", "Occitanie"], ["pac", "Provence-Alpes-Côte d'Azur"], ["cor", "Corse"]];
+const sel = (id, opts, cur) => `<select id="${id}">${opts.map(([v, t]) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
+const sw = (id, on, title, sub) => `<label class="toggle" for="${id}"><span class="lbl">${title}${sub ? `<small>${sub}</small>` : ""}</span><span class="switch"><input type="checkbox" id="${id}"${on ? " checked" : ""}><span></span></span></label>`;
+route(/^\/profil$/, async () => {
   const home = db.home() || {}, pk = passkey.get(), tmp = {...home};
-  view.innerHTML = `<h1>${L("Profil", "Profile")}</h1>
+  let pos = null; try { pos = JSON.parse(raw.get("lp-pos")); } catch (e) {}
+  let favs = []; try { favs = JSON.parse(raw.get("lp-favs") || "[]"); } catch (e) {}
+  const jget = k => { try { return JSON.parse(raw.get(k)); } catch (e) { return null; } };
+  let mic = "unknown"; try { mic = (await navigator.permissions.query({name: "microphone"})).state; } catch (e) {}
+  const micTxt = {granted: L("autorisé", "allowed"), denied: L("bloqué dans les réglages du navigateur", "blocked in the browser settings"), prompt: L("pas encore demandé", "not asked yet"), unknown: L("inconnu", "unknown")}[mic] || mic;
+  const KIND = {station: L("Gare", "Station"), line: L("Ligne", "Line"), trip: L("Trajet", "Trip"), place: L("Lieu", "Place"), region: L("Région", "Region")};
+  view.innerHTML = `<h1>${L("Réglages", "Settings")}</h1><p class="sub">${L("Toutes tes préférences, au même endroit. Elles restent sur ce téléphone.", "All your preferences in one place. They stay on this phone.")}</p>
+    <section class="card"><h2>${L("Langue", "Language")}</h2>
+      <div class="row"><button class="btn${LPI.lang === "fr" ? " primary" : ""}" data-lang="fr">Français</button><button class="btn${LPI.lang === "en" ? " primary" : ""}" data-lang="en">English</button></div></section>
     <section class="card"><h2>${L("Mon trajet habituel", "My usual trip")}</h2>
       ${stationField("pa", L("Départ", "From"), home.a && home.a.name, s => { tmp.a = s; saveHome(); })}
-      ${stationField("pb", L("Arrivée", "To"), home.b && home.b.name, s => { tmp.b = s; saveHome(); })}</section>
+      ${stationField("pb", L("Arrivée", "To"), home.b && home.b.name, s => { tmp.b = s; saveHome(); })}
+      <p class="muted small" style="margin:0">${L("Utilisé par l'écran Aujourd'hui et par Gus.", "Used by the Today screen and by Gus.")}</p></section>
+    <section class="card"><h2>${L("Ma position", "My location")}</h2>
+      <p style="margin:0">${pos ? esc(pos.label || L("Position enregistrée", "Saved location")) : `<span class="muted">${L("Pas encore définie.", "Not set yet.")}</span>`}</p>
+      <div class="row"><button class="btn" id="posGeo">${L("Me localiser", "Locate me")}</button><a class="btn" href="carte.html">${L("Choisir sur la carte", "Pick on the map")}</a>${pos ? `<button class="btn ghost" id="posClear">${L("Effacer", "Clear")}</button>` : ""}</div>
+      <p class="muted small" style="margin:0">${L("Sert à « Autour de moi » et aux itinéraires depuis ta position. Pendant « Lancer mon trajet », la position est lue en direct et n'est pas gardée.", "Used for “Around me” and journeys from your location. During “Start my trip”, the location is read live and not kept.")}</p></section>
+    <section class="card"><h2>${L("Mes favoris", "My favourites")}</h2>
+      ${favs.length ? `<div class="list">${favs.map((f, i) => `<div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span style="min-width:0"><span class="muted small">${esc(KIND[f.t] || "")}</span> ${esc(f.name || "")}</span><button class="btn ghost" data-unfav="${i}" aria-label="${L("Retirer", "Remove")} ${esc(f.name || "")}">✕</button></div>`).join("")}</div>`
+        : `<p class="muted small" style="margin:0">${L("Aucun favori. Sur la carte, touche ☆ sur une gare, une ligne ou un trajet.", "No favourites. On the map, tap ☆ on a station, line or trip.")}</p>`}</section>
+    <section class="card"><h2>${L("Carte", "Map")}</h2>
+      <label class="field" for="prof">${L("Je voyage surtout", "I mostly travel")}${sel("prof", [["quotidien", L("Au quotidien", "Daily")], ["grandes_lignes", L("En grandes lignes", "Long distance")], ["les_deux", L("Les deux", "Both")]], raw.get("lp-profile") || "les_deux")}</label>
+      <label class="field" for="reg">${L("Ma région", "My region")}${sel("reg", REGIONS, raw.get("lp-region") || "")}</label>
+      <label class="field" for="bas">${L("Fond de carte", "Map style")}${sel("bas", [["plan", L("Plan", "Map")], ["light", L("Clair", "Light")], ["dark", L("Sombre", "Dark")], ["osm", L("Détaillé (OSM)", "Detailed (OSM)")]], raw.get("lp-base") || "dark")}</label></section>
+    <section class="card"><h2>${L("Gus et micro", "Gus and microphone")}</h2>
+      <div>${sw("spk", jget("lp-speak") === true, L("Lire les réponses à voix haute", "Read answers aloud"))}
+      ${sw("hf", jget("lp-handsfree") === true, L("Conversation à la voix", "Voice conversation"), L("Le micro se rouvre après chaque réponse de Gus.", "The microphone reopens after each answer from Gus."))}
+      ${sw("srv", jget("lp-stt") === "server", L("Dictée par enregistrement", "Dictation by recording"), L("Si la dictée du navigateur ne marche pas : le son est envoyé pour être transcrit, puis effacé.", "If the browser's dictation doesn't work: the audio is sent to be transcribed, then deleted."))}</div>
+      <p style="margin:0">${L("Micro", "Microphone")} : <b>${micTxt}</b></p>
+      <div class="row">${mic !== "granted" && mic !== "denied" ? `<button class="btn" id="micAsk">${L("Autoriser le micro", "Allow the microphone")}</button>` : ""}<button class="btn ghost" id="chatClear">${L("Effacer la conversation avec Gus", "Clear the conversation with Gus")}</button></div></section>
     <section class="card"><h2>${L("Mon e-mail (facultatif)", "My e-mail (optional)")}</h2>
       <label class="field" for="em">${L("Affiché masqué sur tes justificatifs, si tu le choisis (ex. p•••@entreprise.fr)", "Shown masked on your certificates, if you choose (e.g. p•••@company.com)")}<input id="em" type="email" autocomplete="email" value="${esc(db.email())}"></label></section>
     <section class="card"><h2>${L("Clé de signature", "Signing key")}</h2>
       ${pk ? `<p style="margin:0">✓ ${pk.kind === "browser" ? L("Clé du navigateur (sans biométrie)", "Browser key (no biometrics)") : L("Clé sécurisée du téléphone (passkey)", "Phone's secure key (passkey)")}, ${L("créée le", "created on")} ${new Date(pk.created).toLocaleDateString(locale)}.</p>
         <button class="btn" id="resetKey">${L("Remplacer la clé", "Replace the key")}</button>` : `<p style="margin:0">${L("Pas encore de clé sur ce téléphone.", "No key on this phone yet.")}</p><button class="btn primary" id="mkKey">${L("Créer ma clé", "Create my key")}</button>`}
       <p class="muted small" style="margin:0">${L("Elle signe tes justificatifs. Elle ne quitte jamais ce téléphone. Les justificatifs déjà envoyés restent valables si tu la remplaces.", "It signs your certificates. It never leaves this phone. Certificates already sent stay valid if you replace it.")}</p></section>
-    <section class="card"><h2>${L("Position et favoris", "Location and favourites")}</h2><p class="muted small" style="margin:0">${L("Ta position, tes gares et tes trajets favoris se gèrent sur la carte.", "Your location, favourite stations and trips are managed on the map.")}</p><a class="btn" href="carte.html">${L("Ouvrir la carte", "Open the map")}</a></section>
     <section class="card"><h2>${L("Alertes du matin", "Morning alerts")}</h2><p class="muted small" style="margin:0">${L("Bientôt : une notification quand ton trajet habituel est perturbé, avec le plan B.", "Coming soon: a notification when your usual trip is disrupted, with the plan B.")}</p></section>
-    <section class="card"><h2>${L("Mes données", "My data")}</h2><p class="muted small" style="margin:0">${L("Tout est gardé sur ce téléphone :", "Everything is kept on this phone:")} ${db.voyages().length} ${L("voyage(s)", "trip(s)")}, ${db.certs().length} ${L("justificatif(s)", "certificate(s)")}.</p>
+    <section class="card"><h2>${L("Mes données", "My data")}</h2><p class="muted small" style="margin:0">${L("Tout est gardé sur ce téléphone :", "Everything is kept on this phone:")} ${db.voyages().length} ${L("voyage(s)", "trip(s)")}, ${db.certs().length} ${L("justificatif(s)", "certificate(s)")}, ${favs.length} ${L("favori(s)", "favourite(s)")}.</p>
       <div class="row"><button class="btn" id="exp">${L("Exporter (fichier)", "Export (file)")}</button><button class="btn danger" id="wipe">${L("Tout effacer", "Erase everything")}</button></div></section>`;
-  function saveHome() { if (tmp.a && tmp.b) { store.set("lpa-home", {a: tmp.a, b: tmp.b}); toast(L("Trajet habituel enregistré", "Usual trip saved")); } }
+  function saveHome() { if (tmp.a && tmp.b) { store.set("lpa-home", {a: tmp.a, b: tmp.b}); store.set("lp-trajet", `${tmp.a.name} → ${tmp.b.name}`); toast(L("Trajet habituel enregistré", "Usual trip saved")); } }
+  view.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => { if (b.dataset.lang !== LPI.lang) LPI.setLang(b.dataset.lang); });
+  $("posGeo").onclick = () => {
+    if (!navigator.geolocation) { toast(L("Localisation indisponible", "Location unavailable")); return; }
+    toast(L("Localisation…", "Locating…"));
+    navigator.geolocation.getCurrentPosition(p => { raw.set("lp-pos", JSON.stringify({lat: p.coords.latitude, lon: p.coords.longitude, label: L("Ma position", "My location")})); toast(L("Position enregistrée", "Location saved")); render(); },
+      () => toast(L("Localisation refusée", "Location refused")), {timeout: 10000});
+  };
+  if ($("posClear")) $("posClear").onclick = () => { raw.set("lp-pos", null); render(); };
+  view.querySelectorAll("[data-unfav]").forEach(b => b.onclick = () => { favs.splice(+b.dataset.unfav, 1); raw.set("lp-favs", JSON.stringify(favs)); render(); });
+  $("prof").onchange = () => { raw.set("lp-profile", $("prof").value); toast(L("Enregistré", "Saved")); };
+  $("reg").onchange = () => { raw.set("lp-region", $("reg").value || null); toast(L("Enregistré", "Saved")); };
+  $("bas").onchange = () => { raw.set("lp-base", $("bas").value); toast(L("Enregistré", "Saved")); };
+  $("spk").onchange = () => { store.set("lp-speak", $("spk").checked); if (!$("spk").checked) { $("hf").checked = false; store.set("lp-handsfree", false); } };
+  $("hf").onchange = () => { store.set("lp-handsfree", $("hf").checked); if ($("hf").checked) { $("spk").checked = true; store.set("lp-speak", true); } };
+  $("srv").onchange = () => store.set("lp-stt", $("srv").checked ? "server" : null);
+  if ($("micAsk")) $("micAsk").onclick = async () => {
+    try { const st = await navigator.mediaDevices.getUserMedia({audio: true}); st.getTracks().forEach(t => t.stop()); toast(L("Micro autorisé", "Microphone allowed")); }
+    catch (e) { toast(L("Micro refusé", "Microphone refused")); }
+    render();
+  };
+  $("chatClear").onclick = () => { store.set("lp-chat", null); toast(L("Conversation effacée", "Conversation cleared")); };
   $("em").onchange = () => { store.set("lpa-email", $("em").value.trim()); toast(L("E-mail enregistré", "E-mail saved")); };
   if ($("mkKey")) $("mkKey").onclick = async () => { if (await ensureKey()) render(); };
   if ($("resetKey")) $("resetKey").onclick = async () => { if (!confirm(L("Créer une nouvelle clé ? L'ancienne ne servira plus pour les prochains justificatifs.", "Create a new key? The old one will no longer be used for future certificates."))) return; store.set("lp-passkey", null); if (await ensureKey()) render(); };
   $("exp").onclick = () => {
-    const data = {exported: new Date().toISOString(), home: db.home(), voyages: db.voyages(), certs: db.certs(), email: db.email()};
+    const prefs = {}; ["lp-lang", "lp-profile", "lp-region", "lp-base", "lp-pos", "lp-favs", "lp-trajet", "lp-speak", "lp-handsfree", "lp-stt"].forEach(k => { const v = raw.get(k); if (v != null) prefs[k] = v; });
+    const data = {exported: new Date().toISOString(), home: db.home(), voyages: db.voyages(), certs: db.certs(), email: db.email(), prefs};
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
     a.download = "lateproof-mes-donnees.json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
   $("wipe").onclick = async () => {
-    if (!confirm(L("Effacer tous tes voyages, justificatifs, ton trajet et ta clé de ce téléphone ? Les liens déjà envoyés resteront vérifiables.", "Erase all your trips, certificates, usual trip and key from this phone? Links already sent stay verifiable."))) return;
-    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group"].forEach(k => store.set(k, null));
+    if (!confirm(L("Effacer tous tes voyages, justificatifs, réglages, favoris et ta clé de ce téléphone ? Les liens déjà envoyés resteront vérifiables.", "Erase all your trips, certificates, settings, favourites and key from this phone? Links already sent stay verifiable."))) return;
+    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group",
+     "lp-profile", "lp-region", "lp-base", "lp-pos", "lp-favs", "lp-recent", "lp-trajet", "lp-speak", "lp-handsfree", "lp-stt", "lp-chat"].forEach(k => raw.set(k, null));
     try { await LP.idb.del("browser-key"); } catch (e) {}
     location.hash = "#/bienvenue";
   };
