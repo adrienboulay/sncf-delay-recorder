@@ -4,10 +4,10 @@
 (function () {
   "use strict";
   const LINKS = [
-    {href: "carte.html", fr: "Carte", en: "Map"},
-    {href: "assistant.html", fr: "Copilote", en: "Copilot"},
+    {href: "./#comment", fr: "Comment ça marche", en: "How it works"},
     {href: "./#avis", fr: "Avis", en: "Reviews"},
-    {href: "app.html", fr: "Mon espace", en: "My space", cta: true},
+    {href: "./#faq", fr: "Questions", en: "FAQ"},
+    {href: "carte.html", fr: "Ouvrir l'appli", en: "Open the app", cta: true},
   ];
   const lang = () => (document.documentElement.lang === "en" ? "en" : "fr");
   const here = (location.pathname.split("/").pop() || "index.html").toLowerCase();
@@ -72,6 +72,48 @@
     new MutationObserver(relabel).observe(document.documentElement, {attributes: true, attributeFilter: ["lang"]});
   }
 
+
+  // Appli (carte, Gus, Mon espace) : une seule barre d'onglets, en bas sur téléphone, à gauche sur ordinateur
+  const ICON = {
+    carte: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    home: '<path d="M4 11l8-7 8 7v8.5a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/>',
+    voyages: '<rect x="5" y="3" width="14" height="14" rx="4"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/>',
+    certs: '<path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z"/><circle cx="12" cy="11.5" r="3"/><path d="M12 11.5l1.6 1"/>',
+    gus: '<rect x="4" y="7" width="16" height="12" rx="4"/><path d="M12 7V4M9 13h.01M15 13h.01"/>',
+    profil: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.2-6 8-6s6.8 2 8 6"/>',
+  };
+  const TABS = [
+    {id: "carte", href: "carte.html", fr: "Carte", en: "Map"},
+    {id: "home", href: "app.html#/", fr: "Aujourd'hui", en: "Today"},
+    {id: "voyages", href: "app.html#/voyages", fr: "Voyages", en: "Trips"},
+    {id: "certs", href: "app.html#/justificatifs", fr: "Justificatifs", en: "Proofs"},
+    {id: "gus", href: "assistant.html", fr: "Gus", en: "Gus", desk: true},   // sur téléphone, Gus est le bouton rond
+    {id: "profil", href: "app.html#/profil", fr: "Profil", en: "Profile"},
+  ];
+  function appTab() {
+    const app = document.body.dataset.app;
+    if (app === "carte") return "carte";
+    if (app === "gus") return "gus";
+    const h = location.hash;
+    return /^#\/(voyages?|nouveau)/.test(h) ? "voyages" : /^#\/justificatif/.test(h) ? "certs" : /^#\/profil/.test(h) ? "profil" : "home";
+  }
+  function mountTabs() {
+    if (document.body.dataset.app === undefined || document.querySelector(".lpt")) return;
+    const box = document.createElement("div");
+    box.className = "lpt";
+    box.innerHTML = `<a class="home" href="./" aria-label="LateProof"><svg width="40" height="40" viewBox="0 0 64 64" aria-hidden="true" style="fill:initial;stroke:none"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg></a>` +
+      `<nav aria-label="${lang() === "en" ? "App" : "Appli"}">` + TABS.map((t) => `<a href="${t.href}" data-tab="${t.id}"${t.desk ? ' class="desk"' : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[t.id]}</svg><span data-fr="${t.fr}" data-en="${t.en}">${t[lang()]}</span></a>`).join("") + `</nav>`;
+    document.body.appendChild(box);
+    const mark = () => { const cur = appTab(); box.querySelectorAll("a[data-tab]").forEach((a) => a.dataset.tab === cur ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")); };
+    mark(); addEventListener("hashchange", mark);
+    // Ordinateur : le choix de la langue descend en bas du rail, la barre du haut disparaît
+    const top = document.querySelector("header.top"), mq = matchMedia("(min-width:1024px)");
+    const place = () => { const lg = document.querySelector(".lpn-host .lang, .lpn-host .lp-lang, .lpt .lang, .lpt .lp-lang"); if (!lg) return;
+      if (mq.matches) box.appendChild(lg); else { const nav = top && top.querySelector("nav.nav"); if (nav) nav.insertBefore(lg, nav.querySelector(".lpn-menu")); } };
+    place(); mq.addEventListener("change", place);
+    new MutationObserver(() => box.querySelectorAll("[data-fr]").forEach((s) => { s.textContent = s.dataset[lang()]; })).observe(document.documentElement, {attributes: true, attributeFilter: ["lang"]});
+  }
+
   // Bandeau des nouveautés : <div data-lp-banner="id" data-fr="..." data-en="..." data-href="..." data-link-fr="..." data-link-en="...">
   function mountBanner() {
     const el = document.querySelector("[data-lp-banner]");
@@ -99,7 +141,7 @@
     els.forEach((e) => io.observe(e));
   }
 
-  const ready = () => { mountNav(); mountBanner(); mountReveal(); };
+  const ready = () => { mountNav(); mountTabs(); mountBanner(); mountReveal(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ready); else ready();
   window.LPNav = {relabel};
 })();

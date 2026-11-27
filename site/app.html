@@ -145,9 +145,9 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 
 /* ---- Ordinateur : menu à gauche, contenu en deux colonnes ---- */
 @media (min-width:1024px){
-  .wrap{max-width:1180px;display:grid;grid-template-columns:220px minmax(0,1fr);column-gap:44px;padding-bottom:40px}
+  .wrap{max-width:1100px;display:grid;grid-template-columns:minmax(0,1fr);column-gap:44px;padding-bottom:40px}
   .wrap > .top{grid-column:1 / -1}
-  .wrap > main{grid-column:2}
+  .wrap > main{grid-column:1}
   .tabs{position:fixed;top:86px;bottom:auto;right:auto;left:max(16px,calc((100vw - 1180px) / 2 + 16px));width:220px;padding:0;background:none}
   .tabs nav{flex-direction:column;max-width:none;border-radius:24px;padding:8px}
   .tabs a{display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:.95rem;border-radius:18px}
@@ -162,7 +162,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 </style>
 <link rel="stylesheet" href="lp-ui.css">
 </head>
-<body>
+<body data-app="app">
 <div class="wrap">
   <header class="top">
     <a class="brand" href="#/"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
@@ -170,12 +170,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
   </header>
   <main id="view" class="stack" aria-live="polite"></main>
 </div>
-<div class="tabs"><nav aria-label="Navigation principale" data-en-label="Main navigation">
-  <a href="#/" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8.5a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg><span data-en="Today">Aujourd'hui</span></a>
-  <a href="#/voyages" data-tab="voyages"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="4"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/></svg><span data-en="Trips">Voyages</span></a>
-  <a href="#/justificatifs" data-tab="certs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z"/><circle cx="12" cy="11.5" r="3"/><path d="M12 11.5l1.6 1"/></svg><span data-en="Proofs">Justificatifs</span></a>
-  <a href="#/profil" data-tab="profil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.2-6 8-6s6.8 2 8 6"/></svg><span data-en="Profile">Profil</span></a>
-</nav></div>
+
 
 <script src="config.js"></script>
 <script src="lp-i18n.js"></script>
@@ -249,7 +244,7 @@ async function render() {
   for (const r of routes) {
     const m = h.match(r.re);
     if (m) {
-      document.querySelectorAll(".tabs a").forEach(a => { if (a.dataset.tab === r.tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+      document.querySelectorAll(".lpt a[data-tab]").forEach(a => { if (a.dataset.tab === r.tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
       window.scrollTo(0, 0);
       await r.fn(...m.slice(1));
       return;

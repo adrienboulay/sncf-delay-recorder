@@ -70,3 +70,40 @@
   .lpn-panel{animation:none}
   .top.lpn-sticky{transition:none}
 }
+
+/* ---------------------------------------------------------------- Appli : une seule barre d'onglets pour la carte, Gus et Mon espace
+   Téléphone : en bas. Ordinateur : rail à gauche. La barre du haut ne garde que le logo et la langue. */
+.lpt{z-index:1100}
+.lpt nav{display:flex;gap:2px;max-width:640px;margin:0 auto;padding:5px;border-radius:28px;background:var(--surface,#1A1D21);
+  box-shadow:inset 0 1px 0 rgb(255 255 255/.06),0 10px 28px rgb(0 0 0/.4)}
+.lpt a{flex:1;min-width:0;display:grid;justify-items:center;gap:2px;padding:7px 2px;border-radius:22px;color:var(--muted,#9DA2AA);text-decoration:none;
+  font:600 .68rem var(--display,system-ui);white-space:nowrap;transition:color .2s,background-color .2s}
+.lpt a span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.lpt a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lpt a:hover{color:var(--fg,#E6E6E0)}
+.lpt a[aria-current="page"]{background:var(--surface3,#2B3036);color:var(--lime,#D4FF3A)}
+.lpt a.desk,.lpt .home{display:none}
+body[data-app] .top .lpn-links,body[data-app] .top .lpn-menu{display:none}
+@media (max-width:1023px){
+  body[data-app]{--lpt-h:calc(74px + env(safe-area-inset-bottom,0px))}
+  body[data-app="carte"] .sheet{bottom:var(--lpt-h)}
+  .lpt{position:fixed;left:0;right:0;bottom:0;padding:6px max(10px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(to bottom,transparent,var(--bg,#121417) 35%)}
+  body[data-app="app"],body[data-app="gus"]{padding-bottom:var(--lpt-h)}
+  body[data-app="gus"] .composer{bottom:var(--lpt-h)!important}
+  body[data-app="gus"] .lpt{background:var(--bg,#121417)}
+  body[data-app="carte"] .lpt{position:relative;flex:none;background:var(--bg,#121417)}
+}
+@media (min-width:1024px){
+  .lpt{position:fixed;top:0;bottom:0;left:0;width:92px;display:flex;flex-direction:column;align-items:center;gap:18px;padding:14px 8px;
+    background:var(--surface,#1A1D21);box-shadow:inset -1px 0 0 var(--line,#2B3036)}
+  .lpt .home{display:grid;place-items:center;width:44px;height:44px;border-radius:14px}
+  .lpt nav{flex-direction:column;width:100%;padding:0;gap:6px;background:none;box-shadow:none;border-radius:0}
+  .lpt a{flex:none;padding:10px 2px;border-radius:16px;font-size:.7rem}
+  .lpt a.desk{display:grid}
+  body[data-app]{padding-left:92px}
+  body[data-app] header.top{display:none}
+  body[data-app="app"] .wrap,body[data-app="gus"] .wrap{padding-top:28px}
+  .lpt .lang,.lpt .lp-lang{margin-top:auto;flex-direction:column;border-radius:16px}
+}
+section[id]{scroll-margin-top:90px}

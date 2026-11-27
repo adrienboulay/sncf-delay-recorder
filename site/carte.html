@@ -292,7 +292,7 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
 </style>
 <link rel="stylesheet" href="lp-ui.css">
 </head>
-<body>
+<body data-app="carte">
 <header class="top wrap">
   <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
   <nav class="nav"><a href="app.html" data-i18n="navApp">Mon espace</a><a class="hide-xs" href="assistant.html" data-i18n="navCopilot">Copilote</a><a class="hide-sm" href="./#nouveautes" data-i18n="signup">Nouveautés</a>
@@ -391,7 +391,7 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
 <script src="config.js"></script>
 <script src="lp-ui.js"></script>
 <script src="gus.js"></script>
-<script>Gus.fab({bottom: "178px", z: 960});</script>
+<script>Gus.fab({bottom: "calc(178px + var(--lpt-h, 0px))", z: 960});</script>
 <script>
 // ================================================================= Textes FR / EN
 const EN = {navApp:"My space", navCopilot:"Copilot", signup:"News", h1:"Train delays live, and what's coming", sub:"Search your region, your line or your trip: the map shows today's delays, the list the strikes and works that affect you.",
