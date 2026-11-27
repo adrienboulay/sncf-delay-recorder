@@ -11,7 +11,7 @@ French trains run late often: about one TGV in seven arrives more than 15 minute
 
 ## What it does
 1. **Before the trip:** live delays for every SNCF train in France (TGV, Intercités, TER) and, in Île-de-France, RER, Transilien, metro and tram, refreshed every 2 minutes. Strikes and planned works are flagged on your route.
-2. **During the trip:** **Gus**, a small robot conductor, answers by text or voice (journey requests work today; free-form AI answers are enabled once the copilot server is deployed with its LLM key): "is the RER B on time?", "I want to go to Massy". It reads our live data through tools, and opens the journey planner (one connection, walking included) on the right trip.
+2. **During the trip:** **Gus**, a small robot conductor, answers by text or voice, straight from our live data with built-in rules: no AI account needed and no invented times. He handles line status, next departures at a station, a train by number, strikes and works, your usual trip and passenger rights. An optional LLM on the server handles any other phrasing. Examples: "is the RER B on time?", "I want to go to Massy". It reads our live data through tools, and opens the journey planner (one connection, walking included) on the right trip.
 3. **After the trip:** a **delay certificate** signed on your phone (passkey: Face ID or fingerprint), shared as a link. Your manager opens it and checks it in their own browser, with no account: the signature, the selective-disclosure proof (you choose which fields to reveal), and the train's real delay against our recorded data. Every day of records is sealed on Solana the following night.
 
 ## How Solana is used
@@ -36,7 +36,7 @@ Program: [`program/`](program/) (Rust, Anchor). It stores **fingerprints only**:
 
 ## APIs and services
 - **Data:** SNCF open data (GTFS / GTFS-RT via transport.data.gouv.fr), Île-de-France Mobilités PRIM, Base Adresse Nationale (address search). Licence Mobilités / ODbL.
-- **LLM:** any "chat completions" provider with tool calling. Groq (free tier, `openai/gpt-oss-120b`) when `GROQ_API_KEY` is set, Mistral otherwise.
+- **Copilot answers:** built-in rules in the browser ([`site/gus-local.js`](site/gus-local.js)) call the same public database functions as the map. Optionally, any "chat completions" LLM with tool calling (Mistral or Groq) on the server for free-form questions.
 - **Voice:**
   - Speech to text: the browser's own dictation (Web Speech API) first.
   - Server fallback for browsers without dictation, in this order: Groq Whisper, then the **ElevenLabs Speech-to-Text API (Scribe, `/v1/speech-to-text`)**, then Mistral Voxtral, depending on which key is set.

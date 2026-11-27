@@ -91,7 +91,7 @@
     const metro = ((st && st.metro_next) || []).slice(0, 2);
     if (!deps.length && !metro.length) return {text: `Pas de départ relevé à ${s.name} dans l'heure qui vient.`, mood: "neutre"};
     const parts = deps.map((x) => `${hhmm(x.sched)} ${depLine(x)} vers ${x.dest}, ${x.cancelled ? "supprimé" : late(x.delay)}`.replace(/\s+/g, " "));
-    metro.forEach((m) => { const n = (m.t || [])[0]; if (n) parts.push(`${m.line} vers ${m.dest} dans ${Math.max(0, Math.round((n - now()) / 60))} min`); });
+    metro.forEach((m) => { const n = (m.t || [])[0]; if (n) parts.push(`${/^t/i.test(m.line) ? "tram " : "métro "}${m.line} vers ${m.dest} dans ${Math.max(0, Math.round((n - now()) / 60))} min`); });
     const bad = deps.some((x) => x.cancelled || mins(x.delay) >= 5);
     return {text: `Prochains départs à ${s.name} : ${parts.join(" ; ")}.`, mood: bad ? "retard" : "content"};
   }
