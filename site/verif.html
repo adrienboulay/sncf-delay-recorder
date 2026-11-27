@@ -152,7 +152,7 @@ async function main() {
     <details><summary>Détails techniques</summary><div class="in small">
       <div>Empreinte du justificatif (racine Merkle des champs) : <code>${esc(chk.root)}</code></div>
       <div>Signature : ECDSA P-256 (${browserKey ? "clé du navigateur" : "passkey WebAuthn"}), créée sur <code>${esc(sig.origin || "")}</code>.</div>
-      <div id="anchor">Ancrage public : les relevés du ${esc(F.date || "")} sont scellés chaque nuit ; la publication sur Solana arrive avec le déploiement du programme (devnet).</div>
+      <div id="anchor">Ancrage public : les relevés du ${esc(F.date || "")} sont scellés chaque nuit ; empreinte publiée sur Solana (devnet) : <a href="https://explorer.solana.com/address/8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu?cluster=devnet" target="_blank" rel="noopener">voir le programme</a>.</div>
     </div></details>
     <p class="foot">Vérification faite dans votre navigateur, sans compte et sans passer par nos serveurs.<br>Seul ce site fait foi. Code du justificatif : <b>${esc(code)}</b></p>`;
   const g = $("gotit"); if (g) g.onclick = () => { LP.store.set("lpv-intro", true); $("intro").remove(); };
