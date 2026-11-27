@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LateProof · Le retard, prouvé</title>
+<meta name="description" content="Ton copilote quand le train déraille : retards en direct, plan B, et un justificatif de retard que ton manager vérifie en 3 secondes, sans appli.">
+<meta property="og:title" content="LateProof · Le retard, prouvé">
+<meta property="og:description" content="Retards en direct, plan B, et un justificatif vérifiable en 3 secondes.">
+<meta name="theme-color" content="#121417">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+  --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 var(--display);font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--lime);outline-offset:3px;border-radius:8px}
+a{color:var(--lime)}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--head);letter-spacing:-.04em;line-height:1.05;margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:16px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:800 1.2rem var(--head);letter-spacing:-.045em}
+.nav{display:flex;align-items:center;gap:18px}
+.nav a{color:var(--muted);font-weight:700;text-decoration:none}.nav a:hover{color:var(--fg)}
+.lang{display:inline-flex;border-radius:999px;background:var(--surface);padding:3px}
+.lang button{border:0;background:none;color:var(--muted);font:800 .8rem var(--display);padding:6px 11px;border-radius:999px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--lime);color:#0B0C0F}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;font:800 1rem var(--display);text-decoration:none;border:0;cursor:pointer}
+.btn.lime{background:var(--lime);color:#0B0C0F}
+.btn.line{border:2px solid #3A3D44;color:var(--fg);background:none}
+.btn:disabled{opacity:.5;cursor:default}
+.kick{font:800 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:48px;align-items:center;padding-block:48px 56px}
+.hero h1{font-size:clamp(2.6rem,6.2vw,4.8rem);letter-spacing:-.055em}
+.hero h1 em{font-style:normal;color:var(--lime)}
+.lede{font-size:1.2rem;color:#C9CCD3;margin:22px 0 30px;max-width:34rem}
+.ctas{display:flex;flex-wrap:wrap;gap:12px}
+
+.board{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:12px;align-items:stretch;margin-bottom:72px}
+.board .lbl{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:20px 24px;border-radius:24px;background:var(--surface);min-width:230px}
+.board .lbl span{color:var(--muted);font-size:.9rem}
+.stat{display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding:20px 24px;border-radius:24px;background:var(--surface)}
+.stat b{font:800 clamp(1.9rem,3.4vw,2.8rem) var(--head);letter-spacing:-.05em;line-height:1}
+.stat.o b{color:var(--orange)}
+.stat span{color:var(--muted);font-size:.95rem}
+
+section{margin-bottom:80px}
+.sh{display:flex;flex-direction:column;gap:12px;margin-bottom:28px;max-width:44rem}
+.sh h2{font-size:clamp(1.9rem,3.6vw,2.8rem)}
+.sh p{margin:0;color:#C9CCD3;font-size:1.08rem}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.pill3{display:flex;flex-direction:column;gap:14px;padding:26px;border-radius:28px;background:var(--surface)}
+.pill3 .tag{align-self:flex-start;display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;font:800 .8rem var(--display);letter-spacing:.08em}
+.pill3 h3{font-size:1.45rem}
+.pill3 p{margin:0;color:#C9CCD3}
+.pill3 svg{width:34px;height:34px;fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.demo{display:grid;grid-template-columns:340px minmax(0,1fr);gap:48px;align-items:center}
+.phone{border-radius:44px;background:#000;padding:12px;box-shadow:0 30px 80px rgb(0 0 0/.5)}
+.screen{border-radius:34px;background:var(--bg);min-height:560px;padding:22px 16px;display:flex;flex-direction:column;gap:12px}
+.screen .hd{display:flex;align-items:center;gap:8px;font:800 1rem var(--head);letter-spacing:-.04em;margin-bottom:4px}
+.card{display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:22px;background:var(--surface);transition:opacity .35s,transform .35s}
+.card.hide{opacity:0;transform:translateY(10px)}
+.card .t{font-size:.8rem;color:var(--muted);font-weight:700}
+.card b{font-size:1.02rem}
+.card .chip{align-self:flex-start;display:inline-flex;height:30px;align-items:center;padding:0 12px;border-radius:999px;font:800 .86rem var(--display)}
+.card.lime{background:var(--lime);color:#0B0C0F}.card.lime .t{color:#2B3300}
+.chip.o{background:var(--orange);color:#0B0C0F}.chip.k{background:#0B0C0F;color:var(--lime)}
+.steps{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:10px}
+.steps li{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start;padding:14px 16px;border-radius:20px;color:var(--muted);transition:background .25s,color .25s}
+.steps li.on{background:var(--surface);color:var(--fg)}
+.steps .n{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--surface2);font:800 1rem var(--head)}
+.steps li.on .n{background:var(--lime);color:#0B0C0F}
+
+.biz{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;padding:36px;border-radius:32px;background:var(--lime);color:#0B0C0F}
+.biz h2{font-size:clamp(1.7rem,3.2vw,2.4rem)}
+.biz p{margin:10px 0 0;font-size:1.05rem;max-width:40rem}
+.biz .btn{background:#0B0C0F;color:var(--fg)}
+
+.signup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;padding:36px;border-radius:32px;background:var(--surface)}
+form{display:grid;gap:14px}
+label{display:grid;gap:6px;font-size:.9rem;font-weight:700;color:#C9CCD3}
+input,select{font:500 1rem var(--display);color:var(--fg);background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:13px 14px;width:100%}
+input:focus,select:focus{border-color:var(--lime);outline:none}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.check{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;font-weight:500;color:var(--muted)}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--lime)}
+.hp{position:absolute;left:-9999px}
+.msg{min-height:1.4em;margin:0;font-weight:700}.msg.ok{color:var(--lime)}.msg.err{color:var(--orange)}
+.count{color:var(--muted);font-size:.95rem}
+
+.faq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+details{background:var(--surface);border-radius:22px;padding:18px 22px}
+summary{font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::after{content:"+";color:var(--lime);font:800 1.2rem var(--head)}
+details[open] summary::after{content:"–"}
+summary::-webkit-details-marker{display:none}
+details p{margin:.7em 0 0;color:#C9CCD3}
+footer{border-top:1px solid var(--line);padding-block:26px 40px;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+@media (max-width:900px){.hero,.demo,.signup,.biz{grid-template-columns:1fr}.three,.faq{grid-template-columns:1fr}.board{grid-template-columns:1fr 1fr}.board .lbl{grid-column:1/-1}.dial{max-width:300px}.nav a.hs{display:none}}
+@media (max-width:480px){.row{grid-template-columns:1fr}.board{grid-template-columns:1fr}.phone{max-width:320px;margin:0 auto}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.dial .arc{stroke-dasharray:120 360}}
+
+/* ---- Revision E : calme et relief ---- */
+h1,h2,h3{font-weight:700;letter-spacing:-.015em}
+.hero h1{font-size:clamp(2.4rem,5.4vw,4.2rem);letter-spacing:-.025em;line-height:1.04}
+.hero h1 em{color:var(--fg);text-decoration:underline;text-decoration-color:var(--lime);text-decoration-thickness:.07em;text-underline-offset:.12em}
+.brand{font:700 1.25rem var(--head);letter-spacing:-.02em}
+.btn.line{border:0;background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.08)}
+.lang{box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.lang button[aria-pressed="true"]{background:var(--surface3);color:var(--lime)}
+.phonehero{justify-self:center;width:min(330px,100%);border-radius:42px;padding:10px;background:var(--surface3);box-shadow:inset 0 1px 0 rgb(255 255 255/.12),0 30px 70px rgb(0 0 0/.55)}
+.ph{display:flex;flex-direction:column;gap:12px;min-height:520px;border-radius:34px;background:var(--bg);padding:22px 16px}
+.ph-sub{font-size:.8rem;color:var(--muted)}
+.ph-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ph-row b:first-child{font:700 1.7rem var(--head);letter-spacing:-.02em}
+#phDelay{font:700 1.25rem var(--head);color:var(--orange)}#phDelay.ph-ok{color:var(--lime)}
+.ph-track{position:relative;height:44px;margin:4px 6px}
+.ph-rail,.ph-fill{position:absolute;left:0;top:20px;height:4px;border-radius:2px;background:var(--surface3);right:0}
+.ph-fill{right:auto;width:0;background:var(--fg)}
+.ph-stop{position:absolute;top:15px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--bg);border:3px solid #4A5058;box-sizing:border-box}
+.ph-stop.on{border-color:var(--fg)}
+.ph-train{position:absolute;top:11px;left:0;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 6px rgb(212 255 58/.14)}
+.ph-names{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+.ph-card{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:18px;background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.08);font-size:.85rem;color:var(--muted);transition:opacity .4s,transform .4s}
+.ph-card b{color:var(--fg);font-size:.9rem}
+.ph-btn{display:grid;place-items:center;min-height:38px;margin-top:4px;border-radius:19px;background:var(--lime);color:#121417;font-weight:800}
+.ph-proof{display:flex;align-items:center;gap:10px;margin-top:auto;padding:12px 14px;border-radius:18px;background:var(--surface);font-size:.8rem;color:var(--muted);transition:opacity .4s}
+.ph-proof b{color:var(--fg);font-size:.88rem}
+.ph-ok-dot{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%;background:var(--lime)}
+.lbl,.stat,.pill3,details,.signup{box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.stat b{font-weight:700;letter-spacing:-.025em}
+.pill3 h3{font-size:1.3rem}
+.pill3 .tag{background:var(--surface3)!important;color:var(--fg)!important}
+.pill3 .tag.k-l{color:var(--lime)!important}.pill3 .tag.k-o{color:var(--orange)!important}
+.screen .card{background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.card.lime{background:var(--surface2);color:var(--fg)}.card.lime .t{color:var(--lime)}
+.c3h{display:flex;align-items:center;gap:8px}
+.c3gus{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface3);overflow:hidden}
+.c3gus .gus{width:28px;height:auto}
+.chip.o{background:rgb(255 138 92/.14);color:var(--orange)}.chip.k{background:rgb(212 255 58/.12);color:var(--lime)}
+.biz{background:var(--surface2);color:var(--fg);box-shadow:inset 0 1px 0 rgb(255 255 255/.08)}
+.biz p{color:#C5C8CD}
+.biz .btn{background:var(--lime);color:#121417}
+input,select{background:var(--bg);border-color:var(--surface3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./" aria-label="LateProof">
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
+      lateproof
+    </a>
+    <nav class="nav" aria-label="Navigation">
+      <a class="hs" href="carte.html" data-i18n="navMap">Carte</a>
+      <a class="hs" href="assistant.html" data-i18n="navCopilot">Copilote</a>
+      <a href="app.html" data-i18n="navApp">Mon espace</a>
+      <div class="lang" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr" aria-pressed="true">FR</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <h1 data-i18n-html="h1">Le train déraille. <em>Pas ta journée.</em></h1>
+        <p class="lede" data-i18n="lede">LateProof suit ton trajet en direct, te donne le plan B avant tout le monde, et prouve ton retard avec un simple lien que ton manager vérifie en 3 secondes, sans rien installer.</p>
+        <div class="ctas">
+          <a class="btn lime" href="app.html" data-i18n="cta1">Ouvrir l'appli</a>
+          <a class="btn line" href="#nouveautes" data-i18n="cta2">Être prévenu des nouveautés</a>
+        </div>
+      </div>
+      <div class="phonehero" role="img" aria-label="Démonstration animée : le train avance, le retard se met à jour, le plan B s'affiche, puis le justificatif est prêt">
+        <div class="ph">
+          <span class="ph-sub">TER C18 · vers Saint-Étienne</span>
+          <span class="ph-row"><b id="phArr">Arrivée 12h40</b><b id="phDelay" class="ph-ok">à l'heure</b></span>
+          <div class="ph-track"><span class="ph-rail"></span><span class="ph-fill" id="phFill"></span>
+            <span class="ph-stop" style="left:0%"></span><span class="ph-stop" style="left:33%"></span><span class="ph-stop" style="left:66%"></span><span class="ph-stop" style="left:100%"></span>
+            <span class="ph-train" id="phTrain"></span></div>
+          <span class="ph-names"><span>Lyon</span><span>Givors</span><span>Rive-de-G.</span><span>St-Étienne</span></span>
+          <div class="ph-card" id="phAdvice"><b>Correspondance de 13h02 compromise</b><span>Prends le car de 13h10, arrivée 13h35.</span><span class="ph-btn">Voir le plan B</span></div>
+          <div class="ph-proof" id="phProof"><span class="ph-ok-dot"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#121417" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b>Justificatif prêt</b><br>un lien, vérifiable en 3 s</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="board" aria-live="off">
+      <div class="lbl"><b data-i18n="boardTitle">Aujourd'hui en France</b><span><span data-i18n="boardSub">relevé toutes les 2 min</span> · <span id="updated">—</span></span></div>
+      <div class="stat"><b id="sTrains">—</b><span data-i18n="sTrains">trains suivis</span></div>
+      <div class="stat o"><b id="sLate">—</b><span data-i18n="sLate">en retard de 15 min ou plus</span></div>
+      <div class="stat o"><b id="sCanc">—</b><span data-i18n="sCanc">supprimés</span></div>
+    </div>
+
+    <section aria-labelledby="t3">
+      <div class="sh"><h2 id="t3" data-i18n="h3">Avant, pendant, après le retard.</h2></div>
+      <div class="three">
+        <article class="pill3">
+          <span class="tag k-l" data-i18n="before">AVANT</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+          <h3 data-i18n="bT">L'alerte et le plan B</h3>
+          <p data-i18n="bP">Grève annoncée, train supprimé, correspondance compromise : tu es prévenu, et le copilote te dit quel train prendre à la place.</p>
+        </article>
+        <article class="pill3">
+          <span class="tag k-o" data-i18n="during">PENDANT</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="11" height="18" rx="2.5"/><path d="M2 12h9M8 9l3 3-3 3"/></svg>
+          <h3 data-i18n="dT">Un geste à bord</h3>
+          <p data-i18n="dP">« Je suis à bord » : LateProof sait quel train tu prends et suit son retard minute par minute, même avec des correspondances.</p>
+        </article>
+        <article class="pill3">
+          <span class="tag" data-i18n="after">APRÈS</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          <h3 data-i18n="aT">La preuve, sans discussion</h3>
+          <p data-i18n="aP">Un justificatif signé par ton téléphone, comparé aux données officielles. Ton manager ou ton prof le vérifie en 3 secondes. Et on te dit à quoi tu as droit.</p>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="tDemo">
+      <div class="sh"><h2 id="tDemo" data-i18n="demoTitle">Une matinée avec LateProof.</h2><p data-i18n="demoLede">Appuie sur « Étape suivante » pour suivre un trajet, du quai jusqu'au justificatif.</p></div>
+      <div class="demo">
+        <div class="phone" aria-hidden="true"><div class="screen">
+          <div class="hd"><svg width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="6" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/></svg>lateproof</div>
+          <div class="card" id="c1"><span class="t">07:59 · Lyon Part-Dieu</span><b data-i18n="c1">À bord : TER 8h12 vers Grenoble</b></div>
+          <div class="card hide" id="c2"><span class="t">08:20</span><b data-i18n="c2">Ton train prend du retard</b><span class="chip o">+27 min</span></div>
+          <div class="card lime hide" id="c3"><span class="t c3h"><span class="c3gus" id="c3gus"></span><span data-i18n="c3t">GUS, TON COPILOTE</span></span><b data-i18n="c3">Ta correspondance est perdue. Prends le 9h04, voie B.</b></div>
+          <div class="card hide" id="c4"><span class="t">09:41</span><b data-i18n="c4">Justificatif envoyé à ton manager</b><span class="chip k" data-i18n="c4c">Vérifié</span></div>
+        </div></div>
+        <div>
+          <ol class="steps" id="steps">
+            <li class="on"><span class="n">1</span><span data-i18n="s1">Sur le quai, un geste : LateProof sait quel train tu prends. Ta position ne quitte pas ton téléphone.</span></li>
+            <li><span class="n">2</span><span data-i18n="s2">Le retard est relevé en direct, à partir des données officielles SNCF et Île-de-France Mobilités.</span></li>
+            <li><span class="n">3</span><span data-i18n="s3">Le copilote calcule ton plan B avant même que la correspondance soit ratée.</span></li>
+            <li><span class="n">4</span><span data-i18n="s4">Le justificatif part en un lien. Il est scellé : s'il était retouché, la page de vérification le signalerait.</span></li>
+          </ol>
+          <button class="btn line" id="nextStep" type="button" data-i18n="next">Étape suivante →</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="tBiz">
+      <div class="biz">
+        <div><h2 id="tBiz" data-i18n="bizT">Pour les entreprises et les écoles</h2>
+          <p data-i18n="bizP">Fini les « mon train était en retard » invérifiables. Les justificatifs de vos équipes se vérifient en un clic, sans compte ni installation. Un espace pour les recevoir arrive.</p></div>
+        <a class="btn" href="#nouveautes" data-i18n="bizC">Nous contacter</a>
+      </div>
+    </section>
+
+    <section id="nouveautes" aria-labelledby="tSign">
+      <div class="signup">
+        <div class="sh" style="margin:0"><h2 id="tSign" data-i18n="formTitle">Reste dans la boucle.</h2>
+          <p data-i18n="formSub">Un e-mail quand une grosse nouveauté arrive : appli installable, alertes du matin, offre entreprise. Rien d'autre.</p>
+          <div class="count" id="countWrap" hidden><span data-i18n="already">Déjà inscrits :</span> <b id="count">0</b></div></div>
+        <form id="form" novalidate>
+          <label for="email"><span data-i18n="email">Ton e-mail</span><input id="email" name="email" type="email" required autocomplete="email" maxlength="254" placeholder="prenom@exemple.fr"></label>
+          <div class="row">
+            <label for="profile"><span data-i18n="profile">Tu voyages…</span>
+              <select id="profile" name="profile">
+                <option value="quotidien" data-i18n="pQ">Tous les jours</option>
+                <option value="grandes_lignes" data-i18n="pG">En grandes lignes</option>
+                <option value="les_deux" data-i18n="pB">Les deux</option>
+                <option value="entreprise" data-i18n="pE">Pour mon entreprise</option>
+              </select></label>
+            <label for="line"><span data-i18n="line">Ton trajet (facultatif)</span><input id="line" name="line" type="text" maxlength="80" placeholder="Lyon → Grenoble"></label>
+          </div>
+          <input class="hp" type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="check" for="consent"><input id="consent" name="consent" type="checkbox" required><span data-i18n="consent">J'accepte que LateProof garde mon e-mail uniquement pour m'écrire au sujet du service. Je peux demander sa suppression à tout moment.</span></label>
+          <button class="btn lime" id="submit" type="submit" data-i18n="cta">M'inscrire</button>
+          <p class="msg" id="msg" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <section aria-labelledby="tFaq">
+      <div class="sh"><h2 id="tFaq" data-i18n="faqTitle">Questions fréquentes</h2></div>
+      <div class="faq">
+        <details><summary data-i18n="q1">Combien ça coûte ?</summary><p data-i18n="a1">L'essentiel est gratuit : retards en direct, check-in et justificatifs. Une formule Pro (prix indicatif : 5,99 € par mois ou 49 € par an) ajoutera le copilote complet, les alertes du matin et la voix. Pour les entreprises, une offre par salarié.</p></details>
+        <details><summary data-i18n="q2">Le justificatif, c'est vraiment fiable ?</summary><p data-i18n="a2">Il est signé par ton téléphone au moment du trajet, comparé aux relevés officiels SNCF et Île-de-France Mobilités, et la moindre retouche se voit. Le scellement public des relevés de chaque nuit (sur Solana) arrive prochainement.</p></details>
+        <details><summary data-i18n="q3">Et ma localisation ?</summary><p data-i18n="a3">Elle sert uniquement, sur ton téléphone, à reconnaître ta gare au moment du check-in. Tes trajets et justificatifs restent sur ton appareil.</p></details>
+        <details><summary data-i18n="q4">Quels trains ?</summary><p data-i18n="a4">Tous les trains SNCF en France (TGV, Intercités, TER), et en Île-de-France les RER et Transilien. Pour le métro et le tram, on suit la régularité, mais pas encore de justificatif : ils ne publient pas d'horaires.</p></details>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span data-i18n="legal">LateProof, projet en construction. Ton e-mail n'est jamais partagé.</span>
+    <span data-i18n="data">Données : SNCF open data, Île-de-France Mobilités.</span>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script src="gus.js"></script>
+<script>document.getElementById("c3gus").innerHTML = Gus.svg({head: true, size: 28, mood: "content"}); Gus.fab({tip: "Une question ? Demande à Gus."});</script>
+<script>
+// ------------------------------------------------------------------ Textes FR / EN
+const I18N = {
+  en: {navMap:"Map", navCopilot:"Copilot", navApp:"My space", kick:"Trains, RER, Transilien · France",
+    h1:"Your train derails. <em>Your day doesn't.</em>",
+    lede:"LateProof tracks your trip live, gives you a plan B before anyone else, and proves your delay with a simple link your manager checks in 3 seconds, with nothing to install.",
+    cta1:"Open the app", cta2:"Get the news", boardTitle:"Today in France", boardSub:"checked every 2 min",
+    sTrains:"trains tracked", sLate:"15+ minutes late", sCanc:"cancelled",
+    k3:"What LateProof does", h3:"Before, during, after the delay.", before:"BEFORE", during:"DURING", after:"AFTER",
+    bT:"The alert and the plan B", bP:"Strike announced, train cancelled, connection at risk: you're warned, and the copilot tells you which train to take instead.",
+    dT:"One tap on board", dP:"“I'm on board”: LateProof knows your train and tracks its delay minute by minute, connections included.",
+    aT:"Proof, no arguing", aP:"A certificate signed by your phone, checked against official data. Your manager or teacher verifies it in 3 seconds. And we tell you what you're entitled to.",
+    kDemo:"Try it", demoTitle:"A morning with LateProof.", demoLede:"Tap “Next step” to follow a trip, from the platform to the certificate.",
+    c1:"On board: 8:12 regional train to Grenoble", c2:"Your train is running late", c3t:"GUS, YOUR COPILOT", c3:"Your connection is lost. Take the 9:04, platform B.",
+    c4:"Certificate sent to your manager", c4c:"Verified",
+    s1:"One tap on the platform: LateProof knows which train you're on. Your location never leaves your phone.",
+    s2:"The delay is tracked live, from official SNCF and Île-de-France Mobilités data.",
+    s3:"The copilot works out your plan B before the connection is even missed.",
+    s4:"The certificate goes out as a link. It's sealed: if it were edited, the verification page would show it.",
+    next:"Next step →", restart:"Start again ↺",
+    bizT:"For companies and schools", bizP:"No more unverifiable “my train was late”. Your teams' certificates are checked in one click, no account or install. A space to receive them is coming.", bizC:"Contact us",
+    kSign:"News", formTitle:"Stay in the loop.", formSub:"One email when something big lands: installable app, morning alerts, business plan. Nothing else.",
+    already:"Already signed up:", email:"Your email", profile:"You travel…", pQ:"Every day", pG:"Long distance", pB:"Both", pE:"For my company", line:"Your route (optional)",
+    consent:"I agree that LateProof keeps my email only to write to me about the service. I can ask for it to be deleted at any time.", cta:"Sign me up",
+    faqTitle:"FAQ", q1:"How much does it cost?", a1:"The essentials are free: live delays, check-in and certificates. A Pro plan (indicative price: €5.99 a month or €49 a year) will add the full copilot, morning alerts and voice. For companies, a per-employee plan.",
+    q2:"Is the certificate really reliable?", a2:"It's signed by your phone during the trip, checked against official SNCF and Île-de-France Mobilités records, and any edit shows. Public sealing of each night's records (on Solana) is coming soon.",
+    q3:"What about my location?", a3:"It's only used, on your phone, to recognise your station at check-in. Your trips and certificates stay on your device.",
+    q4:"Which trains?", a4:"All SNCF trains in France (TGV, Intercités, regional), plus RER and Transilien in Île-de-France. For metro and tram we track regularity, but no certificate yet: they publish no timetable.",
+    legal:"LateProof, a project in progress. Your email is never shared.", data:"Data: SNCF open data, Île-de-France Mobilités.",
+    ok:"You're in! We'll write when something big lands.", dup:"You're already on the list.", bad:"Please check your email address.",
+    noConsent:"Please tick the box so we're allowed to email you.", fail:"Sign-up didn't go through. Please try again in a minute.", sending:"Sending…", updated:"updated"},
+  fr: {}
+};
+document.querySelectorAll("[data-i18n]").forEach(el => I18N.fr[el.dataset.i18n] = el.textContent);
+document.querySelectorAll("[data-i18n-html]").forEach(el => I18N.fr[el.dataset.i18nHtml] = el.innerHTML);
+Object.assign(I18N.fr, {ok:"C'est noté ! On t'écrit quand une grosse nouveauté arrive.", dup:"Tu es déjà inscrit·e. À très vite !",
+  bad:"Vérifie ton adresse e-mail.", noConsent:"Coche la case pour qu'on ait le droit de t'écrire.",
+  fail:"L'inscription n'est pas passée. Réessaie dans une minute.", sending:"Envoi…", restart:"Recommencer ↺", updated:"mis à jour"});
+
+let lang = "fr";
+try { lang = localStorage.getItem("lp-lang") || (navigator.language || "fr").slice(0, 2); } catch (e) {}
+if (!I18N[lang]) lang = "fr";
+function setLang(l) {
+  lang = l; document.documentElement.lang = l;
+  document.querySelectorAll("[data-i18n]").forEach(el => { const v = I18N[l][el.dataset.i18n]; if (v) el.textContent = v; });
+  document.querySelectorAll("[data-i18n-html]").forEach(el => { const v = I18N[l][el.dataset.i18nHtml]; if (v) el.innerHTML = v; });
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+  try { localStorage.setItem("lp-lang", l); } catch (e) {}
+  if (lastStats) showStats(lastStats);
+}
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));
+
+// ------------------------------------------------------------------ Donnees publiques (cle publique, droits limites par la base)
+const CFG = window.LP_CONFIG || {};
+const api = (path, opts = {}) => fetch(`${CFG.url}/rest/v1/${path}`, {...opts, headers: {apikey: CFG.key, "Content-Type": "application/json", ...(opts.headers || {})}});
+const rpc = fn => api(`rpc/${fn}`, {method: "POST", body: "{}"}).then(r => r.ok ? r.json() : Promise.reject(r.status));
+const nf = () => new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-GB");
+let lastStats = null;
+function showStats(s) {
+  lastStats = s;
+  document.getElementById("sTrains").textContent = nf().format(s.trains);
+  document.getElementById("sLate").textContent = nf().format(s.late15);
+  document.getElementById("sCanc").textContent = nf().format(s.cancelled);
+  if (s.updated_at) document.getElementById("updated").textContent = `${I18N[lang].updated} ${new Date(s.updated_at * 1000).toLocaleTimeString(lang === "fr" ? "fr-FR" : "en-GB", {hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"})}`;
+}
+function loadStats() { if (CFG.url) rpc("public_today_stats").then(showStats).catch(() => {}); }
+function loadCount() {
+  if (!CFG.url) return;
+  rpc("waitlist_count").then(n => { if (n >= 10) { document.getElementById("count").textContent = nf().format(n); document.getElementById("countWrap").hidden = false; } }).catch(() => {});
+}
+
+// ------------------------------------------------------------------ Inscription aux nouveautes (meme table que la preinscription)
+const form = document.getElementById("form"), msg = document.getElementById("msg"), btn = document.getElementById("submit");
+const say = (key, cls) => { msg.textContent = I18N[lang][key]; msg.className = "msg " + (cls || ""); };
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  if (form.website.value) return;                                  // piege a robots
+  const email = form.email.value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { say("bad", "err"); form.email.focus(); return; }
+  if (!form.consent.checked) { say("noConsent", "err"); form.consent.focus(); return; }
+  btn.disabled = true; say("sending");
+  const params = new URLSearchParams(location.search);
+  try { localStorage.setItem("lp-profile", form.profile.value); if (form.line.value.trim()) localStorage.setItem("lp-line", form.line.value.trim()); } catch (e2) {}
+  try {
+    const r = await api("waitlist", {method: "POST", headers: {Prefer: "return=minimal"},
+      body: JSON.stringify({email, lang, profile: form.profile.value, line: form.line.value.trim() || null, consent: true, source: (params.get("src") || "site").slice(0, 40)})});
+    if (r.ok) { say("ok", "ok"); form.reset(); loadCount(); }
+    else if (r.status === 409) say("dup", "ok");
+    else say("fail", "err");
+  } catch (err) { say("fail", "err"); }
+  btn.disabled = false;
+});
+
+// ------------------------------------------------------------------ Demonstration pas a pas
+let step = 0;
+document.getElementById("nextStep").addEventListener("click", e => {
+  step = (step + 1) % 4;
+  ["c2", "c3", "c4"].forEach((id, i) => document.getElementById(id).classList.toggle("hide", step < i + 1));
+  document.querySelectorAll("#steps li").forEach((li, i) => li.classList.toggle("on", i <= step));
+  e.currentTarget.textContent = step === 3 ? I18N[lang].restart : I18N[lang].next;
+});
+
+
+// ------------------------------------------------------------------ Telephone de l'accueil : le train avance, le retard monte, le plan B arrive
+(function () {
+  const $ = id => document.getElementById(id);
+  const fill = $("phFill"), train = $("phTrain"), delay = $("phDelay"), arr = $("phArr"), advice = $("phAdvice"), proof = $("phProof");
+  if (!fill) return;
+  const stops = [...document.querySelectorAll(".ph-stop")];
+  const c = x => Math.max(0, Math.min(1, x)), e = x => 1 - Math.pow(1 - x, 3);
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function frame(T) {
+    const p = e(c(T / 9000)), late = Math.round(18 * e(c((T - 1500) / 3000)));
+    fill.style.width = (p * 100) + "%"; train.style.left = (p * 100) + "%";
+    stops.forEach((s, i) => s.classList.toggle("on", p * 100 >= i * 33));
+    delay.textContent = late ? "+" + late + " min" : (lang === "en" ? "on time" : "à l'heure"); delay.classList.toggle("ph-ok", !late);
+    arr.textContent = (lang === "en" ? "Arrival " : "Arrivée ") + "12h" + String(40 + late).padStart(2, "0");
+    const a = e(c((T - 4200) / 500)); advice.style.opacity = a; advice.style.transform = `translateY(${(1 - a) * 10}px)`;
+    proof.style.opacity = 0.25 + 0.75 * e(c((T - 9200) / 500));
+  }
+  if (still) { frame(11000); return; }
+  const t0 = performance.now();
+  (function loop(now) { frame((now - t0) % 12000); requestAnimationFrame(loop); })(t0);
+})();
+
+setLang(lang); loadStats(); loadCount(); setInterval(loadStats, 120000);
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vérification du justificatif · LateProof</title>
+<meta name="description" content="Justificatif de retard de train vérifiable : authentique, signé par le téléphone de son titulaire, impossible à modifier.">
+<meta property="og:title" content="Justificatif de retard vérifiable · LateProof">
+<meta property="og:description" content="Ouvre le lien pour vérifier le retard en 3 secondes, sans rien installer.">
+<meta name="theme-color" content="#F2F1EC">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#F2F1EC;--surface:#FFFFFF;--surface2:#F2F1EC;--surface3:#E6E5DF;--fg:#121417;--muted:#5C6068;--line:#E6E5DF;--lime:#D4FF3A;--orange:#C2410C;--blue:#121417;--on-blue:#FFFFFF;--soft:#FFFFFF;--ok:#3E6B00;--okfg:#3E6B00;--bad:#C2410C;--warn:#C2410C;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--display)}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+a{color:var(--blue)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.05rem;color:var(--fg);text-decoration:none}.brand b{color:var(--blue)}
+.code{font:600 .8rem var(--mono);color:var(--muted)}
+.banner{color:#0B0C0F;padding:22px 16px 20px}
+.banner .in{max-width:560px;margin:0 auto;display:grid;gap:6px}
+.banner h1{display:flex;align-items:center;gap:10px;margin:0;font-size:1.55rem;letter-spacing:-.01em}
+.banner p{margin:0;opacity:.95;font-size:.95rem}
+.ok{background:#D4FF3A;color:#0B0C0F}.bad{background:#FF6A3D;color:#0B0C0F}.wait{background:#2A2D33;color:#F4F5F0}   /* texte blanc : contraste AA dans les deux themes */
+main{max-width:560px;margin:0 auto;padding:18px 16px 40px;display:grid;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px}
+.kicker{font:700 .7rem var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.big{display:flex;align-items:baseline;gap:10px}.big b{font:700 2.75rem var(--mono);color:var(--bad);letter-spacing:-.02em}
+.leg{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:9px 0;border-top:1px solid var(--line)}
+.leg .t{font-weight:600}.leg .s{font-size:.82rem;color:var(--muted)}.leg .r{grid-row:1/3;grid-column:2;font:700 .9rem var(--mono);color:var(--bad);align-self:center}
+.leg .r.okc{color:var(--ok)}
+.total{display:flex;justify-content:space-between;border-top:2px solid var(--fg);padding-top:10px;font-weight:800}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.93rem}.check i{font-style:normal;font-weight:800;color:var(--okfg,var(--ok))}.check i.w{color:var(--warn)}.check i.x{color:var(--bad)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+summary{cursor:pointer;padding:13px 16px;font-weight:700;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"▾";color:var(--muted)}details[open] summary::after{content:"▴"}
+summary::-webkit-details-marker{display:none}
+details .in{padding:0 16px 14px;display:grid;gap:8px;font-size:.92rem}
+.muted{color:var(--muted)}.small{font-size:.84rem}
+.btn{display:inline-flex;justify-content:center;align-items:center;min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:700 .92rem var(--display);cursor:pointer;text-decoration:none}
+.intro{background:var(--soft);border-radius:14px;padding:14px 16px;display:grid;gap:8px;font-size:.93rem}
+.foot{text-align:center;font-size:.8rem;color:var(--muted)}
+code{font:500 .78rem var(--mono);overflow-wrap:anywhere}
+
+/* ---- Direction artistique D : lime dominant, nuit, Unbounded + Manrope ---- */
+h1,h2,h3{font-family:var(--head);letter-spacing:-.03em}
+.wm{font:800 1.12rem var(--head);letter-spacing:-.045em;color:var(--fg)}
+.brand{gap:9px}
+body{font-variant-numeric:tabular-nums}
+.btn{border-radius:999px}
+.card{border-radius:22px}
+.big b{font-family:var(--head);letter-spacing:-.05em;color:var(--orange)}
+.leg .r{color:var(--orange)}.leg .r.okc{color:var(--lime)}
+.total span:last-child{color:var(--orange)!important}
+.check i{color:var(--lime)}.check i.w,.check i.x{color:var(--orange)}
+.banner h1{font-family:var(--head);letter-spacing:-.03em}
+
+/* ---- Revision E : calme et relief. Gros titres gras et aplats lime seulement par touches. ---- */
+h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
+.wm{font:700 1.15rem var(--head);letter-spacing:-.02em;color:var(--fg)}
+.d-ok{background:rgb(212 255 58/.12);color:var(--lime)}.d-mid,.d-bad{background:rgb(255 138 92/.14);color:var(--orange)}
+.top{background:transparent;border-bottom:0}
+.banner{padding:6px 16px 0;background:transparent!important}
+.banner .in{background:#FFFFFF;border-radius:22px;padding:16px 18px;box-shadow:0 1px 2px rgb(18 20 23/.06),0 8px 24px rgb(18 20 23/.06)}
+.banner h1{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;color:#121417}
+.banner p{color:#5C6068;opacity:1}
+.banner.bad .in{box-shadow:inset 0 0 0 2px #C2410C,0 8px 24px rgb(18 20 23/.06)}
+.card,details{background:#FFFFFF;border:0;border-radius:22px;box-shadow:0 1px 2px rgb(18 20 23/.06),0 8px 24px rgb(18 20 23/.06)}
+.intro{background:#FFFFFF;border-radius:22px;box-shadow:0 1px 2px rgb(18 20 23/.06)}
+.big b{font-family:var(--head);font-weight:700;letter-spacing:-.03em;color:#C2410C}
+.leg .r{color:#C2410C}.leg .r.okc{color:#3E6B00}
+.total{border-top-color:#121417}.total span:last-child{color:#C2410C!important}
+.check i{color:#3E6B00}.check i.w,.check i.x{color:#C2410C}
+.btn{background:#FFFFFF;border:0;box-shadow:inset 0 0 0 1.5px #D6D5CF;border-radius:999px}
+a{color:#121417}
+</style>
+</head>
+<body>
+<header class="top"><a class="brand" href="./"><svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a><span class="code" id="code"></span></header>
+<section class="banner wait" id="banner" aria-live="polite"><div class="in"><h1 id="bTitle">Vérification…</h1><p id="bSub">Contrôle de la signature et du sceau, directement dans ce navigateur.</p></div></section>
+<main id="main"></main>
+
+<script src="config.js"></script>
+<script src="lp-core.js"></script>
+<script>
+"use strict";
+const {fmt, esc} = LP, $ = id => document.getElementById(id);
+const ICON_OK = `<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#D4FF3A"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#121417" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ICON_BAD = `<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#C2410C"/><path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const LABELS = {trains: "Trains", arrivee: "Gare d'arrivée", depart: "Gare de départ", etapes: "Détail par étape", checkin: "Heure du check-in", presence: "Présence",
+  titulaire: "Titulaire", releves: "Relevés officiels du retard", date: "Date", retard_min: "Retard", arrivee_prevue: "Arrivée prévue", arrivee_reelle: "Arrivée réelle", declare: "Heure prévue"};
+
+function banner(kind, title, sub) {
+  const b = $("banner"); b.className = "banner " + kind;
+  $("bTitle").innerHTML = (kind === "ok" ? ICON_OK : kind === "bad" ? ICON_BAD : "") + `<span>${esc(title)}</span>`;
+  $("bSub").textContent = sub;
+}
+
+async function main() {
+  const h = new URLSearchParams(location.hash.slice(1)).get("c");
+  if (!h) { banner("wait", "Aucun justificatif", "Ouvre le lien complet reçu par message."); $("main").innerHTML = `<div class="card">Ce lien est incomplet. Demande à la personne de te renvoyer le lien de son justificatif LateProof.</div>`; return; }
+  let c;
+  try { c = LP.certFromHash(h); } catch (e) { banner("bad", "Lien illisible", "Le justificatif a été abîmé ou modifié."); return; }
+  const chk = await LP.checkCert(c).catch(() => ({ok: false, signature: {ok: false}}));
+  const code = LP.shortCode(chk.root || c.root || "00".repeat(32)); $("code").textContent = "code " + code;
+  const F = Object.fromEntries(c.f.filter(f => !f.h).map(f => [f.n, f.v]));
+  const hidden = c.f.filter(f => f.h).map(f => LABELS[f.n] || f.n);
+  const delay = +F.retard_min || 0;
+  if (!chk.ok) {
+    banner("bad", "Justificatif modifié", "Ce document ne correspond pas à celui qui a été signé. Ne vous y fiez pas.");
+    $("main").innerHTML = `<div class="card"><b>Ce qui ne va pas</b>${F.retard_min ? `<span>Retard affiché : <b>+${esc(F.retard_min)} min</b>, mais ce chiffre n'est pas celui qui a été signé.</span>` : ""}<span>${chk.signature && chk.signature.ok === false ? "Le contenu affiché ne correspond pas à la signature du titulaire : au moins une information a été changée après coup." : "La signature est illisible."}</span></div>
+      <div class="card small">Un justificatif LateProof ne peut pas être modifié sans que cela se voie. Demandez le lien d'origine à son titulaire.</div>
+      <p class="foot">Vérification faite dans votre navigateur, sans passer par nos serveurs.</p>`;
+    return;
+  }
+  banner("ok", "Justificatif authentique", "Vérifié à l'instant, dans votre navigateur.");
+  const day = F.date ? new Date(F.date + "T12:00:00Z").toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long", year: "numeric"}) : "";
+  let legs = []; try { legs = JSON.parse(F.etapes || "[]"); } catch (e) {}
+  const sig = chk.signature, browserKey = sig.kind === "browser";
+  $("main").innerHTML = `
+    ${seenIntro() ? "" : `<div class="intro" id="intro"><b>En 15 secondes</b><span>Cette page vérifie un justificatif de retard de train. Le retard vient des données officielles SNCF et Île-de-France Mobilités. Le justificatif a été signé par le téléphone de son titulaire au moment des faits : s'il avait été modifié, cette page s'afficherait en orange.</span><button class="btn" id="gotit">Compris</button></div>`}
+    <section class="card"><span class="kicker">${esc(day)}${legs.length > 1 ? ` · trajet en ${legs.length} étapes` : ""}</span>
+      <div class="big"><b>+${delay}</b><span><b style="font:inherit;color:inherit">min</b> de retard${legs.length > 1 ? " au total" : ""}</span></div>
+      ${F.arrivee_prevue && F.arrivee_reelle ? `<span>Arrivée prévue <b>${fmt.time(+F.arrivee_prevue)}</b>${F.arrivee ? ` à ${esc(F.arrivee)}` : ""}, arrivée réelle <b>${fmt.time(+F.arrivee_reelle)}</b>.</span>` : ""}
+      ${F.declare && F.declare !== "non" ? `<span class="small muted">Heure d'arrivée prévue déclarée par le titulaire (correspondance manquée) ; les retards de chaque train sont relevés.</span>` : ""}
+    </section>
+    ${legs.length ? `<section class="card"><span class="kicker">Le détail${F.etapes ? "" : ""}</span>${legs.map(l => `<div class="leg"><span class="t">${esc(l.t)}</span>
+      <span class="r ${l.x ? "" : fmt.min(l.r) < 1 ? "okc" : ""}">${l.x ? "supprimé" : fmt.min(l.r) < 1 ? "à l'heure" : "+" + fmt.min(l.r) + " min"}</span>
+      <span class="s">${l.a ? `jusqu'à ${esc(l.a)} · ` : ""}prévu ${fmt.time(l.ap)}</span></div>`).join("")}
+      <div class="total"><span>Retard à l'arrivée</span><span style="font-family:var(--mono);color:var(--bad)">+${delay} min</span></div></section>`
+      : F.trains ? `<section class="card"><span class="kicker">Trains</span><span>${esc(F.trains)}</span></section>` : ""}
+    <section class="card">
+      <div class="check"><i aria-hidden="true">✓</i><span>${F.presence ? `<b>${esc(F.presence.split(" : ")[0])}</b> : ${esc(F.presence.split(" : ").slice(1).join(" : "))}` : "Présence non communiquée"}${F.checkin ? ` (check-in à ${fmt.time(+F.checkin)})` : ""}.</span></div>
+      <div class="check"><i aria-hidden="true" class="${browserKey ? "w" : ""}">${browserKey ? "!" : "✓"}</i><span>${browserKey ? "Signé par <b>la clé du navigateur</b> de son titulaire (sans déverrouillage par visage ou empreinte)." : `Signé par <b>le téléphone de son titulaire</b>${sig.userVerified ? ", déverrouillé par visage, empreinte ou code" : ""}.`}${F.titulaire ? ` Titulaire : <b>${esc(F.titulaire)}</b>.` : ""}</span></div>
+      <div class="check"><i aria-hidden="true">✓</i><span>Scellé le ${new Date(c.at * 1000).toLocaleString("fr-FR", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"})} : <b>impossible à modifier</b> sans que cette page passe à l'orange.</span></div>
+      <div class="check" id="cross"><i aria-hidden="true" class="w">…</i><span>Comparaison avec les relevés officiels…</span></div>
+      ${hidden.length ? `<div class="check"><i aria-hidden="true" class="w">◦</i><span class="muted">Non montré par le titulaire, mais scellé : ${esc(hidden.join(", "))}.</span></div>` : ""}
+    </section>
+    <details><summary>Pourquoi c'est fiable ?</summary><div class="in">
+      <div><b>1. Les retards viennent des données officielles</b> de la SNCF et d'Île-de-France Mobilités, relevées en direct toutes les 2 minutes.</div>
+      <div><b>2. Le justificatif est signé par le téléphone</b> de son titulaire, au moment des faits. Un autre appareil ne peut pas le produire, et la moindre modification se voit.</div>
+      <div><b>3. Les relevés de chaque jour sont scellés chaque nuit</b> dans un registre public (Solana), que personne ne peut modifier, pas même LateProof.</div>
+    </div></details>
+    <details><summary>Ce que ça prouve, et ce que ça ne prouve pas</summary><div class="in">
+      <div>Prouve : le retard de chaque train (données officielles), la déclaration de présence du titulaire dans le train, faite sur le moment, et que rien n'a été changé depuis.</div>
+      <div class="muted">Ne prouve pas : la raison de son heure de départ. C'est un élément de preuve, pas un document officiel de l'opérateur.</div>
+    </div></details>
+    <details><summary>Détails techniques</summary><div class="in small">
+      <div>Empreinte du justificatif (racine Merkle des champs) : <code>${esc(chk.root)}</code></div>
+      <div>Signature : ECDSA P-256 (${browserKey ? "clé du navigateur" : "passkey WebAuthn"}), créée sur <code>${esc(sig.origin || "")}</code>.</div>
+      <div id="anchor">Ancrage public : les relevés du ${esc(F.date || "")} sont scellés chaque nuit ; la publication sur Solana arrive avec le déploiement du programme (devnet).</div>
+    </div></details>
+    <p class="foot">Vérification faite dans votre navigateur, sans compte et sans passer par nos serveurs.<br>Seul ce site fait foi. Code du justificatif : <b>${esc(code)}</b></p>`;
+  const g = $("gotit"); if (g) g.onclick = () => { LP.store.set("lpv-intro", true); $("intro").remove(); };
+  crossCheck(F).catch(() => setCross("w", "Comparaison avec les relevés indisponible pour le moment."));
+}
+const seenIntro = () => LP.store.get("lpv-intro");
+function setCross(k, html) { const el = $("cross"); if (el) el.innerHTML = `<i aria-hidden="true" class="${k}">${k === "x" ? "✕" : k === "w" ? "!" : "✓"}</i><span>${html}</span>`; }
+
+// Les releves du justificatif sont-ils identiques a ceux de notre base ? (gardes en detail 2 jours ; ensuite : preuve Solana)
+async function crossCheck(F) {
+  let recs = []; try { recs = JSON.parse(F.releves || "[]"); } catch (e) {}
+  if (!F.releves) return setCross("w", "Relevés officiels non montrés par le titulaire.");
+  if (!recs.length) return setCross("w", "Aucun retard d'au moins une minute relevé sur les trains de ce trajet.");
+  let same = 0, seen = 0, diff = [];
+  for (const r of recs) {
+    const [, net, day, num, stop] = r.split("|");
+    const t = await LP.rpc("public_journey_train", {p_net: net, p_num: num, p_day: day}).catch(() => null);
+    if (!t) continue; seen++;
+    const st = (t.stops || []).find(s => s.stop === stop);
+    if (st && st.rec === r) same++; else diff.push(num);
+  }
+  if (!seen) return setCross("w", "Relevés de ce jour plus en détail dans notre base : ils sont scellés dans l'empreinte de la nuit (preuve Solana bientôt).");
+  if (diff.length) return setCross("x", `Écart avec nos relevés pour le train ${esc(diff.join(", "))} : le retard a pu évoluer après la signature.`);
+  setCross("", `<b>Identique aux relevés officiels</b> enregistrés par LateProof (${same} relevé${same > 1 ? "s" : ""}).`);
+}
+main();
+</script>
+</body>
+</html>

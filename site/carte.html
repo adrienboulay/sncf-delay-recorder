@@ -1,0 +1,1605 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carte des retards · LateProof</title>
+<meta name="description" content="Ponctualité des gares en direct, ta région, ta ligne, ton trajet : grèves annoncées et travaux à venir, en France.">
+<meta name="theme-color" content="#121417">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Meme identite que la page d'accueil. Mise en page : barre de recherche, carte a gauche, panneau a droite. */
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;--blue:#D4FF3A;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#D4FF3A;--red:#FF8A5C;--gold:#D4FF3A;--dot-ok:#D4FF3A;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#D4FF3A;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#D4FF3A;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--display)}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:8px}
+/* Page plein ecran facon Google Maps : la carte occupe tout, les menus flottent dessus et ne s'ouvrent qu'a la demande. */
+html,body{height:100%}
+body{display:flex;flex-direction:column;overflow:hidden}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{position:relative;flex:1;min-height:0}
+.side{position:absolute;z-index:1000;top:12px;left:12px;width:min(400px,calc(100% - 24px));max-height:calc(100% - 24px);display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.side>*{pointer-events:auto}
+.searchbar{display:flex;align-items:center;gap:2px;background:var(--surface);border-radius:999px;box-shadow:0 2px 6px rgb(0 0 0/.18),0 1px 2px rgb(0 0 0/.12);padding:3px 4px}
+.searchbar .combo{flex:1;min-width:0}
+.searchbar input{width:100%;border:0;background:none;font:500 1rem var(--display);color:var(--fg);padding:10px 6px;outline:none}
+.searchbar .sugg{top:calc(100% + 10px);left:-50px;right:-48px}
+.ib{width:42px;height:42px;flex:none;border:0;border-radius:50%;background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.ib:hover{background:var(--bg);color:var(--fg)}
+.ib.dir{color:var(--blue)}
+.ib[aria-expanded="true"],.ib[aria-pressed="true"]{color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,transparent)}
+.quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px}
+.quick::-webkit-scrollbar{display:none}
+.quick button{flex:none;display:inline-flex;align-items:center;gap:6px;border:0;background:var(--surface);color:var(--fg);font:600 .85rem var(--display);border-radius:999px;padding:7px 12px;box-shadow:0 1px 4px rgb(0 0 0/.2);cursor:pointer;white-space:nowrap}
+.quick button:hover{background:var(--bg)}
+.quick button[aria-pressed="true"]{background:var(--blue);color:var(--on-blue)}
+.quick .n{font:700 .72rem var(--mono);background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red);border-radius:999px;padding:1px 6px}
+.quick button[aria-pressed="true"] .n{background:rgb(255 255 255/.25);color:inherit}
+.sheet{background:var(--surface);border-radius:14px;box-shadow:0 2px 10px rgb(0 0 0/.22);overflow:auto;min-height:0;flex:0 1 auto;display:flex;flex-direction:column;overscroll-behavior:contain}
+.sheet .handle{display:none}
+.nhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.box{padding:14px;display:grid;gap:14px}
+.box h2{margin:0;font-size:1.05rem}
+.box .seg{display:flex}.box .seg button{flex:1}
+.box .note{padding:0;margin:0}
+.newsToggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--fg);font:700 .9rem var(--display);padding:12px 14px;cursor:pointer;text-align:left}
+.newsToggle .chev{color:var(--muted);transition:transform .15s}
+.newsToggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.mapinfo{position:absolute;z-index:900;left:50%;transform:translateX(-50%);bottom:24px;display:flex;gap:6px;align-items:center;max-width:calc(100% - 140px)}
+.pill{display:flex;flex-wrap:wrap;gap:2px 12px;background:var(--surface);border:0;border-radius:999px;padding:6px 14px;box-shadow:0 1px 4px rgb(0 0 0/.22);font:500 .78rem var(--display);color:var(--muted)}
+.pill b{font:700 .84rem var(--mono);color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
+.pill .late b{color:var(--amber)}
+button.pill{cursor:pointer;color:var(--fg);font-weight:700;flex:none}
+button.pill[aria-expanded="true"]{background:var(--fg);color:var(--bg)}
+.legendcard{position:absolute;z-index:950;bottom:58px;left:50%;transform:translateX(-50%);width:min(460px,calc(100% - 24px));background:var(--surface);border-radius:12px;box-shadow:0 4px 16px rgb(0 0 0/.22);padding:12px 14px;margin:0}
+.pickbar{position:absolute;z-index:1002;top:118px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:var(--fg);color:var(--bg);border-radius:999px;padding:7px 7px 7px 16px;font-weight:600;font-size:.9rem;box-shadow:0 4px 14px rgb(0 0 0/.3);max-width:calc(100% - 24px)}
+.pickbar button{flex:none;border:0;border-radius:999px;background:var(--bg);color:var(--fg);font:700 .82rem var(--display);padding:6px 12px;cursor:pointer}
+.app.picking #map,.app.picking .leaflet-interactive{cursor:crosshair!important}
+.endrow{display:flex;gap:6px;align-items:center}
+.endrow .combo{flex:1;min-width:0}
+.pickbtn{flex:none;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);display:grid;place-items:center;cursor:pointer}
+.pickbtn[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+.near{font-size:.76rem;color:var(--muted);font-weight:500}
+.star{font-size:1.1rem;line-height:1}
+.star[aria-pressed="true"]{color:#f5b301}
+.favlist{display:grid;gap:4px}
+.fav{display:flex;align-items:center;gap:6px}
+.fav>button:first-child{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 .88rem var(--display);border-radius:10px;padding:9px 10px;cursor:pointer;overflow-wrap:anywhere}
+.fav>button:first-child:hover{border-color:var(--blue)}
+.fav .k{font:700 .62rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:44px}
+.quickfill{display:flex;flex-wrap:wrap;gap:6px}
+.quickfill button{font:600 .78rem var(--display);border:1px dashed var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:4px 10px;cursor:pointer}
+.posbox{display:grid;gap:8px}
+.posbox .row .btn{padding:7px 10px;font-size:.8rem}
+.sugg .k.addr{color:var(--blue)}
+.locdot{width:16px;height:16px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 6px color-mix(in srgb,var(--blue) 25%,transparent)}
+@media (max-width:720px){
+  .side{left:8px;right:8px;top:8px;width:auto;max-height:none}
+  .sheet{position:fixed;left:0;right:0;bottom:0;max-height:52dvh;border-radius:16px 16px 0 0;z-index:1001;box-shadow:0 -2px 14px rgb(0 0 0/.25)}
+  .sheet.full{max-height:calc(100dvh - 64px)}
+  .sheet .handle{display:block;flex:none;width:100%;height:22px;border:0;cursor:pointer;background:var(--surface)}
+  .sheet .handle::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:8px auto}
+  .mapinfo{left:8px;transform:none;max-width:calc(100% - 66px);bottom:24px}
+  .app.sheet-open .mapinfo,.app.sheet-open .legendcard{display:none}
+  .legendcard{left:8px;transform:none;width:calc(100% - 16px)}
+  .nav a.hide-sm{display:none}
+  .app.picking .sheet{display:none}
+  .pickbar{top:auto;bottom:28px;left:8px;right:8px;transform:none;justify-content:space-between;border-radius:16px}
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.2rem;color:var(--fg);text-decoration:none}
+.brand b{color:var(--blue)}
+.nav{display:flex;align-items:center;gap:12px}
+.nav a{color:var(--muted);font-weight:600;text-decoration:none}.nav a:hover{color:var(--blue)}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.lang button{border:0;background:none;color:var(--muted);font:600 .8rem var(--mono);padding:6px 11px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--blue);color:var(--on-blue)}
+.field{display:grid;gap:4px;font-size:.78rem;font-weight:600;color:var(--muted);min-width:0}
+.field input,.field select{font:500 .95rem var(--display);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%;min-width:0}
+.field select{padding-right:28px}
+.combo{position:relative}
+.sugg{position:absolute;z-index:1200;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 12px 30px rgb(0 0 0/.16);max-height:340px;overflow:auto;padding:4px;margin:0;list-style:none}
+.sugg li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:.92rem}
+.sugg li[aria-selected="true"],.sugg li:hover{background:var(--bg)}
+.sugg .k{font:700 .64rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:52px}
+.sugg .x{color:var(--muted);font-size:.8rem;margin-left:auto;text-align:right}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;color:var(--fg);font:600 .82rem var(--display);padding:9px 11px;cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.btn{font:700 .88rem var(--display);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:9px 13px;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted);padding:6px 8px}
+.btn:disabled{opacity:.5;cursor:default}
+#map{position:absolute;inset:0;background:var(--surface2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.legend .grad{gap:8px}
+.legend .bar{width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(145 70% 42%),hsl(110 70% 45%),hsl(55 85% 48%),hsl(32 90% 50%),hsl(8 80% 50%),hsl(0 75% 45%))}
+.ev{display:grid;place-items:center;width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  font:800 11px/1 var(--display);font-style:normal;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgb(0 0 0/.35);box-sizing:border-box}
+.ev span{transform:rotate(45deg)}
+.ev-greve{background:var(--red)}.ev-travaux{background:var(--amber)}.ev-incident{background:var(--blue)}
+.legend .ev.lg{transform:none;border-radius:50%;width:14px;height:14px;border-width:2px}
+.picto{height:1.25em;width:auto;vertical-align:-.25em;margin-right:4px;display:inline-block}
+.picto.lg{height:1.7em;vertical-align:-.45em;margin-right:8px}
+.lbadge{display:inline-block;font:800 .72rem/1 var(--display);padding:3px 5px;border-radius:4px;margin-right:4px;vertical-align:.05em;color:#fff;background:#6b7280}
+.lbadge.lg{font-size:.9rem;padding:4px 7px;margin-right:8px}
+.picts{display:inline-flex;flex-wrap:wrap;gap:2px;vertical-align:middle}
+.leaflet-control-layers{font:500 13px var(--display);border-radius:10px!important}
+.news>header{padding:14px 14px 10px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.news h2{font-size:1.05rem;margin:0}
+.fr{font:700 .6rem var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 3px;margin-left:4px;vertical-align:.1em}
+/* Itineraires (facon Google Maps : une carte par option, depliable) */
+.jrns{display:grid;gap:8px}
+.jrn{border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.jrn.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.jhead{display:grid;gap:4px;width:100%;border:0;background:none;color:var(--fg);font:inherit;text-align:left;padding:10px 12px;cursor:pointer}
+.jtop{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.jtop .t{font:700 1.02rem var(--mono);font-variant-numeric:tabular-nums}
+.jtop .dur{font-weight:700;white-space:nowrap}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:.84rem;color:var(--muted)}
+.chain .sep{color:var(--muted)}
+.jsub{font-size:.8rem;color:var(--muted)}
+.jsub.warn{color:var(--amber);font-weight:600}.jsub.bad{color:var(--red);font-weight:600}
+.legs{list-style:none;margin:0;padding:0 12px 12px;display:grid;gap:0}
+.leg{display:grid;grid-template-columns:54px 14px 1fr;gap:0 8px;font-size:.86rem}
+.leg .t{font:600 .82rem var(--mono);text-align:right;padding-top:1px}
+.leg .rail{position:relative}
+.leg .rail::before{content:"";position:absolute;left:5px;top:4px;bottom:-4px;width:4px;border-radius:2px;background:var(--lc,var(--blue))}
+.leg .rail::after{content:"";position:absolute;left:1px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid var(--lc,var(--blue));box-sizing:border-box}
+.leg.end .rail::before{display:none}
+.leg .what{padding-bottom:12px;min-width:0;overflow-wrap:anywhere}
+.leg .what small{display:block;color:var(--muted)}
+.xfer{display:grid;grid-template-columns:54px 14px 1fr;gap:0 8px;font-size:.8rem;color:var(--muted)}
+.xfer .rail{border-left:4px dotted var(--line);margin-left:5px}
+.xfer .what{padding:2px 0 12px}
+.xfer.warn .what{color:var(--amber);font-weight:600}.xfer.bad .what{color:var(--red);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:600 .8rem var(--display);border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:5px 10px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.list{padding:6px;display:grid;gap:4px;align-content:start}
+.item{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;text-align:left;border:1px solid transparent;background:none;border-radius:10px;padding:9px 10px;cursor:pointer;color:var(--fg);font:inherit}
+.item:hover,.item.on{background:var(--bg);border-color:var(--line)}
+.tag{font:700 .68rem var(--mono);letter-spacing:.06em;padding:3px 6px;border-radius:5px;align-self:start;text-transform:uppercase}
+.t-greve{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
+.t-travaux{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.t-incident{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.item .ttl{font-size:.9rem;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.item .meta{grid-column:2;font:500 .75rem var(--mono);color:var(--muted)}
+.item .sev{color:var(--red);font-weight:700}
+.empty{padding:20px 12px;color:var(--muted);font-size:.9rem;margin:0}
+
+/* Carte de contexte : region, ligne ou trajet selectionne */
+.ctx{border-bottom:1px solid var(--line);padding:14px;display:grid;gap:10px;background:color-mix(in srgb,var(--blue) 5%,var(--surface));border-radius:14px 14px 0 0}
+.ctx-head{display:flex;align-items:flex-start;gap:8px}
+.ctx-head h3{margin:0;font-size:1.1rem;line-height:1.25;flex:1;min-width:0;overflow-wrap:anywhere}
+.ctx-head .kind{display:block;font:700 .66rem var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin-bottom:2px}
+.stats{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.84rem;color:var(--muted)}
+.stats b{font:700 1rem var(--mono);color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
+.stats .warn b{color:var(--amber)}.stats .bad b{color:var(--red)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hint{font-size:.82rem;color:var(--muted);margin:0}
+.trip-form{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:end}
+.trip-form .field{grid-column:1}
+.trip-form .swap{grid-column:2;grid-row:1/3;align-self:center}
+.trip-form .go{grid-column:1/-1}
+table.trains{width:100%;border-collapse:collapse;font-size:.84rem}
+.trains th{font:600 .7rem var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+.trains td{padding:6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:top}
+.trains td.t{font:600 .86rem var(--mono)}
+.trains tr.past td{opacity:.55}
+.d{display:inline-block;font:700 .7rem var(--mono);padding:2px 5px;border-radius:4px;margin-left:4px}
+.d-ok{background:color-mix(in srgb,var(--mint) 16%,transparent);color:var(--mint)}
+.d-mid{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.d-bad{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
+.saved{display:flex;flex-wrap:wrap;gap:6px}
+.saved button{font:600 .78rem var(--display);border:1px dashed var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:4px 10px;cursor:pointer}
+.metro{display:grid;gap:2px}.dir{margin:0;font-size:.84rem;display:flex;justify-content:space-between;gap:8px}.dir span{font:600 .82rem var(--mono);white-space:nowrap}
+.lblocks{display:grid;gap:10px}
+.lblock{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface)}
+.lhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.lname{display:flex;align-items:center;gap:2px;border:0;background:none;color:var(--fg);font:800 .95rem var(--display);cursor:pointer;padding:0}
+.freq{font-size:.75rem;color:var(--muted);text-align:right}
+.lrow{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-top:1px dashed var(--line);font-size:.86rem}
+.lrow .term{min-width:0;overflow-wrap:anywhere}
+.lrow .times{font:600 .8rem var(--mono);white-space:nowrap;text-align:right}
+.lrow .times .d{margin-left:2px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.tabs button{border:0;background:none;color:var(--muted);font:700 .86rem var(--display);padding:7px 10px;cursor:pointer;border-bottom:3px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--blue)}
+.dep{border-bottom:1px solid var(--line)}
+.dephead{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center;width:100%;border:0;background:none;color:var(--fg);font:inherit;font-size:.86rem;padding:7px 2px;cursor:pointer;text-align:left}
+.dephead .t{font:600 .84rem var(--mono);white-space:nowrap}
+.dephead .chev{transition:transform .15s;color:var(--muted)}
+.dep.open .chev{transform:rotate(180deg)}
+.depbody{padding:2px 2px 10px}
+.issues{margin:4px 0;padding-left:18px;color:var(--red);font-size:.82rem}
+.hint.ok{color:var(--mint)}
+.stops{list-style:none;margin:4px 0 0;padding:0 0 0 10px;border-left:3px solid var(--line);display:grid;gap:2px}
+.stops li{display:grid;grid-template-columns:44px 1fr auto;gap:6px;font-size:.82rem}
+.stops li .t{font:600 .78rem var(--mono);color:var(--muted)}
+.stops li.skip span:nth-child(2){text-decoration:line-through;color:var(--muted)}
+.backbtn{justify-self:start;padding:2px 0;font-size:.82rem}
+.soon{font-size:.8rem;color:var(--muted);border-left:3px solid var(--blue);padding-left:8px;margin:0}
+.note{font-size:.8rem;color:var(--muted);padding-block:0 30px}
+.leaflet-popup-content{font:14px/1.45 var(--display)}.leaflet-popup-content b{font-weight:800}
+.leaflet-popup-content .btn{margin-top:6px;padding:5px 9px;font-size:.78rem}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:600;font-size:.88rem;z-index:2000}
+
+/* ---- Direction artistique D : lime dominant, nuit, Unbounded + Manrope ---- */
+h1,h2,h3{font-family:var(--head);letter-spacing:-.03em}
+.wm{font:800 1.12rem var(--head);letter-spacing:-.045em;color:var(--fg)}
+.brand{gap:9px}
+body{font-variant-numeric:tabular-nums}
+.btn{border-radius:999px}
+.searchbar,.quick button,.pill{font-family:var(--display)}
+.d-ok{background:var(--lime);color:#0B0C0F}.d-mid,.d-bad{background:var(--orange);color:#0B0C0F}
+.jtop .t{font-family:var(--head);letter-spacing:-.03em}
+
+/* ---- Revision E : calme et relief. Gros titres gras et aplats lime seulement par touches. ---- */
+h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
+.wm{font:700 1.15rem var(--head);letter-spacing:-.02em;color:var(--fg)}
+.d-ok{background:rgb(212 255 58/.12);color:var(--lime)}.d-mid,.d-bad{background:rgb(255 138 92/.14);color:var(--orange)}
+.searchbar,.sheet{box-shadow:inset 0 1px 0 rgb(255 255 255/.06),0 8px 24px rgb(0 0 0/.35)}
+.quick button{background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.06),0 2px 8px rgb(0 0 0/.3)}
+.quick button[aria-pressed="true"]{background:var(--surface3);color:var(--lime)}
+.pill{background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.06),0 2px 8px rgb(0 0 0/.3)}
+button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
+.ctx{background:var(--surface2)}
+.jrn{border-color:transparent;background:var(--surface2)}.jrn.on{box-shadow:inset 0 0 0 1.5px var(--lime)}
+</style>
+</head>
+<body>
+<header class="top wrap">
+  <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
+  <nav class="nav"><a href="app.html">Mon espace</a><a href="assistant.html">Copilote</a><a class="hide-sm" href="./#nouveautes" data-i18n="signup">Nouveautés</a>
+    <div class="lang" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr" aria-pressed="true">FR</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></nav>
+</header>
+<h1 class="sr" data-i18n="h1">Les retards en direct, et ce qui arrive</h1>
+
+<main class="app" id="app">
+  <div id="map" role="region" aria-label="Carte des gares"></div>
+
+  <div class="side">
+    <div class="searchbar" role="search">
+      <button class="ib" type="button" id="menuBtn" aria-expanded="false" aria-controls="sheet" data-i18n-aria="menu" aria-label="Préférences">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <div class="combo"><label for="q" class="sr" data-i18n="qLabel">Rechercher</label>
+        <input id="q" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="qList" aria-autocomplete="list"
+               data-i18n-ph="qPh" placeholder="Une région, une ligne (RER A, TER C30…), une gare">
+        <ul class="sugg" id="qList" role="listbox" hidden></ul>
+      </div>
+      <button class="ib dir" type="button" id="tripBtn" data-i18n-aria="tripBtn" aria-label="Mon trajet">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l9.4 9.4-9.4 9.4L2.6 12z" fill="currentColor"/><path d="M9 14v-2.5a1.5 1.5 0 0 1 1.5-1.5H15m-2-2l2 2-2 2" fill="none" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <div class="quick" role="toolbar" aria-label="Raccourcis">
+      <button type="button" id="newsBtn" aria-pressed="false" aria-controls="sheet">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4m0 3v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span data-i18n="newsBtn">Perturbations</span><span class="n" id="newsN" hidden></span></button>
+      <button type="button" id="regionBtn"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg>
+        <span id="regionBtnLbl" data-i18n="regionBtn">Ma région</span></button>
+      <button type="button" id="locBtn"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span data-i18n="around">Autour de moi</span></button>
+      <button type="button" id="favBtn" aria-pressed="false" aria-controls="sheet"><span class="star" aria-hidden="true">★</span><span data-i18n="favs">Favoris</span></button>
+    </div>
+
+    <div class="sheet" id="sheet" hidden>
+      <button class="handle" type="button" id="handle" data-i18n-aria="expand" aria-label="Agrandir"></button>
+      <section class="ctx" id="ctx" aria-live="polite" hidden></section>
+      <button class="newsToggle" type="button" id="newsToggle" aria-expanded="false" aria-controls="newsBox" hidden><span id="newsToggleLbl"></span><span class="chev" aria-hidden="true">▾</span></button>
+      <section class="news" id="newsBox" aria-labelledby="pTitle" hidden>
+        <header>
+          <div class="nhead"><h2 id="pTitle"><span data-i18n="pTitle">Perturbations annoncées</span><span id="pScope"></span></h2>
+            <button class="btn ghost" type="button" data-close="news" data-i18n-aria="close" aria-label="Fermer">✕</button></div>
+          <div class="chips" id="kinds" role="group" aria-label="Type">
+            <button type="button" data-k="all" aria-pressed="true" data-i18n="cAll">Tout</button>
+            <button type="button" data-k="greve" aria-pressed="false" data-i18n="cGreve">Grèves</button>
+            <button type="button" data-k="travaux" aria-pressed="false" data-i18n="cTravaux">Travaux</button>
+            <button type="button" data-k="incident" aria-pressed="false" data-i18n="cIncident">Incidents</button>
+          </div>
+          <div class="chips" id="when" role="group" aria-label="Période">
+            <button type="button" data-w="0" aria-pressed="false" data-i18n="wNow">En cours</button>
+            <button type="button" data-w="7" aria-pressed="true" data-i18n="w7">7 prochains jours</button>
+          </div>
+        </header>
+        <div class="list" id="list"><p class="empty" data-i18n="loading">Chargement…</p></div>
+      </section>
+      <section class="box" id="favBox" aria-labelledby="favTitle" hidden>
+        <div class="nhead"><h2 id="favTitle" data-i18n="favs">Favoris</h2>
+          <button class="btn ghost" type="button" data-close="favs" data-i18n-aria="close" aria-label="Fermer">✕</button></div>
+        <div class="favlist" id="favList"></div>
+      </section>
+      <section class="box" id="menuBox" aria-labelledby="menuTitle" hidden>
+        <div class="nhead"><h2 id="menuTitle" data-i18n="settings">Préférences</h2>
+          <button class="btn ghost" type="button" data-close="menu" data-i18n-aria="close" aria-label="Fermer">✕</button></div>
+        <div class="field"><span id="profLbl" data-i18n="profLbl">Mon profil</span>
+          <div class="seg" id="profile" role="group" aria-labelledby="profLbl">
+            <button type="button" data-p="quotidien" aria-pressed="false" data-i18n="pQ">Au quotidien</button>
+            <button type="button" data-p="grandes_lignes" aria-pressed="false" data-i18n="pG">Grandes lignes</button>
+            <button type="button" data-p="les_deux" aria-pressed="true" data-i18n="pB">Les deux</button>
+          </div>
+        </div>
+        <div class="field"><label for="region" data-i18n="regLbl">Ma région</label>
+          <select id="region"><option value="" data-i18n="regAll">Toute la France</option></select>
+        </div>
+        <div class="field posbox"><span id="posLbl" data-i18n="posTitle">Ma position</span>
+          <span class="hint" id="posNow"></span>
+          <div class="endrow"><div class="combo"><input id="posIn" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="posList" aria-labelledby="posLbl" data-i18n-ph="posPh" placeholder="Adresse ou gare"><ul class="sugg" id="posList" role="listbox" hidden></ul></div></div>
+          <div class="row"><button class="btn" type="button" id="posGeo" data-i18n="posUse">Me localiser</button><button class="btn" type="button" id="posMap" data-i18n="posMap">Choisir sur la carte</button><button class="btn ghost" type="button" id="posClear" data-i18n="posClear">Effacer</button></div>
+        </div>
+        <p class="hint" data-i18n="sub">Cherche ta région, ta ligne ou ton trajet : la carte montre les retards du jour, la liste les grèves et travaux qui te concernent.</p>
+        <p class="note" data-i18n="note">Sources : données temps réel SNCF et Île-de-France Mobilités enregistrées par LateProof toutes les 2 minutes ; agenda public des grèves (cestlagreve.fr). Chiffres de la journée en cours, heure de Paris. Ton profil, ta région et tes trajets restent dans ce navigateur.</p>
+      </section>
+    </div>
+  </div>
+
+  <div class="pickbar" id="pickBar" role="status" hidden><span id="pickTxt"></span><button type="button" id="pickCancel" data-i18n="cancel">Annuler</button></div>
+  <div class="mapinfo">
+    <div class="pill" aria-live="polite">
+      <span><b id="kSt">—</b><span data-i18n="kSt">gares suivies</span></span>
+      <span class="late"><b id="kLate">—</b><span data-i18n="kLate">passages à +15 min</span></span>
+      <span><b id="kCanc">—</b><span data-i18n="kCanc">arrêts supprimés</span></span>
+      <span><b id="kUpd">—</b><span data-i18n="kUpd">dernière mise à jour</span></span>
+    </div>
+    <button class="pill" type="button" id="legendBtn" aria-expanded="false" aria-controls="legendCard" data-i18n="legendBtn">Légende</button>
+  </div>
+  <div class="legendcard legend" id="legendCard" hidden>
+    <span class="grad"><span data-i18n="lg0">fluide</span><i class="bar" aria-hidden="true"></i><span data-i18n="lg2">très perturbé</span></span>
+    <span><i class="ev ev-incident lg" aria-hidden="true"></i><span data-i18n="lgE">perturbation annoncée ici</span></span>
+    <span data-i18n="lgM">Trains : retard moyen, trains à +15 min et suppressions du jour. Métro, tram : intervalle entre deux rames comparé au prévu. Clique une ligne ou une gare pour le détail.</span>
+    <span data-i18n="lgZ">Vue large : les gares voisines sont regroupées (taille = trafic). Zoome pour le détail et le tracé des lignes.</span>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="config.js"></script>
+<script src="gus.js"></script>
+<script>Gus.fab({bottom: "178px", z: 960});</script>
+<script>
+// ================================================================= Textes FR / EN
+const EN = {signup:"News", h1:"Train delays live, and what's coming", sub:"Search your region, your line or your trip: the map shows today's delays, the list the strikes and works that affect you.",
+  kSt:"stations tracked", kLate:"arrivals 15+ min late", kCanc:"cancelled stops", kUpd:"last update", qLabel:"Search", qPh:"A region, a line (RER A, TER C30…), a station",
+  profLbl:"My profile", pQ:"Daily commute", pG:"Long distance", pB:"Both", regLbl:"My region", regAll:"All of France", tripBtn:"My trip",
+  lg0:"smooth", lg2:"heavily disrupted", lgE:"disruption announced here",
+  lgM:"Trains: average delay, trains 15+ min late and cancellations today. Metro, tram: interval between trains vs planned. Click a line or a station for details.",
+  tabGL:"TGV & Intercités", tabTER:"TER & regional", noHour:"No departure in the next hour.", trainNo:"Train", noTrain:"Details unavailable.",
+  maxDelay:"Up to", skippedStops:"stop(s) cancelled further on", cancelledTrain:"Train cancelled", noIssue:"No problem reported", inTrouble:"of traffic disrupted", atQuay:"now", estNote:"Metro and tram times are estimated from live train positions (RATP publishes no timetable).", zoomIn:"Zoom in", nextDep:"Next departures", noNext:"No departure known in real time right now.", metroNoTime:"Metro and tram: no timetable is published, only the frequency.",
+  dest:"Destination", time:"Time", linesHere:"Lines here", kStation2:"Station", lgZ:"Zoomed out: nearby stations are grouped (size = traffic). Zoom in for detail and line routes.", grp:"stations", grpWorst:"most affected",
+  bPlan:"Map", bLight:"Light", bDark:"Dark", bOsm:"Detailed (OSM)", every:"a train every", planned:"planned", extra:"extra wait about", metroT:"Metro / tram", pTitle:"Announced disruptions", cAll:"All", cGreve:"Strikes", cTravaux:"Works", cIncident:"Incidents",
+  wNow:"Ongoing", w7:"Next 7 days", loading:"Loading…", note:"Sources: SNCF and Île-de-France Mobilités real-time data, recorded by LateProof every 2 minutes; public strike calendar (cestlagreve.fr). Figures for the current day, Paris time. Your profile, region and trips stay in this browser.",
+  none:"Nothing announced for this filter.", greve:"strike", travaux:"works", incident:"incident", now:"ongoing", from:"from", to:"to", block:"service stopped",
+  pass:"arrivals", late:"15+ min late", canc:"cancelled", avg:"average delay", min:"min", unavailable:"Live data is not connected yet.",
+  kRegion:"Region", kLine:"Line", kStation:"Station", kTrip:"My trip", trains:"trains today", lateT:"15+ min late", cancT:"cancelled",
+  stTracked:"stations with data", gap:"average wait between trains", worst:"Most affected", close:"Close", share:"Share", shared:"Link copied",
+  setRegion:"Set as my region", isRegion:"This is your region", tripFrom:"From", tripTo:"To", tripGo:"Show this trip", swap:"Swap",
+  tripPh:"Station", save:"Keep this trip", savedOk:"Trip kept in this browser", mine:"My trips",
+  soon:"Coming at launch: the trips you insure with LateProof will show up here, with their cover status.",
+  dep:"Dep.", arr:"Arr.", line_:"Line", onTime:"on time", cancelled:"cancelled", noTrip:"No direct train found today between these two stations. Try nearby stations or another day.",
+  pickBoth:"Pick a departure and an arrival station from the suggestions.", tripDay:"Today on this trip", tripFromTo:"Departures from now",
+  fromHere:"Trip from here", toHere:"Trip to here", lineOf:"lines", around:"Around me", locating:"Locating…", noLoc:"Location unavailable",
+  scopeRegion:" · region", scopeLine:" · this line", scopeTrip:" · this trip", scopeStation:" · this station", scopeAround:" · around me", noData:"No train recorded on this line today.", loadingCtx:"Loading…",
+  newsBtn:"Disruptions", regionBtn:"My region", settings:"Settings", legendBtn:"Legend", menu:"Settings", expand:"Expand", newsHere:"Disruptions",
+  direct:"Direct", oneChange:"1 change", changeAt:"Change at", walk:"walk", waitFor:"wait", tight:"Tight connection", missed:"Connection at risk",
+  towards:"towards", journeys:"Options in the next 3 hours", noJourney:"No route found in the next 3 hours with trains, RER and Transilien (at most one change). Metro and tram are not included: they publish no timetable.",
+  journeyNote:"Times and delays from live data. Connection checked with the known delays.", arrLate:"late on arrival", arrOk:"on time on arrival", leaveAt:"Leave", arriveAt:"arrive",
+  dur:"min", hr:"h", trainN:"train", origFr:"original in French",
+  mapPick:"Pick on the map", pickA:"Click the map or a station to choose the departure", pickB:"Click the map or a station to choose the arrival", pickPos:"Click the map to set your position",
+  cancel:"Cancel", kAddress:"Address", kMyPos:"Me", myPos:"My position", nearest:"nearest station", noStationNear:"No train station within 3 km of this point.", mapPoint:"Point on the map",
+  walkTo:"Walk to", walkEnd:"Walk to destination", favs:"Favourites", favAdd:"Add to favourites", favDel:"Remove from favourites",
+  noFavs:"No favourite yet: tap ☆ on a station, a line or a trip.", favAdded:"Added to favourites", posTitle:"My position", posUse:"Locate me", posMap:"Pick on the map",
+  posClear:"Clear", posNone:"Not set yet. It is only kept in this browser.", posSaved:"Position saved", posPh:"Address or station", kPlace:"Place", aroundTitle:"Around me",
+  nearStations:"Train stations nearby", goFrom:"Leave from here", goTo:"Go here", fillHint:"Quick fill:", addrNote:"Addresses are looked up with the French national address database (api-adresse.data.gouv.fr).",
+  noGeo:"No address found."};
+const FR = {}; document.querySelectorAll("[data-i18n]").forEach(el => FR[el.dataset.i18n] = el.textContent);
+FR.qPh = document.getElementById("q").placeholder;
+Object.assign(FR, {tabGL:"TGV & Intercités", tabTER:"TER & régionaux", noHour:"Pas de passage dans l'heure.", trainNo:"Train", noTrain:"Détail indisponible.",
+  maxDelay:"Retard jusqu'à", skippedStops:"arrêt(s) supprimé(s) plus loin", cancelledTrain:"Train supprimé", noIssue:"Aucun problème signalé", atQuay:"à quai", estNote:"Horaires métro et tram estimés d'après la position des rames en temps réel (la RATP ne publie pas d'horaires).", inTrouble:"du trafic perturbé", zoomIn:"Zoomer", nextDep:"Prochains départs", noNext:"Aucun départ connu en temps réel pour l'instant.",
+  metroNoTime:"Métro et tram : pas d'horaires publiés, seulement la fréquence.", dest:"Destination", time:"Heure", linesHere:"Lignes", kStation2:"Gare", grp:"gares", grpWorst:"les plus touchées", bPlan:"Plan", bLight:"Clair", bDark:"Sombre", bOsm:"Détaillé (OSM)", every:"une rame toutes les", planned:"prévu",
+  extra:"attente en plus d'environ", metroT:"Métro / tram", none:"Rien d'annoncé pour ce filtre.", greve:"grève", travaux:"travaux", incident:"incident", now:"en cours", from:"du", to:"au",
+  block:"service interrompu", pass:"passages", late:"à +15 min", canc:"supprimés", avg:"retard moyen", min:"min", unavailable:"Les données en direct ne sont pas encore branchées.",
+  kRegion:"Région", kLine:"Ligne", kStation:"Gare", kTrip:"Mon trajet", trains:"trains aujourd'hui", lateT:"à +15 min", cancT:"supprimés",
+  stTracked:"gares avec des chiffres", gap:"d'attente moyenne entre deux rames", worst:"Les plus touchées", close:"Fermer", share:"Partager", shared:"Lien copié",
+  setRegion:"En faire ma région", isRegion:"C'est ta région", tripFrom:"Départ", tripTo:"Arrivée", tripGo:"Voir ce trajet", swap:"Inverser",
+  tripPh:"Gare", save:"Garder ce trajet", savedOk:"Trajet gardé dans ce navigateur", mine:"Mes trajets",
+  soon:"Au lancement : les trajets que tu assures avec LateProof s'afficheront ici, avec l'état de ta couverture.",
+  dep:"Dép.", arr:"Arr.", line_:"Ligne", onTime:"à l'heure", cancelled:"supprimé", noTrip:"Aucun train direct trouvé aujourd'hui entre ces deux gares. Essaie des gares proches ou un autre jour.",
+  pickBoth:"Choisis une gare de départ et une gare d'arrivée dans les suggestions.", tripDay:"Aujourd'hui sur ce trajet", tripFromTo:"Départs à partir de maintenant",
+  fromHere:"Partir d'ici", toHere:"Arriver ici", lineOf:"lignes", around:"Autour de moi", locating:"Localisation…", noLoc:"Position indisponible",
+  scopeRegion:" · région", scopeLine:" · cette ligne", scopeTrip:" · ce trajet", scopeStation:" · cette gare", scopeAround:" · autour de moi", noData:"Aucun train enregistré sur cette ligne aujourd'hui.", loadingCtx:"Chargement…",
+  tripBtn:"Mon trajet", menu:"Préférences", expand:"Agrandir", newsHere:"Perturbations",
+  direct:"Direct", oneChange:"1 correspondance", changeAt:"Correspondance à", walk:"à pied", waitFor:"attente", tight:"Correspondance juste", missed:"Correspondance compromise",
+  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", noJourney:"Aucun itinéraire trouvé dans les 3 prochaines heures en train, RER et Transilien (une correspondance au plus). Le métro et le tram ne sont pas inclus : ils ne publient pas d'horaires.",
+  journeyNote:"Horaires et retards en temps réel. Correspondance vérifiée avec les retards connus.", arrLate:"de retard à l'arrivée", arrOk:"à l'heure à l'arrivée", leaveAt:"Départ", arriveAt:"arrivée",
+  dur:"min", hr:"h", trainN:"train", origFr:"texte d'origine en français",
+  mapPick:"Choisir sur la carte", pickA:"Clique sur la carte ou sur une gare pour choisir le départ", pickB:"Clique sur la carte ou sur une gare pour choisir l'arrivée", pickPos:"Clique sur la carte pour choisir ta position",
+  kAddress:"Adresse", kMyPos:"Moi", myPos:"Ma position", nearest:"gare la plus proche", noStationNear:"Aucune gare de train à moins de 3 km de ce point.", mapPoint:"Point sur la carte",
+  walkTo:"À pied jusqu'à", walkEnd:"À pied jusqu'à destination", favAdd:"Ajouter aux favoris", favDel:"Retirer des favoris",
+  noFavs:"Pas encore de favori : touche ☆ sur une gare, une ligne ou un trajet.", favAdded:"Ajouté aux favoris", posNone:"Pas encore définie. Elle reste uniquement dans ce navigateur.",
+  posSaved:"Position enregistrée", kPlace:"Lieu", aroundTitle:"Autour de moi", nearStations:"Gares de train à proximité", goFrom:"Partir d'ici", goTo:"Y aller", fillHint:"Remplir avec :",
+  addrNote:"Les adresses sont recherchées dans la Base Adresse Nationale (api-adresse.data.gouv.fr).", noGeo:"Aucune adresse trouvée."});
+let lang = "fr"; try { lang = localStorage.getItem("lp-lang") || (navigator.language || "fr").slice(0, 2); } catch (e) {}
+if (lang !== "en") lang = "fr";
+const L_ = () => lang === "en" ? EN : FR;
+const loc = () => lang === "en" ? "en-GB" : "fr-FR";
+const store = {get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+               set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }};
+function setLang(l) {
+  lang = l; document.documentElement.lang = l;
+  document.querySelectorAll("[data-i18n]").forEach(el => { const v = L_()[el.dataset.i18n]; if (v) el.textContent = v; });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = L_()[el.dataset.i18nPh]);
+  document.querySelectorAll("[data-i18n-aria]").forEach(el => { const v = L_()[el.dataset.i18nAria]; if (v) { el.setAttribute("aria-label", v); el.title = v; } });
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+  store.set("lp-lang", l);
+  if (l === "en") ensureTranslator();   // appele depuis un clic : le navigateur peut telecharger son modele de traduction
+  baseControl(); drawStations(); drawList(); drawCtx(); drawEvents(); regionLabel();
+}
+
+// ================================================================= Traduction des perturbations (textes publies en francais)
+// 1) les formules les plus frequentes des flux SNCF / IDFM, traduites a la main ; 2) sinon la traduction integree du
+// navigateur (Chrome, sur l'appareil, gratuite) ; 3) sinon le texte d'origine, marque « FR ».
+const D = "(\\d{1,2}/\\d{1,2}(?:/\\d{2,4})?)";
+const NEWS_EN = [
+  [/^\W*plus d.?infos?(?:rmations?)?\s*:?\s*$/i, "More information"],
+  [/^\W*forte affluence\W*$/i, "Heavy crowds expected"],
+  [/^\W*votre train est retardé\W*$/i, "Your train is delayed"],
+  [/^\W*voitures? hors[- ]?quai\W*$/i, "Some carriages stop beyond the platform"],
+  [/^\W*voitures? hors[- ]?quai en gare de (.+?)\W*$/i, "Some carriages stop beyond the platform at $1"],
+  [/^\W*travaux prévus sur votre ligne\W*$/i, "Planned works on your line"],
+  [/^\W*travaux prévus\W*$/i, "Planned works"],
+  [/^\W*travaux prévus en gare de (.+?)\W*$/i, "Planned works at $1 station"],
+  [/^\W*travaux en cours sur votre ligne\W*$/i, "Works in progress on your line"],
+  [/^\W*travaux en cours sur la ligne (\w+)\W*$/i, "Works in progress on line $1"],
+  [/^\W*travaux en cours\W*$/i, "Works in progress"],
+  [/^\W*travaux sur les voies\W*$/i, "Track works"],
+  [/^\W*travaux du (\d+) au (\d+ \w+)\W*$/i, "Works from $1 to $2"],
+  [/^\W*arrêt\(s\) non desservi\(s\)\W*$/i, "Stop(s) not served"],
+  [/^\W*arrêts supprimés\W*$/i, "Stops cancelled"],
+  [/^\W*(attention, )?certaines gares non desservies\W*$/i, "Some stations are not served"],
+  [/^\W*votre train ne dessert pas certaines gares\W*$/i, "Your train does not stop at some stations"],
+  [/^\W*arrêts? (.+?) non desservis?\W*$/i, "$1: not served"],
+  [/^\W*trafic perturbé\W*$/i, "Disrupted service"],
+  [/^\W*trafic interrompu\W*$/i, "Service interrupted"],
+  [/^\W*trafic ralenti\W*$/i, "Slow service"],
+  [/^\W*perturbation - retard\W*$/i, "Disruption – delays"],
+  [new RegExp(`^\\W*indisponibilité d'un matériel : votre (\\w+) du ${D} sera supprimé\\W*$`, "i"), "Rolling stock unavailable: your $1 on $2 is cancelled"],
+  [new RegExp(`^\\W*incident lors de la préparation du train : votre (\\w+) du ${D} sera supprimé\\W*$`, "i"), "Incident while preparing the train: your $1 on $2 is cancelled"],
+  [/^\W*incident lors de la préparation du train\W*$/i, "Incident while preparing the train"],
+  [/^\W*équipements? en gare hors[- ]service\W*$/i, "Station equipment out of service"],
+  [/^\W*équipements? en gare de (.+?) hors[- ]service\W*$/i, "Station equipment out of service at $1"],
+  [/^\W*train court\W*$/i, "Short train"],
+  [/^\W*train supprimé\W*$/i, "Train cancelled"],
+  [/^\W*queue du train fermée aux voyageurs\W*$/i, "Rear of the train closed to passengers"],
+  [/^\W*adhérence dégradée\W*$/i, "Poor rail adhesion"],
+  [/^\W*arrêt à la demande\W*$/i, "Request stop"],
+  [/^\W*arrêt déporté (.+?)\W*$/i, "Stop moved: $1"],
+  [/^\W*interruption (?!des |de |du |totale)(.+?)\W*$/i, "Line closed: $1"],
+  [/^\W*train supplémentaire (.+?)\W*$/i, "Extra train: $1"],
+  [/^\W*(\d{4,6})\s+supprim[ée]e?\W*$/i, "Train $1 cancelled"],
+  [/^\W*positionnement rame (.+?)\W*$/i, "Train set position: $1"],
+  [/^\W*(?:⚠️\s*)?(.+?)\s*:\s*forte affluence\W*$/i, "$1: heavy crowds expected"],
+  [/^\W*(\d{4,6})\s*:\s*les places sont limitées\W*$/i, "Train $1: limited seats"],
+  [/^\W*réduction de capacité\s*:\s*les places sont limitées\W*$/i, "Reduced capacity: limited seats"],
+  [/^\W*travaux prévus entre (.+?) et (.+?)\W*$/i, "Planned works between $1 and $2"],
+  [/^\W*travaux entre (.+?) et (.+?)\W*$/i, "Works between $1 and $2"],
+  [/^\W*travaux prévus sur la ligne (\w+)\W*$/i, "Planned works on line $1"],
+  [/^\W*travaux prévus (?:le |les )?(.+?)\W*$/i, "Planned works: $1"],
+  [/^\W*travaux (?:sur votre ligne )?du (.+?) au (.+?)(?:, puis du (.+?) au (.+?))?\W*$/i, "Works on your line from $1 to $2"],
+  [/^\W*travaux sur les lignes (.+?)\W*$/i, "Works on lines $1"],
+  [/^\W*travaux de voirie à (.+?)\W*$/i, "Road works in $1"],
+  [/^\W*travaux week-end (.+?)\W*$/i, "Weekend works $1"],
+  [/^\W*travaux (?:en cours )?sur le réseau allemand\W*$/i, "Works on the German network"],
+  [/^\W*travaux suite aux intempéries\W*$/i, "Works after bad weather"],
+  [/^\W*travaux en cours sur la ligne à grande vitesse à (.+?)\W*$/i, "Works on the high-speed line at $1"],
+  [/^\W*conséquences intempéries du (.+?)\W*$/i, "After the bad weather of $1"],
+  [/^\W*indisponibilité du matériel suite aux intempéries\W*$/i, "Rolling stock unavailable after bad weather"],
+  [/^\W*gare fermée\W*$/i, "Station closed"],
+  [/^\W*gare (?:de )?(.+?) fermée\W*$/i, "$1 station closed"],
+  [/^\W*complet (?:le )?(.+?)\W*$/i, "Fully booked: $1"],
+  [/^\W*plan de transport adapté\W*$/i, "Adjusted timetable"],
+  [/^\W*transport à la demande à (.+?)\W*$/i, "On-demand transport in $1"],
+  [/^\W*montée par l'avant pour les voyageurs à destination de (.+?)\W*$/i, "Passengers for $1: board at the front"],
+  [/^\W*placement à l'avant du train pour les voyageurs à destination de (.+?)\W*$/i, "Passengers for $1: travel at the front of the train"],
+  [/^\W*horaire adapté de votre train (.+?)\W*$/i, "Adjusted schedule for your train $1"],
+  [/^\W*modification de composition à (.+?)\W*$/i, "Change of train composition at $1"],
+  [/^\W*(.+?)\s*:\s*dérangement d'installations\W*$/i, "$1: equipment failure"],
+  [/^\W*gare de (.+?)\s*:\s*les ascenseurs sont hors[- ]service\W*$/i, "$1 station: lifts out of service"],
+  [/^\W*équipement en gare de\s+(.+?)\s*:\s*dysfonctionnement du distributeur de billets\W*$/i, "$1 station: ticket machine out of order"],
+  [/^\W*rame fermée aux voyageurs à l'arrière de votre (\w+) (\w+), accès par l'avant du train\W*$/i, "Rear of your $1 $2 closed: board at the front"],
+  [/^\W*adaptation (.+?)\W*$/i, "Adjusted service: $1"],
+  [/^\W*campagne adhérence (\d{4}) du (.+?) au (.+?)\W*$/i, "$1 rail adhesion campaign from $2 to $3"],
+  [/^\W*les dimanches (.+?),\s*interruption totale des circulations entre (.+?) et (.+?)(?: de \d.*)?$/i, "Sundays $1: no trains between $2 and $3"],
+  [/^\W*interruption des circulations\W*$/i, "Service suspended"],
+  [/^\W*vents violents (?:le )?(.+?)\W*$/i, "Strong winds on $1"],
+  // Greves : titre libre, traduit par le navigateur (sinon laisse en francais)
+];
+const FR_WORDS = {lundi: "Monday", mardi: "Tuesday", mercredi: "Wednesday", jeudi: "Thursday", vendredi: "Friday", samedi: "Saturday", dimanche: "Sunday",
+  dimanches: "Sundays", samedis: "Saturdays", janvier: "January", février: "February", mars: "March", avril: "April", mai: "May", juin: "June", juillet: "July",
+  août: "August", septembre: "September", octobre: "October", novembre: "November", décembre: "December"};
+// Seulement les jours, les mois et « et » entre deux espaces : les noms de gares (« Gare du Nord ») restent intacts.
+const frWords = t => t.replace(/(^|[\s(])([A-Za-zÀ-ÿ]+)(?=$|[\s,.)])/g, (all, pre, w) => { const v = FR_WORDS[w.toLowerCase()]; return v ? pre + v : all; })
+  .replace(/ et /g, " and ").replace(/\bdu (?=\d)/g, "from ").replace(/\bau (?=\d)/g, "to ").replace(/\s{2,}/g, " ");
+const trCache = new Map();
+let translator = null, trQueue = new Set(), trBusy = false;
+async function ensureTranslator() {
+  if (translator || !("Translator" in self)) return;
+  try {
+    const within = (pr, ms) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error("timeout")), ms))]);
+    const a = await within(Translator.availability({sourceLanguage: "fr", targetLanguage: "en"}), 3000);
+    if (a === "unavailable") return;
+    translator = await within(Translator.create({sourceLanguage: "fr", targetLanguage: "en"}), 60000);
+    if (trQueue.size) pumpTr();
+  } catch (e) { translator = null; }
+}
+async function pumpTr() {
+  if (trBusy || !translator) return;
+  trBusy = true;
+  try {
+    for (const t of [...trQueue].slice(0, 40)) {
+      trQueue.delete(t);
+      try { trCache.set(t, await translator.translate(t)); } catch (e) { trCache.set(t, null); }
+    }
+  } finally { trBusy = false; }
+  if (lang === "en") { drawList(); drawEvents(); }
+  if (trQueue.size) pumpTr();
+}
+/** Texte d'une perturbation dans la langue choisie : {text, fr} (fr = encore en francais). */
+function tr(text) {
+  text = String(text || "").trim();
+  if (lang !== "en" || !text) return {text, fr: false};
+  if (!trCache.has(text)) {
+    const hit = NEWS_EN.find(([re]) => re.test(text));
+    if (hit) { const m = text.match(hit[0]); trCache.set(text, hit[1].replace(/\$(\d)/g, (_, k) => frWords(m[k] || "").trim())); }
+    else { trQueue.add(text); if (translator) pumpTr(); }
+  }
+  const v = trCache.get(text);
+  return v ? {text: v, fr: false} : {text, fr: true};
+}
+const trHtml = text => { const t = tr(text); return esc(t.text) + (t.fr ? `<span class="fr" title="${L_().origFr}">FR</span>` : ""); };
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));
+
+// ================================================================= Regions (cadres approximatifs, pour zoomer et filtrer)
+const REGIONS = [
+  ["idf", "Île-de-France", [[48.12, 1.44], [49.24, 3.56]]], ["hdf", "Hauts-de-France", [[48.83, 1.38], [51.09, 4.26]]],
+  ["nor", "Normandie", [[48.18, -1.95], [50.07, 1.80]]], ["ges", "Grand Est", [[47.42, 3.38], [50.17, 8.23]]],
+  ["bre", "Bretagne", [[47.28, -5.14], [48.90, -1.01]]], ["pdl", "Pays de la Loire", [[46.27, -2.56], [48.57, 0.92]]],
+  ["cvl", "Centre-Val de Loire", [[46.35, 0.05], [48.94, 3.13]]], ["bfc", "Bourgogne-Franche-Comté", [[46.15, 2.85], [48.40, 7.14]]],
+  ["naq", "Nouvelle-Aquitaine", [[42.78, -1.79], [47.18, 2.61]]], ["ara", "Auvergne-Rhône-Alpes", [[44.12, 2.06], [46.80, 7.19]]],
+  ["occ", "Occitanie", [[42.33, -0.33], [45.05, 4.85]]], ["pac", "Provence-Alpes-Côte d'Azur", [[42.98, 4.23], [45.13, 7.72]]],
+  ["cor", "Corse", [[41.33, 8.53], [43.03, 9.56]]]].map(([id, name, b]) => ({id, name, b}));
+const regionById = id => REGIONS.find(r => r.id === id);
+const inB = (b, lat, lon) => lat >= b[0][0] && lat <= b[1][0] && lon >= b[0][1] && lon <= b[1][1];
+const regionSel = document.getElementById("region");
+REGIONS.forEach(r => regionSel.add(new Option(r.name, r.id)));
+
+// ================================================================= Carte
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const dark = true;   // direction artistique : toujours sombre
+// Un seul calque de dessin pour lignes + gares : sinon le calque du dessus capte tous les clics.
+const map = L.map("map", {preferCanvas: true, renderer: L.canvas({tolerance: 5}), zoomSnap: .5, zoomControl: false}).setView([46.6, 2.4], 5.5);
+L.control.zoom({position: "bottomright"}).addTo(map);
+// Fonds de carte (sans cle). Par defaut « Plan » (Esri World Street Map) : lisible comme un plan type Google (rues, quartiers,
+// reperes), sans relief ni satellite. En option : gris clair, gris sombre (fond + noms des lieux), ou OpenStreetMap detaille.
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/", EATTR = "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap";
+map.createPane("labels").style.zIndex = 380; map.getPane("labels").style.pointerEvents = "none";
+const esri = (path, o = {}) => L.tileLayer(ESRI + path + "/MapServer/tile/{z}/{y}/{x}", Object.assign({maxZoom: 19, attribution: EATTR}, o));
+const gray = tone => L.layerGroup([esri(`Canvas/World_${tone}_Gray_Base`, {maxNativeZoom: 16}),
+                                   esri(`Canvas/World_${tone}_Gray_Reference`, {maxNativeZoom: 16, pane: "labels"})]);
+const BASES = {plan: esri("World_Street_Map"), light: gray("Light"), dark: gray("Dark"),
+  osm: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 19, attribution: "&copy; OpenStreetMap"})};
+let baseKey = store.get("lp-base"); if (!BASES[baseKey]) baseKey = dark ? "dark" : "plan";
+BASES[baseKey].addTo(map);
+let baseCtl = null;
+function baseControl() {
+  if (baseCtl) baseCtl.remove();
+  const T = L_(), names = {plan: T.bPlan, light: T.bLight, dark: T.bDark, osm: T.bOsm}, o = {};
+  Object.keys(BASES).forEach(k => o[names[k]] = BASES[k]);
+  baseCtl = L.control.layers(o, null, {position: "bottomright"}).addTo(map);
+}
+map.on("baselayerchange", e => { const k = Object.keys(BASES).find(k => BASES[k] === e.layer); if (k) store.set("lp-base", k); });
+map.createPane("seg").style.zIndex = 350;   // troncons sous les gares
+const segRenderer = L.canvas({pane: "seg"});
+const segLayer = L.layerGroup().addTo(map), stationLayer = L.layerGroup().addTo(map), evLayer = L.layerGroup().addTo(map),
+      ctxLayer = L.layerGroup().addTo(map), focusLayer = L.layerGroup().addTo(map);
+let stations = [], items = [], idfGeo = null, rfn = [], lines = [], kind = "all", when = 7, updatedAt = null;
+let profile = store.get("lp-profile") || "les_deux", myRegion = store.get("lp-region") || "";
+let ctx = null;  // null | {type:"region", r} | {type:"line", line, data} | {type:"trip", a, b, data} | {type:"tripform"}
+
+// Indice de difficulte 0..1, calibre sur les chiffres reels (24/11 : retard moyen median d'une gare 1,5 min, 90 % sous 6 min).
+// Trains : le pire de (retard moyen / 12 min, part a +15 min / 25 %, part supprimee / 20 %).
+// Metro / tram : intervalle observe / prevu (1 = normal, 1,8 = tres perturbe).
+function sev(s) {   // (nom distinct de score() de la recherche, qui l ecrasait)
+  if (s.kind === "metro" || (s.gap != null && s.avg == null)) return s.planned && s.gap != null ? Math.min(1, Math.max(0, (s.gap / s.planned - 1) / .8)) : null;
+  if (!s.n) return null;
+  return Math.min(1, Math.max((+s.avg || 0) / 12, s.late15 / s.n / .25, s.cancelled / s.n / .2));
+}
+// Couleur progressive : vert -> vert-jaune -> jaune -> orange -> rouge.
+const HUES = [[0, 145], [.15, 110], [.3, 55], [.5, 32], [.75, 8], [1, 0]];
+function heat(m) {
+  if (m == null) return css("--muted");
+  let h = 0;
+  for (let i = 1; i < HUES.length; i++) if (m <= HUES[i][0]) { const [a, ha] = HUES[i - 1], [b, hb] = HUES[i]; h = ha + (hb - ha) * (m - a) / (b - a); break; }
+  return `hsl(${h.toFixed(0)} ${dark ? "70% 55%" : "75% 42%"})`;
+}
+const color = s => heat(sev(s));
+const PROBLEM = .3;   // indice : en dessous, la gare est consideree « normale »
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const nf = () => new Intl.NumberFormat(loc());
+const nf1 = v => new Intl.NumberFormat(loc(), {maximumFractionDigits: 1}).format(v);
+const shown = () => profile === "grandes_lignes" ? stations.filter(s => s.net === "sncf") : stations;
+function popup(s) {
+  const T = L_(), f = nf();
+  if (s.kind === "metro") {
+    const m = sev(s);
+    return `<b>${esc(s.name)}</b><br>${picsByNames(s.lines) || T.metroT}<br>${T.every} <b>${nf1(s.gap)} ${T.min}</b>` +
+      (s.planned != null ? ` (${T.planned} ${nf1(s.planned)} ${T.min})` : "") + (m != null && m >= .5 ? `<br>${T.extra} <b>${nf1(m)} ${T.min}</b>` : "");
+  }
+  return `<b>${esc(s.name)}</b><br>${f.format(s.n)} ${T.pass} · <b>${f.format(s.late15)}</b> ${T.late}<br>` +
+    `${s.cancelled ? `${f.format(s.cancelled)} ${T.canc} · ` : ""}${s.avg != null ? `${T.avg} ${nf1(s.avg)} ${T.min}` : ""}` +
+    (s.id ? `<div class="row"><button class="btn" type="button" data-trip="a" data-st="${esc(s.net + "|" + s.id)}">${T.fromHere}</button>` +
+            `<button class="btn" type="button" data-trip="b" data-st="${esc(s.net + "|" + s.id)}">${T.toHere}</button></div>` : "");
+}
+const dimmed = () => ctx && (ctx.type === "line" || ctx.type === "trip");
+const canvasClick = map.options.renderer;   // lignes IDF et arrets cliquables, sous les gares (ordre de dessin)
+// Fond de reseau : voies reelles du reseau ferre national (gris) + traces officiels des lignes d'Ile-de-France (couleurs des plans).
+const netRenderer = L.canvas({pane: "seg"});
+function lineFor(code) {
+  const l = lineById(code); if (l) return l;
+  const g = idfGeo && idfGeo.lines[code]; return g ? {net: "idf", id: code, name: g.name, mode: g.mode, n: 0} : null;
+}
+function drawNetwork() {
+  segLayer.clearLayers();
+  const z = map.getZoom(), dim = dimmed();
+  const grey = dark ? "#8796ae" : "#7f8a9c";
+  rfn.forEach(g => L.polyline(g, {renderer: netRenderer, color: grey, weight: z < 7 ? 1 : z < 10 ? 1.3 : 1.8, opacity: dim ? .25 : .75, interactive: false}).addTo(segLayer));
+  if (!idfGeo || z < 8) return;
+  const w = z < 10 ? 2 : z < 12 ? 3 : 4.5;
+  idfGeo.shapes.forEach(([code, g]) => { const l = idfGeo.lines[code]; if (!l) return;
+    if (l.mode === "TRAM" && z < 10) return;   // trams : seulement en zoomant (sinon illisible)
+    // Clic sur le trait = detail de la ligne
+    L.polyline(g, {renderer: canvasClick, color: l.color, weight: l.mode === "TRAM" ? w * .7 : w, opacity: dim ? .2 : .95, bubblingMouseEvents: false})
+      .bindTooltip(() => picto(code, l.name) + esc(lineLabel(lineFor(code) || {net: "idf", name: l.name, mode: l.mode})), {sticky: true, direction: "top", opacity: .95})
+      .on("click", e => { if (pickFor) { pickAt(e.latlng.lat, e.latlng.lng); return; } const lf = lineFor(code); if (lf) openLine(lf); }).addTo(segLayer); });
+  // Arrets officiels : petits points de la couleur de la ligne (clic = detail de la gare)
+  if (z >= 11 && !dim && idfGeo.stops) {
+    const r = z < 13 ? 2.4 : z < 15 ? 3.4 : 4.5;
+    Object.entries(idfGeo.stops).forEach(([code, st]) => { const l = idfGeo.lines[code]; if (!l || (l.mode === "TRAM" && z < 12)) return;
+      st.forEach(([la, lo, name]) => L.circleMarker([la, lo], {renderer: canvasClick, radius: r, color: "#ffffff", weight: 1.2, fillColor: l.color, fillOpacity: 1,
+        bubblingMouseEvents: false}).bindTooltip(esc(name), {direction: "top"}).on("click", () => openStationAt(la, lo, name, code)).addTo(segLayer)); });
+  }
+}
+// Vue large : gares regroupees par carre de ~44 px (couleur = minutes perdues moyennes ponderees par le trafic).
+function clusters(list) {
+  const z = map.getZoom(), cell = 44, cells = new Map();
+  list.forEach(s => {
+    const m = sev(s); if (m == null) return;
+    const pt = map.project([s.lat, s.lon], z), k = Math.floor(pt.x / cell) + ":" + Math.floor(pt.y / cell);
+    let c = cells.get(k); if (!c) cells.set(k, c = {n: 0, w: 0, lat: 0, lon: 0, sc: 0, bad: 0, st: []});
+    const w = Math.max(s.n, 1); c.n++; c.w += w; c.lat += s.lat * w; c.lon += s.lon * w; c.sc += m * w; if (m >= PROBLEM) c.bad += w; c.st.push([m, s]);
+  });
+  // Couleur : la moyenne seule noie les gares en difficulte ; on prend aussi la part du trafic touchee (30 % touches ~ jaune).
+  return [...cells.values()].map(c => ({lat: c.lat / c.w, lon: c.lon / c.w, bad: c.bad / c.w, m: Math.max(c.sc / c.w, c.bad / c.w), n: c.n, w: c.w, st: c.st}));
+}
+function drawStations() {
+  stationLayer.clearLayers();
+  if (!stations.length) return;  // garde les tirets tant qu'aucune donnee n'est arrivee
+  const dim = dimmed(), f = nf(), list = shown(), z = map.getZoom();
+  if (z < 9 && !dim) {
+    const T = L_();
+    clusters(list).forEach(c => {
+      const worst = c.st.sort((a, b) => b[0] - a[0]).slice(0, 3).filter(x => x[0] >= PROBLEM);
+      L.circleMarker([c.lat, c.lon], {radius: Math.min(2.5 + Math.sqrt(c.w) / 8, 11), color: dark ? "#0f1520" : "#ffffff", weight: 1,
+        fillColor: heat(c.m), fillOpacity: .85}).bindTooltip(`<b>${nf().format(c.n)} ${T.grp}</b> · ${Math.round(100 * c.bad)} % ${T.inTrouble}` +
+          (worst.length ? `<br>${T.grpWorst} : ` + worst.map(x => esc(x[1].name)).join(", ") : "")).on("click", () => map.setView([c.lat, c.lon], Math.max(map.getZoom() + 2, 9)))
+        .addTo(stationLayer);
+    });
+  }
+  // Gares « normales » : petits points discrets (le trace des lignes reste lisible) ; gares en difficulte : plus grosses.
+  const small = z < 11 ? 1.8 : z < 13 ? 2.8 : 4.5, big = z < 11 ? 4.5 : z < 13 ? 6 : 7.5;
+  if (z >= 9 && !dim) list.forEach(s => {   // vue ligne ou trajet : seules ses gares sont affichees
+    const m = sev(s), bad = m != null && m >= PROBLEM;
+    if (!bad && s.covered && z >= 11) return;   // deja dessinee par un arret officiel (point de la couleur de la ligne)
+    const r = bad ? big * (1 + Math.min(m, .6)) : small;
+    L.circleMarker([s.lat, s.lon], {radius: r, color: dark ? "#0f1520" : "#ffffff", weight: bad ? 1.5 : .8, fillColor: color(s),
+      fillOpacity: dim ? .1 : bad ? .95 : .85, opacity: dim ? .1 : .9, bubblingMouseEvents: false}).bindTooltip(esc(s.name), {direction: "top"})
+      .on("click", () => openStation(s)).addTo(stationLayer);
+  });
+  const trains = list.filter(s => s.kind !== "metro"), sum = k => trains.reduce((a, s) => a + s[k], 0);
+  document.getElementById("kSt").textContent = f.format(list.length);
+  document.getElementById("kLate").textContent = f.format(sum("late15"));
+  document.getElementById("kCanc").textContent = f.format(sum("cancelled"));
+  if (updatedAt) document.getElementById("kUpd").textContent = new Date(updatedAt * 1000).toLocaleTimeString(loc(), {hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"});
+}
+// Perturbations dessinees UNIQUEMENT la ou elles s'appliquent (gares touchees), dans la zone visible.
+const KIND_RANK = {greve: 3, travaux: 2, incident: 1};
+function drawEvents() {
+  evLayer.clearLayers();
+  if (!items.length) return;
+  const at = new Map(), view = map.getBounds().pad(.2), T = L_();
+  const z = map.getZoom(), sz = z < 13 ? 14 : 18;
+  // Vue large : seulement les perturbations qui interrompent le service ; en zoomant, toutes.
+  // Perturbation sur toute une ligne (plus de 4 gares) : une icone aux deux extremites seulement, pas sur chaque arret.
+  const ends = st => st.length > 4 ? [st[0], st[st.length - 1]] : st;
+  visible().filter(x => z >= 8 || x.severity === "bloquant").forEach(x => ends(x.stops || []).forEach(s => {
+    if (!s[1] || !s[2] || !view.contains([s[1], s[2]])) return;
+    const k = (+s[1]).toFixed(3) + "," + (+s[2]).toFixed(3);
+    if (!at.has(k)) at.set(k, {s, xs: []});
+    at.get(k).xs.push(x);
+  }));
+  [...at.values()].slice(0, 350).forEach(({s, xs}) => {
+    const top = xs.reduce((a, x) => (KIND_RANK[x.kind] || 0) > (KIND_RANK[a.kind] || 0) ? x : a, xs[0]);
+    L.marker([s[1], s[2]], {icon: L.divIcon({className: "", html: `<i class="ev ev-${top.kind}" style="width:${sz}px;height:${sz}px;font-size:${sz - 7}px"><span>!</span></i>`,
+      iconSize: [sz, sz], iconAnchor: [sz / 2, sz]}),
+      keyboard: false, title: s[0]})
+      .bindPopup(`<b>${esc(s[0])}</b>` + xs.slice(0, 5).map(x => `<br><span class="tag t-${x.kind}">${T[x.kind] || x.kind}</span> ${itemPics(x)}${trHtml(x.title)}`).join("") +
+        (xs.length > 5 ? `<br>+ ${xs.length - 5}` : ""), {maxWidth: 320}).addTo(evLayer);
+  });
+}
+map.on("zoomend", () => { drawNetwork(); drawStations(); drawEvents(); });
+map.on("moveend", drawEvents);
+
+// ================================================================= Perturbations (filtrees selon la region, la ligne ou le trajet)
+const fmtDay = t => new Date(t * 1000).toLocaleDateString(loc(), {day: "numeric", month: "short", timeZone: "Europe/Paris"});
+function inCtx(x) {
+  if (!ctx || ctx.type === "tripform") return true;
+  if (x.src === "agenda") return true;   // greves annoncees : nationales ou transports, toujours utiles
+  if (ctx.type === "region") return (x.stops || []).some(s => inB(ctx.r.b, s[1], s[2]));
+  if (ctx.type === "around") { const c = Math.cos(ctx.p.lat * Math.PI / 180); return (x.stops || []).some(s => Math.hypot(s[1] - ctx.p.lat, (s[2] - ctx.p.lon) * c) < .02); }
+  if (ctx.type === "station") {
+    const ids = ctx.data ? ctx.data.lines.map(l => l.id) : [], c = Math.cos(ctx.s.lat * Math.PI / 180);
+    return (x.line_ids || []).some(id => ids.includes(id)) ||
+      (x.stops || []).some(s => Math.hypot(s[1] - ctx.s.lat, (s[2] - ctx.s.lon) * c) < .004);
+  }
+  const ids = ctx.type === "line" ? [ctx.line.id] : (ctx.data && ctx.data.line_ids) || [];
+  if ((x.line_ids || []).some(id => ids.includes(id))) return true;
+  if (ctx.type === "trip" && ctx.bounds) return (x.stops || []).some(s => ctx.bounds.contains([s[1], s[2]]));
+  return false;
+}
+function visible() {
+  const now = Date.now() / 1000;
+  return items.filter(x => (kind === "all" || x.kind === kind) && x.kind !== "info" && inCtx(x) &&
+    (when === 7 || ((x.t_start ?? 0) <= now && (x.t_end ?? Infinity) >= now)));
+}
+function drawList() {
+  const T = L_(), list = document.getElementById("list"), v = visible(), now = Date.now() / 1000;
+  const nEl = document.getElementById("newsN"); nEl.hidden = !items.length; nEl.textContent = v.length > 99 ? "99+" : String(v.length);
+  document.getElementById("newsToggleLbl").textContent = `${T.newsHere}${!ctx || ctx.type === "tripform" ? "" :
+    (({region: T.scopeRegion, line: T.scopeLine, trip: T.scopeTrip, station: T.scopeStation, around: T.scopeAround})[ctx.type] || "")} · ${v.length}`;
+  document.getElementById("pScope").textContent = !ctx || ctx.type === "tripform" ? "" :
+    (({region: T.scopeRegion, line: T.scopeLine, trip: T.scopeTrip, station: T.scopeStation, around: T.scopeAround})[ctx.type] || "");
+  if (!v.length) { list.innerHTML = `<p class="empty">${items.length || stations.length ? T.none : T.unavailable}</p>`; return; }
+  list.innerHTML = v.slice(0, 200).map(x => {
+    const on = (x.t_start ?? 0) <= now;
+    const period = on ? T.now + (x.t_end ? ` · ${T.to} ${fmtDay(x.t_end)}` : "") : `${T.from} ${fmtDay(x.t_start)}${x.t_end ? ` ${T.to} ${fmtDay(x.t_end)}` : ""}`;
+    return `<button class="item" type="button" data-i="${items.indexOf(x)}"><span class="tag t-${x.kind}">${T[x.kind] || x.kind}</span>
+      <span class="ttl">${trHtml(x.title)}</span>
+      <span class="meta">${itemPics(x) ? itemPics(x) + " " : ""}${period}${x.lines && !itemPics(x) ? " · " + esc(x.lines) : ""}${x.severity === "bloquant" ? ` · <span class="sev">${T.block}</span>` : ""}</span></button>`;
+  }).join("");
+}
+document.getElementById("list").addEventListener("click", e => {
+  const b = e.target.closest(".item"); if (!b) return;
+  document.querySelectorAll(".item.on").forEach(x => x.classList.remove("on")); b.classList.add("on");
+  const x = items[+b.dataset.i]; focusLayer.clearLayers();
+  const pts = (x.stops || []).filter(s => s[1] && s[2]);
+  pts.forEach(s => L.circleMarker([s[1], s[2]], {radius: 9, color: css("--red"), weight: 3, fill: false}).bindTooltip(esc(s[0])).addTo(focusLayer));
+  if (pts.length) map.fitBounds(L.latLngBounds(pts.map(s => [s[1], s[2]])).pad(.4), {maxZoom: 11});
+});
+const chips = (id, attr, set) => document.getElementById(id).addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  document.querySelectorAll(`#${id} button`).forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  set(b.dataset[attr]); focusLayer.clearLayers(); drawList(); drawEvents();
+});
+chips("kinds", "k", v => kind = v); chips("when", "w", v => when = +v);
+function setWhen(w) { when = w; document.querySelectorAll("#when button").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.w === w))); }
+
+// ================================================================= Recherche (regions, lignes, gares)
+const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[-'’_/.,()]/g, " ").replace(/\s+/g, " ").trim();
+const MODES = {OUI: "TGV INOUI", OGO: "OUIGO", IC: "Intercités", ICN: "Intercités de nuit", LYR: "Lyria", TT: "Tram-train", NAV: "Navette",
+  METRO: "Métro", TRAM: "Tram", FUNI: "Funiculaire", TRANSILIEN: "Ligne"};
+function lineLabel(l) {
+  if (l.net === "idf") {
+    if (l.mode === "RER") return "RER " + l.name;
+    if (l.mode === "TRAM" && /^T/i.test(l.name)) return "Tram " + l.name;
+    return (MODES[l.mode] || l.mode || "") + " " + l.name;
+  }
+  return `${MODES[l.mode] || l.mode || "Train"} ${l.name || ""}`.trim();
+}
+// Pictogramme officiel (IDFM) si disponible ; sinon pastille aux couleurs officielles ; lignes SNCF : pastille neutre.
+function picto(id, name, big) {
+  const g = idfGeo && idfGeo.lines[id], cls = big ? " lg" : "";
+  if (g && g.picto) return `<img class="picto${cls}" src="${g.picto}" alt="${esc(name || g.name)}" title="${esc(name || g.name)}">`;
+  if (g) return `<span class="lbadge${cls}" style="background:${g.color}">${esc(g.name)}</span>`;
+  return name ? `<span class="lbadge${cls}">${esc(name)}</span>` : "";
+}
+const lineById = id => lines.find(l => l.id === id);
+const linePic = (l, big) => l ? picto(l.id, l.net === "idf" ? lineLabel(l) : (l.name || ""), big) : "";
+// Noms de lignes metro/tram (« 7, 7B ») -> pictogrammes
+const picsByNames = names => String(names || "").split(/,\s*/).filter(Boolean).map(n => {
+  const l = lines.find(x => x.net === "idf" && x.name === n && ["METRO", "TRAM", "FUNI"].includes(x.mode)); return l ? linePic(l) : `<span class="lbadge">${esc(n)}</span>`; }).join("");
+// Lignes d'une perturbation : pictogrammes pour l'IDF, texte pour la SNCF
+function itemPics(x) {
+  const ids = (x.line_ids || []).filter(id => idfGeo && idfGeo.lines[id]);
+  return ids.length ? `<span class="picts">${ids.slice(0, 8).map(id => picto(id, (lineById(id) && lineLabel(lineById(id))) || "")).join("")}</span>` : "";
+}
+const lineSub = l => l.long && l.long !== l.name ? l.long : (l.net === "idf" ? "Île-de-France" : "");
+function score(text, q) {
+  const t = norm(text); if (!q) return 0;
+  const toks = q.split(" "); if (!toks.every(k => t.includes(k))) return 0;
+  return (t.startsWith(q) ? 3 : 0) + (t.split(" ").some(w => w.startsWith(toks[0])) ? 2 : 1);
+}
+function suggest(qRaw, only) {
+  const q = norm(qRaw), out = [];
+  if (!q) return out;
+  if (!only) REGIONS.forEach(r => { const s = score(r.name, q); if (s) out.push({type: "region", s: s + 2, r, label: r.name}); });
+  if (!only) lines.forEach(l => { const s = Math.max(score(lineLabel(l), q), score(l.long, q) - 1);
+    if (s) out.push({type: "line", s: s + (l.n ? 1 : 0), l, label: lineLabel(l), sub: lineSub(l)}); });
+  const seen = new Set();
+  stations.forEach(st => { const s = score(st.name, q); if (!s) return;
+    const key = st.net + norm(st.name); if (seen.has(key)) return; seen.add(key);
+    out.push({type: "station", s: s + Math.min(st.n / 400, 1), st, label: st.name, sub: st.net === "idf" ? "Île-de-France Mobilités" : "SNCF"}); });
+  return out.sort((a, b) => b.s - a.s).slice(0, 9);
+}
+function combo(input, list, only, onPick) {
+  let opts = [], act = -1;
+  const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); act = -1; input.removeAttribute("aria-activedescendant"); };
+  const places = only === "station";   // champs de trajet / position : gares + adresses + « Ma position »
+  let addr = [], addrQ = "", timer = null;
+  const paint = () => {
+    const T = L_(), K = {region: T.kRegion, line: T.kLine, station: T.kStation, address: T.kAddress, mypos: T.kMyPos};
+    list.innerHTML = opts.map((o, i) => `<li role="option" id="${list.id}-${i}" aria-selected="${i === act}" data-i="${i}"><span class="k${o.type === "address" || o.type === "mypos" ? " addr" : ""}">${K[o.type]}</span>` +
+      `<span>${o.type === "line" ? linePic(o.l) : ""}${esc(o.label)}</span>${o.sub ? `<span class="x">${esc(o.sub)}</span>` : ""}</li>`).join("");
+    list.hidden = false; input.setAttribute("aria-expanded", "true");
+  };
+  const render = () => {
+    const q = input.value.trim();
+    opts = suggest(q, only);
+    if (places) {
+      if (!q && (myPos || navigator.geolocation)) opts.unshift({type: "mypos", label: L_().myPos, sub: myPos ? myPos.label : ""});
+      if (q.length >= 4) {
+        opts = opts.slice(0, /\d|,/.test(q) ? 2 : 5).concat(addrQ === q ? addr : []);   // une adresse (chiffre, virgule) : peu de gares
+        if (addrQ !== q) { clearTimeout(timer); timer = setTimeout(() => geocode(q).then(r => { addr = r; addrQ = q; if (input.value.trim() === q && document.activeElement === input) render(); }), 250); }
+      }
+    }
+    if (!opts.length) return close();
+    paint();
+  };
+  const pick = i => { const o = opts[i]; if (!o) return; input.value = o.label; close(); onPick(o); };
+  input.addEventListener("input", () => { act = -1; render(); });
+  input.addEventListener("focus", () => { if (input.value || places) render(); });
+  input.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      if (list.hidden) render(); if (!opts.length) return;
+      act = (act + (e.key === "ArrowDown" ? 1 : -1) + opts.length) % opts.length; e.preventDefault();
+      list.querySelectorAll("li").forEach((li, i) => li.setAttribute("aria-selected", String(i === act)));
+      input.setAttribute("aria-activedescendant", `${list.id}-${act}`);
+    } else if (e.key === "Enter") {
+      if (!list.hidden) { e.preventDefault(); pick(act >= 0 ? act : 0); }
+      else if (places && input.value.trim().length >= 4) {   // adresse collee puis Entree tout de suite : on cherche, puis on prend la 1re
+        e.preventDefault(); const q = input.value.trim();
+        geocode(q).then(r => { if (r.length) { input.value = r[0].label; onPick(r[0]); } else toast(L_().noGeo); });
+      }
+    }
+    else if (e.key === "Escape") close();
+  });
+  list.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
+  input.addEventListener("blur", () => setTimeout(close, 120));
+}
+combo(document.getElementById("q"), document.getElementById("qList"), null, o => {
+  if (o.type === "region") openRegion(o.r.id);
+  else if (o.type === "line") openLine(o.l);
+  else { map.setView([o.st.lat, o.st.lon], 14); openStation(o.st); }
+});
+
+// ================================================================= Adresses et points : Base Adresse Nationale (gratuite, sans cle) + gares les plus proches
+async function geocode(q) {
+  try {
+    const r = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q.slice(0, 200))}&limit=4&autocomplete=1`).then(x => x.json());
+    return (r.features || []).map(f => ({type: "address", label: f.properties.label, sub: f.properties.context || "", lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0]}));
+  } catch (e) { return []; }
+}
+async function reverseGeocode(lat, lon) {
+  try {
+    const r = await fetch(`https://api-adresse.data.gouv.fr/reverse/?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}&limit=1`).then(x => x.json());
+    return r.features && r.features[0] ? r.features[0].properties.label : null;
+  } catch (e) { return null; }
+}
+// Un point (adresse, clic, position) devient la gare de train la plus proche, avec la marche a faire (detour compte : x1,3).
+async function resolvePoint(lat, lon, label, isStop) {
+  let near = [];
+  try { near = await rpc("public_nearest_stops", {p_lat: lat, p_lon: lon}); } catch (e) {}
+  if (!near.length) { toast(L_().noStationNear); return null; }
+  const st = near[0];
+  // Clic sur un arret de ligne : c'est la gare elle-meme, pas une adresse d'ou marcher.
+  if (isStop && st.dist < 300) return {net: st.net, id: st.id, name: st.name, lat: +st.lat, lon: +st.lon};
+  const place = {label: label || L_().mapPoint, lat, lon, dist: st.dist, walk_s: Math.round(st.dist * 1.3 / 1.2)};
+  // Autres gares a distance de marche (a plus de 400 m de la premiere : sinon deja couvertes par le calcul)
+  const c = Math.cos(st.lat * Math.PI / 180), far = o => Math.hypot((o.lat - st.lat) * 111000, (o.lon - st.lon) * 111000 * c) > 400;
+  const alts = near.slice(1).filter(o => o.dist < 1500 && far(o)).slice(0, 2)
+    .map(o => ({net: o.net, id: o.id, name: o.name, lat: +o.lat, lon: +o.lon, place: {...place, dist: o.dist, walk_s: Math.round(o.dist * 1.3 / 1.2)}}));
+  return {net: st.net, id: st.id, name: st.name, lat: +st.lat, lon: +st.lon, place, alts};
+}
+const endLabel = e => e ? (e.place ? e.place.label : e.name) : "";
+// Choisit le depart ("a") ou l'arrivee ("b") ; quand les deux sont connus, les itineraires se calculent tout seuls.
+function setEnd(w, e) {
+  if (!e) return;
+  const c = ctx && (ctx.type === "trip" || ctx.type === "tripform") ? ctx : {type: "tripform"};
+  c[w] = e; map.closePopup();
+  if (c.a && c.b) { openTrip(c.a, c.b); return; }
+  if (ctx !== c) setCtx(c); else drawCtx();
+  // Sur ordinateur, on passe au champ suivant ; sur telephone, pas de clavier qui surgit
+  if (!matchMedia("(pointer: coarse)").matches) setTimeout(() => byId(w === "a" ? "tb" : "ta")?.focus({preventScroll: true}), 0);
+}
+async function endFromOption(o) {
+  if (o.type === "station") return o.st;
+  if (o.type === "address") return resolvePoint(o.lat, o.lon, o.label);
+  if (o.type === "mypos") { const p = await currentPos(); return p ? resolvePoint(p.lat, p.lon, L_().myPos) : null; }
+  return null;
+}
+
+// ================================================================= Choisir un depart / une arrivee / sa position EN CLIQUANT sur la carte
+let pickFor = null;   // null | "a" | "b" | "pos"
+function startPick(w) {
+  pickFor = w; const T = L_();
+  byId("pickTxt").textContent = w === "a" ? T.pickA : w === "b" ? T.pickB : T.pickPos;
+  byId("pickBar").hidden = false; byId("app").classList.add("picking"); map.closePopup();
+  document.querySelectorAll("[data-pick]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pick === w)));
+}
+function endPick() {
+  pickFor = null; byId("pickBar").hidden = true; byId("app").classList.remove("picking");
+  document.querySelectorAll("[data-pick]").forEach(b => b.setAttribute("aria-pressed", "false"));
+}
+// Clic (carte, gare, arret, trace de ligne) pendant le choix. La fiche de la gare ne s'ouvre PAS : on reste dans l'itineraire.
+async function pickAt(lat, lon, name, st) {
+  const w = pickFor; endPick();
+  if (w === "pos") { setMyPos({lat, lon, label: name || await reverseGeocode(lat, lon) || L_().mapPoint}); return; }
+  let e = st && st.id ? {net: st.net, id: st.id, name: st.name, lat: st.lat, lon: st.lon} : null;
+  if (!e) e = name ? await resolvePoint(lat, lon, name, true) : await resolvePoint(lat, lon, await reverseGeocode(lat, lon) || L_().mapPoint);
+  setEnd(w, e);
+}
+byId("pickCancel").addEventListener("click", endPick);
+map.on("click", e => { if (pickFor) pickAt(e.latlng.lat, e.latlng.lng); });
+
+// ================================================================= Ma position (gardee dans ce navigateur uniquement)
+let myPos = (() => { try { return JSON.parse(store.get("lp-pos")); } catch (e) { return null; } })();
+let locMarker = null;
+function showPos() {
+  if (locMarker) { locMarker.remove(); locMarker = null; }
+  if (myPos) locMarker = L.marker([myPos.lat, myPos.lon], {icon: L.divIcon({className: "", html: '<div class="locdot"></div>', iconSize: [16, 16], iconAnchor: [8, 8]}),
+    keyboard: false, title: myPos.label}).bindTooltip(esc(L_().myPos + " · " + myPos.label)).on("click", () => openAround()).addTo(map);
+  const now = byId("posNow"); if (now) now.textContent = myPos ? myPos.label : L_().posNone;
+}
+function setMyPos(p) {
+  myPos = p; store.set("lp-pos", p ? JSON.stringify(p) : null); showPos();
+  if (p) { toast(L_().posSaved); openAround(); }
+}
+function geolocate() {
+  return new Promise(ok => {
+    if (!navigator.geolocation) { toast(L_().noLoc); ok(null); return; }
+    toast(L_().locating);
+    navigator.geolocation.getCurrentPosition(async p => {
+      const lat = p.coords.latitude, lon = p.coords.longitude;
+      ok({lat, lon, label: await reverseGeocode(lat, lon) || L_().myPos});
+    }, () => { toast(L_().noLoc); ok(null); }, {enableHighAccuracy: false, timeout: 10000, maximumAge: 60000});
+  });
+}
+async function currentPos() { if (myPos) return myPos; const p = await geolocate(); if (p) { myPos = p; store.set("lp-pos", JSON.stringify(p)); showPos(); } return p; }
+// « Autour de moi » : ma position + les gares de train les plus proches (partir d'ici, y aller, voir la gare)
+async function openAround() {
+  const p = await currentPos(); if (!p) return;
+  setCtx({type: "around", p, data: null});
+  map.setView([p.lat, p.lon], 14);
+  let near = [];
+  try { near = await rpc("public_nearest_stops", {p_lat: p.lat, p_lon: p.lon}); } catch (e) {}
+  if (!ctx || ctx.type !== "around" || ctx.p !== p) return;
+  ctx.data = near; drawCtx();
+}
+
+// ================================================================= Contexte : region, ligne, trajet
+const ctxEl = document.getElementById("ctx");
+function head(kindLbl, title, extra = "") {
+  const T = L_(), f = ctxFav(), on = isFav(f);
+  if (f) extra += `<button class="btn ghost star" type="button" data-act="fav" aria-pressed="${on}" aria-label="${on ? T.favDel : T.favAdd}" title="${on ? T.favDel : T.favAdd}">${on ? "★" : "☆"}</button>`;
+  return `<div class="ctx-head"><h3><span class="kind">${esc(kindLbl)}</span>${title}</h3>${extra}` +
+    `<button class="btn ghost" type="button" data-act="share" aria-label="${T.share}">${T.share}</button>` +
+    `<button class="btn ghost" type="button" data-act="close" aria-label="${T.close}">✕</button></div>`;
+}
+const stat = (n, lbl, cls = "") => `<span class="${cls}"><b>${nf().format(n)}</b>${esc(lbl)}</span>`;
+const hhmm = t => new Date(t * 1000).toLocaleTimeString(loc(), {hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"});
+function badge(delay, cancelled) {
+  const T = L_();
+  if (cancelled) return `<span class="d d-bad">${T.cancelled}</span>`;
+  const m = Math.round((delay || 0) / 60);
+  if (m < 1) return `<span class="d d-ok">${T.onTime}</span>`;
+  return `<span class="d ${m >= 15 ? "d-bad" : m >= 5 ? "d-mid" : "d-ok"}">+${m} ${T.min}</span>`;
+}
+function savedTrips() { try { return JSON.parse(store.get("lp-trips") || "[]"); } catch (e) { return []; } }
+function savedHtml() {
+  const s = savedTrips(); if (!s.length) return "";
+  return `<div><p class="hint">${L_().mine}</p><div class="saved">${s.map((t, i) =>
+    `<button type="button" data-saved="${i}">${esc(t.an)} → ${esc(t.bn)}</button>`).join("")}</div></div>`;
+}
+
+// ================================================================= Favoris (gares, lignes, trajets, lieux) : dans ce navigateur
+function favs() { try { return JSON.parse(store.get("lp-favs") || "[]"); } catch (e) { return []; } }
+const favKey = f => f.t === "station" ? `s|${f.net}|${f.id}` : f.t === "line" ? `l|${f.net}|${f.id}` :
+  f.t === "trip" ? `t|${f.a.net}|${f.a.id}|${f.a.place ? f.a.place.label : ""}>${f.b.net}|${f.b.id}|${f.b.place ? f.b.place.label : ""}` : `p|${(+f.lat).toFixed(4)}|${(+f.lon).toFixed(4)}`;
+function ctxFav() {
+  if (!ctx) return null;
+  if (ctx.type === "station" && ctx.s.id) return {t: "station", net: ctx.s.net, id: ctx.s.id, name: ctx.s.name, lat: ctx.s.lat, lon: ctx.s.lon};
+  if (ctx.type === "line") return {t: "line", net: ctx.line.net, id: ctx.line.id, name: lineLabel(ctx.line)};
+  if (ctx.type === "trip") return {t: "trip", a: ctx.a, b: ctx.b, name: `${endLabel(ctx.a)} → ${endLabel(ctx.b)}`};
+  if (ctx.type === "around") return {t: "place", lat: ctx.p.lat, lon: ctx.p.lon, name: ctx.p.label};
+  return null;
+}
+const isFav = f => !!f && favs().some(x => favKey(x) === favKey(f));
+function toggleFav(f) {
+  let all = favs(); const k = favKey(f);
+  if (all.some(x => favKey(x) === k)) all = all.filter(x => favKey(x) !== k);
+  else { all.unshift(f); toast(L_().favAdded); }
+  store.set("lp-favs", JSON.stringify(all.slice(0, 40))); drawCtx(); drawFavs();
+}
+// Anciens « trajets gardes » : repris une fois dans les favoris
+(() => { try { const old = JSON.parse(store.get("lp-trips") || "[]"); if (!old.length) return;
+  const all = favs(); old.forEach(t => { const [an, ai] = t.a.split("|"), [bn, bi] = t.b.split("|");
+    const f = {t: "trip", a: {net: an, id: ai, name: t.an}, b: {net: bn, id: bi, name: t.bn}, name: `${t.an} → ${t.bn}`};
+    if (!all.some(x => favKey(x) === favKey(f))) all.push(f); });
+  store.set("lp-favs", JSON.stringify(all)); store.set("lp-trips", null); } catch (e) {} })();
+function drawFavs() {
+  const el = byId("favList"); if (!el) return;
+  const T = L_(), all = favs(), K = {station: T.kStation, line: T.kLine, trip: T.kTrip, place: T.kPlace};
+  el.innerHTML = all.length ? all.map((f, i) => `<div class="fav"><button type="button" data-fav="${i}"><span class="k">${esc(K[f.t])}</span>` +
+    `<span>${f.t === "line" ? linePic(lineFor(f.id) || {net: f.net, id: f.id}) : ""}${esc(f.name)}</span></button>` +
+    `<button class="btn ghost" type="button" data-unfav="${i}" aria-label="${esc(T.favDel)} : ${esc(f.name)}" title="${esc(T.favDel)}">✕</button></div>`).join("")
+    : `<p class="hint">${T.noFavs}</p>`;
+}
+function openFav(f) {
+  if (f.t === "station") { map.setView([f.lat, f.lon], 14); openStation({net: f.net, id: f.id, name: f.name, lat: f.lat, lon: f.lon}); }
+  else if (f.t === "line") { const l = lines.find(x => x.net === f.net && x.id === f.id) || lineFor(f.id) || {net: f.net, id: f.id, name: f.name}; openLine(l); }
+  else if (f.t === "trip") openTrip(f.a, f.b);
+  else if (f.t === "place") { myPos = {lat: f.lat, lon: f.lon, label: f.name}; store.set("lp-pos", JSON.stringify(myPos)); showPos(); openAround(); }
+}
+// Gares et lieux favoris : boutons pour remplir le depart ou l'arrivee d'un trajet en un geste
+function quickFillHtml() {
+  const T = L_(), all = favs().map((f, i) => [f, i]).filter(([f]) => f.t === "station" || f.t === "place");
+  const pos = myPos ? `<button type="button" data-fill="pos">📍 ${esc(T.myPos)}</button>` : "";
+  if (!all.length && !pos) return "";
+  return `<div class="quickfill"><span class="near">${T.fillHint}</span>${pos}${all.slice(0, 8).map(([f, i]) => `<button type="button" data-fill="${i}">★ ${esc(f.name)}</button>`).join("")}</div>`;
+}
+async function endFromFav(f) {
+  if (f.t === "station") return {net: f.net, id: f.id, name: f.name, lat: f.lat, lon: f.lon};
+  return resolvePoint(f.lat, f.lon, f.name);
+}
+
+const trainCache = new Map();
+function trainHtml(tr, x) {
+  const T = L_();
+  if (!tr) return `<p class="hint">${T.noTrain}</p>`;
+  const here = (ctx.data && ctx.data.sncfIds) || [], i0 = Math.max(0, tr.stops.findIndex(st => here.includes(st[6])));
+  const after = tr.stops.slice(i0 + 1), skipped = after.filter(st => st[5]).length;
+  const issues = [...(tr.alerts || []).map(a => `<li>${trHtml(a)}</li>`),
+    (tr.max_delay || 0) >= 300 ? `<li>${T.maxDelay} ${Math.round(tr.max_delay / 60)} ${T.min}</li>` : "",
+    skipped ? `<li>${skipped} ${T.skippedStops}</li>` : "", tr.status === "CANCELED" ? `<li>${T.cancelledTrain}</li>` : ""].join("");
+  return `<p class="hint">${T.trainNo} ${esc(tr.num)} · ${esc(MODES[tr.mode] || tr.mode || "")}${tr.long ? " · " + esc(tr.long) : ""}</p>` +
+    (issues ? `<ul class="issues">${issues}</ul>` : `<p class="hint ok">✓ ${T.noIssue}</p>`) +
+    `<ol class="stops">` + after.map(st => { const ts = st[1] || st[2], dl = st[3] != null ? st[3] : st[4];
+      return `<li class="${st[5] ? "skip" : ""}"><span class="t">${ts ? hhmm(ts) : ""}</span><span>${esc(st[0] || "")}</span>` +
+        `<span>${st[5] ? `<span class="d d-bad">${T.cancelled}</span>` : (dl || 0) >= 60 ? badge(dl, false) : ""}</span></li>`; }).join("") + `</ol>`;
+}
+function drawCtx() { drawCtxInner(); updateSheet(); }
+function drawCtxInner() {
+  const T = L_();
+  if (!ctx) { ctxEl.hidden = true; ctxEl.innerHTML = ""; return; }
+  ctxEl.hidden = false;
+  if (ctx.type === "region") {
+    const st = shown().filter(s => inB(ctx.r.b, s.lat, s.lon)), sum = k => st.reduce((a, s) => a + s[k], 0);
+    const worst = st.filter(s => s.n >= 20).sort((a, b) => b.late15 / b.n - a.late15 / a.n).slice(0, 3).filter(s => s.late15);
+    ctxEl.innerHTML = head(T.kRegion, esc(ctx.r.name)) +
+      `<div class="stats">${stat(st.length, T.stTracked)}${stat(sum("late15"), T.lateT, "warn")}${stat(sum("cancelled"), T.cancT, "bad")}</div>` +
+      (worst.length ? `<p class="hint">${T.worst} : ${worst.map(s => `${esc(s.name)} (${Math.round(100 * s.late15 / s.n)} %)`).join(", ")}</p>` : "") +
+      `<div class="row">${myRegion === ctx.r.id ? `<span class="hint">✓ ${T.isRegion}</span>` :
+        `<button class="btn" type="button" data-act="myregion">${T.setRegion}</button>`}</div>`;
+  } else if (ctx.type === "around") {
+    const p = ctx.p, d = ctx.data; ctxLayer.clearLayers();
+    ctxEl.innerHTML = head(T.aroundTitle, esc(p.label)) + `<p class="hint">${T.nearStations}</p>` +
+      (!d ? `<p class="hint">${T.loadingCtx}</p>` : !d.length ? `<p class="hint">${T.noStationNear}</p>` :
+        `<div class="favlist">${d.map((st, i) => `<div class="fav"><button type="button" data-around="open" data-i="${i}"><span class="k">${nf().format(st.dist)} m</span><span>${esc(st.name)}</span></button>` +
+          `<button class="btn" type="button" data-around="from" data-i="${i}">${T.goFrom}</button></div>`).join("")}</div>`);
+    if (d) d.forEach(st => L.circleMarker([+st.lat, +st.lon], {radius: 7, color: "#fff", weight: 2, fillColor: css("--blue"), fillOpacity: 1})
+      .bindTooltip(esc(st.name)).on("click", () => openStation({net: st.net, id: st.id, name: st.name, lat: +st.lat, lon: +st.lon})).addTo(ctxLayer));
+  } else if (ctx.type === "line") {
+    const d = ctx.data, l = ctx.line;
+    if (!d) { ctxEl.innerHTML = head(T.kLine, linePic(l, true) + esc(lineLabel(l))) + `<p class="hint">${T.loadingCtx}</p>`; return; }
+    const metro = !d.n && d.stops.some(s => s.gap != null), gaps = d.stops.filter(s => s.gap != null).map(s => +s.gap);
+    const worst = d.stops.filter(s => s.n >= 5 && s.late15).sort((a, b) => b.late15 / b.n - a.late15 / a.n).slice(0, 3);
+    ctxEl.innerHTML = head(T.kLine, linePic(l, true) + esc(lineLabel(l)) + (lineSub(l) ? `<br><small class="hint">${esc(lineSub(l))}</small>` : "")) +
+      (metro ? `<div class="stats"><span><b>${new Intl.NumberFormat(loc(), {maximumFractionDigits: 1}).format(gaps.reduce((a, b) => a + b, 0) / gaps.length)} ${T.min}</b>${T.gap}</span></div>`
+        : d.n ? `<div class="stats">${stat(d.n, T.trains)}${stat(d.late15, T.lateT, "warn")}${stat(d.cancelled, T.cancT, "bad")}</div>`
+        : `<p class="hint">${T.noData}</p>`) +
+      (worst.length ? `<p class="hint">${T.worst} : ${worst.map(s => `${esc(s.name)} (${Math.round(100 * s.late15 / s.n)} %)`).join(", ")}</p>` : "");
+  } else if (ctx.type === "station") {
+    const s = ctx.s, d = ctx.data, now = Date.now() / 1000;
+    const hd = (ctx.back ? `<button class="btn ghost backbtn" type="button" data-act="back">← ${ctx.back.type === "line" ? linePic(ctx.back.line) + esc(lineLabel(ctx.back.line)) : T.kTrip}</button>` : "") +
+      head(T.kStation2, esc(s.name || ""));
+    if (!d) { ctxEl.innerHTML = hd + `<p class="hint">${T.loadingCtx}</p>`; return; }
+    const when = (ts, delay, cancelled) => {          // « à quai », « 4 min » (moins d'une heure) ou « 14:32 » + retard
+      if (cancelled) return `<s>${hhmm(ts)}</s> <span class="d d-bad">${T.cancelled}</span>`;
+      const real = ts + Math.max(delay || 0, 0), m = Math.round((real - now) / 60);
+      const lbl = m <= 0 ? T.atQuay : m < 60 ? `${m} ${T.min}` : hhmm(real);
+      return lbl + ((delay || 0) >= 60 ? ` <span class="d ${delay >= 900 ? "d-bad" : delay >= 300 ? "d-mid" : "d-ok"}">+${Math.round(delay / 60)}</span>` : "");
+    };
+    // ---- Lignes urbaines (metro, RER, Transilien, tram) : un bloc par ligne, triees, terminus l'un sous l'autre
+    const ORDER = {METRO: 1, RER: 2, TRANSILIEN: 3, TRAM: 4, FUNI: 5};
+    const natural = (a, b) => String(a).localeCompare(String(b), "fr", {numeric: true});
+    const idfLines = d.lines.filter(l => l.net === "idf" && l.mode !== "TER").map(   // TER d'IDF : dans l'onglet TER, pas en ligne urbaine
+      l => Object.assign({}, l, {lf: lineFor(l.id) || {net: "idf", id: l.id, name: l.name, mode: l.mode}}));
+    (d.metro_next || []).forEach(x => { if (!idfLines.some(l => l.id === x.line_id))
+      idfLines.push({net: "idf", id: x.line_id, name: x.line, mode: "METRO", lf: lineFor(x.line_id) || {net: "idf", id: x.line_id, name: x.line, mode: "METRO"}}); });
+    idfLines.sort((a, b) => (ORDER[a.lf.mode] || 9) - (ORDER[b.lf.mode] || 9) || natural(a.lf.name, b.lf.name));
+    const blocks = idfLines.map(l => {
+      let rows = (d.metro_next || []).filter(x => x.line_id === l.id && norm(x.dest) !== norm(s.name))
+        .map(x => [x.dest, x.t.map(ts => when(ts, 0, false)).join(" · ")]);
+      if (!rows.length) {   // RER / Transilien : prochains departs (heure prevue + retard), groupes par terminus
+        const by = {};
+        d.next.filter(x => x.net === "idf" && x.line_id === l.id).forEach(x => (by[x.dest || "?"] = by[x.dest || "?"] || []).push(x));
+        rows = Object.entries(by).map(([dest, xs]) => [dest, xs.slice(0, 3).map(x => when(x.sched, x.delay, x.cancelled)).join(" · ")]);
+      }
+      return `<div class="lblock"><div class="lhead"><button class="lname" type="button" data-line="idf|${esc(l.id)}">${linePic(l.lf, true)}<span>${esc(lineLabel(l.lf))}</span></button>` +
+        (l.gap != null ? `<span class="freq">${T.every} ${nf1(l.gap)} ${T.min}</span>` : "") + `</div>` +
+        (rows.length ? rows.map(([dest, times]) => `<div class="lrow"><span class="term">${esc(dest)}</span><span class="times">${times}</span></div>`).join("")
+                     : `<p class="hint">${T.noHour}</p>`) + `</div>`;
+    }).join("");
+    // ---- Grandes lignes SNCF : onglets TGV / TER, chaque depart se deroule (arrets, problemes)
+    const GL = ["OUI", "OGO", "IC", "ICN", "LYR", "ICE", "TGV", "ES", "TGVLYR", "NAV_GL"];
+    const sn = d.next.filter(x => x.net === "sncf"), tabs = {gl: sn.filter(x => GL.includes(x.mode)), ter: sn.filter(x => !GL.includes(x.mode))};
+    if (!ctx.tab) ctx.tab = tabs.gl.length >= tabs.ter.length ? "gl" : "ter";
+    const sncfLines = d.lines.filter(l => l.net === "sncf");
+    const glHtml = (sn.length || sncfLines.length) ? `<div class="gl"><div class="tabs" role="tablist">` +
+      [["gl", T.tabGL], ["ter", T.tabTER]].map(([k, lbl]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${ctx.tab === k}">${lbl} <small>${tabs[k].length}</small></button>`).join("") +
+      `</div>` + (tabs[ctx.tab].length ? tabs[ctx.tab].map(x => {
+        const open = ctx.open === x.num, tr = trainCache.get(x.num);
+        return `<div class="dep${open ? " open" : ""}"><button type="button" class="dephead" data-train="${esc(x.num)}" aria-expanded="${open}">` +
+          `<span class="t">${hhmm(x.sched)}${badge(x.delay, x.cancelled)}</span><span class="lbadge">${esc(MODES[x.mode] || x.mode || "")}</span>` +
+          `<span class="term">${esc(x.dest || "")}</span><span class="chev" aria-hidden="true">▾</span></button>` +
+          (open ? `<div class="depbody">${tr === undefined ? `<p class="hint">${T.loadingCtx}</p>` : trainHtml(tr, x)}</div>` : "") + `</div>`;
+      }).join("") : `<p class="hint">${T.noNext}</p>`) + `</div>` : "";
+    ctxEl.innerHTML = hd +
+      (d.n ? `<div class="stats">${stat(d.n, T.pass)}${stat(d.late15, T.lateT, "warn")}${stat(d.cancelled, T.cancT, "bad")}` +
+             (d.avg != null ? `<span><b>${nf1(d.avg)} ${T.min}</b>${T.avg}</span>` : "") + `</div>` : "") +
+      (blocks ? `<div class="lblocks">${blocks}</div>` : "") + glHtml +
+      ((d.metro_next || []).length ? `<p class="hint">${T.estNote}</p>` : "") +
+      (s.id ? `<div class="row"><button class="btn" type="button" data-trip="a" data-st="${esc(key(s))}">${T.fromHere}</button>` +
+              `<button class="btn" type="button" data-trip="b" data-st="${esc(key(s))}">${T.toHere}</button></div>` : "");
+  } else {
+    // Formulaire de trajet (+ itineraires si un trajet est affiche)
+    const a = ctx.a, b = ctx.b, d = ctx.type === "trip" ? ctx.data : null;
+    if (ctx.type === "tripform") {   // depart / arrivee deja choisis : visibles sur la carte en attendant l'autre
+      ctxLayer.clearLayers();
+      [[a, "A"], [b, "B"]].forEach(([e, k]) => { if (!e) return;
+        if (e.place) L.polyline([[e.place.lat, e.place.lon], [e.lat, e.lon]], {color: css("--muted"), weight: 3, dashArray: "2 7", interactive: false}).addTo(ctxLayer);
+        L.circleMarker([e.lat, e.lon], {radius: 8, color: "#fff", weight: 2, fillColor: css("--blue"), fillOpacity: 1, interactive: false})
+          .bindTooltip(`${k} · ${esc(endLabel(e))}`, {permanent: true, direction: "top", offset: [0, -6]}).addTo(ctxLayer); });
+    }
+    let res = "";
+    if (ctx.type === "trip" && !d) res = `<p class="hint">${T.loadingCtx}</p>`;
+    else if (d && !d.journeys.length) res = `<p class="hint">${T.noJourney}</p>`;
+    else if (d) {
+      res = `<div class="jrns" role="list" aria-label="${esc(T.journeys)}"><p class="hint">${T.journeys}</p>${d.journeys.map(journeyHtml).join("")}</div>` +
+        `<p class="hint">${T.journeyNote}</p>`;
+    }
+    const pin = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg>`;
+    const endField = (w, e, lbl) => `<div class="field"><label for="t${w}">${lbl}</label><div class="endrow"><div class="combo">` +
+      `<input id="t${w}" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="t${w}List" placeholder="${T.tripPh}" value="${esc(endLabel(e))}">` +
+      `<ul class="sugg" id="t${w}List" role="listbox" hidden></ul></div>` +
+      `<button class="pickbtn" type="button" data-pick="${w}" aria-pressed="${pickFor === w}" aria-label="${T.mapPick} : ${lbl}" title="${T.mapPick}">${pin}</button></div>` +
+      (e && e.place ? `<span class="near">→ ${T.nearest} : ${esc(e.name)} (${nf().format(e.place.dist)} m)</span>` : "") + `</div>`;
+    ctxEl.innerHTML = head(T.kTrip, a && b && ctx.type === "trip" ? `${esc(a.name)} → ${esc(b.name)}` : T.kTrip) +
+      `<div class="trip-form">${endField("a", a, T.tripFrom)}${endField("b", b, T.tripTo)}
+        <button class="btn swap" type="button" data-act="swap" aria-label="${T.swap}">⇅</button>
+        <button class="btn primary go" type="button" data-act="go">${T.tripGo}</button>
+      </div>` + quickFillHtml() + res + `<p class="near">${T.addrNote}</p>`;
+    ["a", "b"].forEach(w => combo(byId("t" + w), byId(`t${w}List`), "station", o => endFromOption(o).then(e => setEnd(w, e))));
+  }
+}
+ctxEl.addEventListener("click", e => {
+  const jb = e.target.closest("[data-j]");
+  if (jb) { const i = +jb.dataset.j; ctx.sel = ctx.sel === i ? -1 : i; drawJourney(); drawCtx(); return; }
+  const tab = e.target.closest("[data-tab]");
+  if (tab) { ctx.tab = tab.dataset.tab; ctx.open = null; drawCtx(); return; }
+  const trn = e.target.closest("[data-train]");
+  if (trn) {
+    const num = trn.dataset.train; ctx.open = ctx.open === num ? null : num; drawCtx();
+    if (ctx.open && !trainCache.has(num)) rpc("public_train", {p_num: num}).then(r => { trainCache.set(num, r); drawCtx(); }).catch(() => { trainCache.set(num, null); drawCtx(); });
+    return;
+  }
+  const ln = e.target.closest("[data-line]");
+  if (ln) { const [net, id] = ln.dataset.line.split("|"); const l = lines.find(x => x.net === net && x.id === id) || lineFor(id); if (l) openLine(l); return; }
+  const pk = e.target.closest("[data-pick]");
+  if (pk) { if (pickFor === pk.dataset.pick) endPick(); else startPick(pk.dataset.pick); return; }
+  const fl = e.target.closest("[data-fill]");
+  if (fl) {   // remplit le champ vide (depart d'abord)
+    const w = !ctx.a ? "a" : !ctx.b ? "b" : "b", f = fl.dataset.fill;
+    (f === "pos" ? resolvePoint(myPos.lat, myPos.lon, L_().myPos) : endFromFav(favs()[+f])).then(x => setEnd(w, x)); return;
+  }
+  const ar = e.target.closest("[data-around]");
+  if (ar) { const st = ctx.data[+ar.dataset.i]; const x = {net: st.net, id: st.id, name: st.name, lat: +st.lat, lon: +st.lon};
+    if (ar.dataset.around === "open") { openStation(x); return; }
+    const me = {...x, place: {label: ctx.p.label, lat: ctx.p.lat, lon: ctx.p.lon, dist: st.dist, walk_s: Math.round(st.dist * 1.3 / 1.2)}};
+    setEnd(ar.dataset.around === "from" ? "a" : "b", ar.dataset.around === "from" ? me : x); return; }
+  const act = e.target.closest("[data-act]")?.dataset.act; if (!act) return;
+  if (act === "close") { endPick(); setCtx(null); }
+  else if (act === "fav") { const f = ctxFav(); if (f) toggleFav(f); }
+  else if (act === "back" && ctx.back) { const b = ctx.back; if (b.type === "line") openLine(b.line); else openTrip(b.a, b.b); }
+  else if (act === "share") share();
+  else if (act === "myregion") { myRegion = ctx.r.id; store.set("lp-region", myRegion); regionSel.value = myRegion; drawCtx(); }
+  else if (act === "swap") { const a = ctx.a, b = ctx.b; if (a && b) openTrip(b, a); else { ctx.a = b; ctx.b = a; drawCtx(); } }
+  else if (act === "around-pos") openAround();
+  else if (act === "go") { if (ctx.a && ctx.b) openTrip(ctx.a, ctx.b); else toast(L_().pickBoth); }
+
+});
+const key = s => s.net + "|" + s.id;
+const findSt = k => stations.find(s => key(s) === k);
+
+function setCtx(c) {
+  if (c && c !== ctx) { panel = null; newsOpen = false; }
+  ctx = c; ctxLayer.clearLayers(); focusLayer.clearLayers();
+  drawNetwork(); drawStations(); drawCtx(); drawList(); drawEvents();
+  const h = !c || c.type === "tripform" || c.type === "around" ? "" : c.type === "region" ? "region=" + c.r.id :
+    c.type === "line" ? "ligne=" + encodeURIComponent(c.line.net + "|" + c.line.id) :
+    c.type === "station" ? (c.s.id ? "gare=" + encodeURIComponent(key(c.s)) : "") : "trajet=" + encodeURIComponent(key(c.a) + ">" + key(c.b));
+  history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
+  setTimeout(() => map.invalidateSize(), 0);
+}
+function near(lat, lon, m) {
+  const c = Math.cos(lat * Math.PI / 180);
+  return stations.filter(o => Math.hypot((o.lat - lat) * 111000, (o.lon - lon) * 111000 * c) < m);
+}
+function openStationAt(lat, lon, name) { return openStation({name, lat, lon}); }
+// Meme gare sur plusieurs reseaux : a moins de 250 m, ou a moins de 600 m avec le meme premier mot (Chatelet / Chatelet - Les Halles).
+const firstWord = n => norm(n).split(" ")[0];
+// Ouvre la fiche d'un lieu, quel que soit le point clique (gare, arret de ligne, gare depuis la vue d'une ligne ou d'un trajet).
+// Les quais et gares du meme lieu sont retrouves EN BASE (public_nearby_ids) : la fiche ne depend pas des gares affichees.
+async function openStation(s0) {
+  if (pickFor) { pickAt(s0.lat, s0.lon, s0.name, s0.id ? s0 : null); return; }   // choix d'un depart / arrivee : on reste dans l'itineraire
+  const back = ctx && (ctx.type === "line" || ctx.type === "trip") ? ctx : (ctx && ctx.type === "station" ? ctx.back : null);
+  const s = Object.assign({}, s0);
+  setCtx({type: "station", s, back, data: null});
+  let found = [];
+  try { found = await rpc("public_nearby_ids", {p_lat: s.lat, p_lon: s.lon, p_name: s.name || ""}); } catch (e) {}
+  if (!ctx || ctx.type !== "station" || ctx.s !== s) return;
+  const group = [...(s.id ? [s] : []), ...found.filter(o => !(o.net === s.net && o.id === s.id))].slice(0, 6);
+  if (!s.id) {   // point sans identifiant (arret de ligne) : on prend la gare connue la plus proche pour le nom, le lien et « Partir d'ici »
+    const known = group.map(g => findSt(g.net + "|" + g.id)).find(Boolean) || group[0];
+    if (known) { s.net = known.net; s.id = known.id; if (!s.name) s.name = known.name; }
+    history.replaceState(null, "", "#gare=" + encodeURIComponent(key(s)));
+  }
+  const seen = new Set(), res = await Promise.all(group.filter(o => { const k = key(o); if (seen.has(k)) return false; seen.add(k); return true; })
+    .map(o => rpc("public_station", {p_net: o.net, p_id: o.id}).then(d => d && Object.assign(d, {net: o.net})).catch(() => null)));
+  if (!ctx || ctx.type !== "station" || ctx.s !== s) return;
+  const ds = res.filter(Boolean), byLine = new Map();
+  if (!s.name && ds[0]) s.name = ds[0].name;
+  ds.forEach(d => d.lines.forEach(l => { const k = d.net + "|" + l.id; if (!byLine.has(k)) byLine.set(k, Object.assign({net: d.net}, l)); }));
+  const n = ds.reduce((a, d) => a + d.n, 0);
+  ctx.data = {lines: [...byLine.values()], n, late15: ds.reduce((a, d) => a + d.late15, 0), cancelled: ds.reduce((a, d) => a + d.cancelled, 0),
+    avg: n ? ds.reduce((a, d) => a + (+d.avg || 0) * d.n, 0) / n : null,
+    // Plusieurs points d'arret pour la meme gare : une entree par ligne et direction (3 prochaines rames)
+    metro_next: Object.values(ds.flatMap(d => d.metro_next || []).reduce((acc, x) => {
+      // une seule source par ligne et direction (la gare cliquee d'abord) : deux quais voisins donnent la meme rame a 1-2 min d'ecart
+      const k = x.line_id + "|" + norm(x.dest); if (!acc[k]) acc[k] = {line_id: x.line_id, line: x.line, dest: x.dest, t: [...x.t]};
+      return acc; }, {})).map(g => {
+        const ts = g.t.sort((a, b) => a - b).filter((v, i, arr) => i === 0 || v - arr[i - 1] > 40);
+        return Object.assign(g, {t: ts.slice(0, 3)}); }),
+    sncfIds: ds.filter(d => d.net === "sncf").map(d => d.id),
+    next: ds.flatMap(d => d.next.map(x => Object.assign({net: d.net}, x))).sort((a, b) => (a.sched + Math.max(a.delay || 0, 0)) - (b.sched + Math.max(b.delay || 0, 0))).slice(0, 80)};
+  L.circleMarker([s.lat, s.lon], {radius: 11, color: css("--blue"), weight: 3, fill: false, interactive: false}).addTo(ctxLayer);
+  drawCtx(); drawList(); drawEvents();
+}
+function openRegion(id) {
+  const r = regionById(id); if (!r) { setCtx(null); map.setView([46.6, 2.4], 5.5); return; }
+  setCtx({type: "region", r}); map.fitBounds(r.b);
+}
+function openLine(l) {
+  setCtx({type: "line", line: l, data: null});
+  rpc("public_line", {p_net: l.net, p_id: l.id}).then(d => {
+    if (!ctx || ctx.type !== "line" || ctx.line !== l) return;
+    ctx.data = d || {stops: [], paths: [], n: 0}; drawCtx();
+    const blue = css("--blue"), pts = [];
+    const official = idfGeo && idfGeo.lines[l.id] ? idfGeo.shapes.filter(s => s[0] === l.id).map(s => s[1]) : [];
+    const lc = official.length ? idfGeo.lines[l.id].color : blue;
+    (official.length ? official : ctx.data.paths).forEach(p => { L.polyline(p, {color: lc, weight: 6, opacity: .95}).addTo(ctxLayer); pts.push(...p); });
+    ctx.data.stops.forEach(s => { pts.push([s.lat, s.lon]);
+      L.circleMarker([s.lat, s.lon], {radius: 6, color: "#fff", weight: 2, fillColor: s.gap != null ? lc : color(s), fillOpacity: 1})
+        .bindTooltip(esc(s.name), {direction: "top"}).on("click", () => openStation({name: s.name, lat: s.lat, lon: s.lon})).addTo(ctxLayer); });
+    if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(.1));
+  }).catch(() => { ctx.data = {stops: [], paths: [], n: 0}; drawCtx(); });
+}
+// Itineraires (direct ou une correspondance, SNCF + RER / Transilien, avec marche entre gares voisines) : calcules en base.
+const realT = (t, d) => t + Math.max(d || 0, 0);
+// On ne garde que les meilleures options : aucune autre ne part plus tard ET n'arrive plus tot.
+function bestJourneys(js) {
+  const dep = j => realT(j.legs[0].dep, j.legs[0].dep_delay), arr = j => realT(j.arr, j.arr_delay);
+  const sorted = [...js].sort((x, y) => dep(x) - dep(y) || x.transfers - y.transfers);
+  const out = []; let best = Infinity;
+  for (let i = sorted.length - 1; i >= 0; i--) { const j = sorted[i]; if (arr(j) < best) { out.unshift(j); best = arr(j); } }
+  return out.slice(0, 6);
+}
+function legColor(l) {
+  const id = l.info && l.info.line_id, g = idfGeo && id && idfGeo.lines[id];
+  return g ? g.color : css("--blue");
+}
+function legPic(l) {
+  const i = l.info || {};
+  if (idfGeo && i.line_id && idfGeo.lines[i.line_id]) return picto(i.line_id, i.line);
+  const name = i.line && !/^\d{3}[A-Z]$/.test(i.line) ? " " + i.line : "";   // « 631B » : code interne SNCF, pas un nom de ligne
+  return `<span class="lbadge">${esc((MODES[i.mode] || i.mode || "Train") + name)}</span>`;
+}
+const WALK = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4" r="2" fill="currentColor"/><path d="M9 21l2-6 3 3v3m-3-6l1-5-3 2-1 3m4-5l2 3 3 1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function durTxt(sec) { const T = L_(), m = Math.max(0, Math.round(sec / 60)); return m < 60 ? `${m} ${T.dur}` : `${Math.floor(m / 60)} ${T.hr} ${String(m % 60).padStart(2, "0")}`; }
+function xferOf(j) {
+  if (j.legs.length < 2) return null;
+  const [l1, l2] = j.legs, slack = realT(l2.dep, l2.dep_delay) - realT(l1.arr, l1.arr_delay) - (j.walk_s || 0);
+  return {slack, at: l2.from[0], walk: j.walk_s || 0, cls: slack < 120 ? "bad" : slack < 300 ? "warn" : ""};
+}
+function journeyHtml(j, i) {
+  const T = L_(), first = j.legs[0], last = j.legs[j.legs.length - 1], open = ctx.sel === i, x = xferOf(j);
+  const wa = ctx.a && ctx.a.place ? ctx.a.place.walk_s : 0, wb = ctx.b && ctx.b.place ? ctx.b.place.walk_s : 0;
+  const dep = realT(first.dep, first.dep_delay) - wa, arr = realT(last.arr, last.arr_delay) + wb, late = Math.round(Math.max(last.arr_delay || 0, 0) / 60);
+  const walkRow = (t, txt) => `<li class="xfer"><span class="t">${hhmm(t)}</span><span class="rail"></span><span class="what">${WALK} ${txt}</span></li>`;
+  const dl = v => (v || 0) >= 60 ? badge(v, false) : "";
+  const sub = (late ? `+${late} ${T.min} ${T.arrLate}` : T.arrOk) + (x && x.cls ? ` · ${x.cls === "bad" ? T.missed : T.tight}` : "");
+  const subCls = x && x.cls === "bad" || late >= 15 ? "bad" : (x && x.cls) || late >= 5 ? "warn" : "";
+  let body = "";
+  if (open) {
+    body = `<ol class="legs">` + j.legs.map((l, k) => {
+      const inf = l.info || {}, c = legColor(l);
+      const between = k > 0 && x ? `<li class="xfer ${x.cls}"><span></span><span class="rail"></span><span class="what">${T.changeAt} ${esc(x.at)} · ` +
+        (x.walk ? `${WALK} ${Math.round(x.walk / 60)} ${T.min} ${T.walk} · ` : "") + `${Math.max(0, Math.round(x.slack / 60))} ${T.min} ${T.waitFor}` +
+        (x.cls ? ` · ${x.cls === "bad" ? T.missed : T.tight}` : "") + `</span></li>` : "";
+      return between +
+        `<li class="leg" style="--lc:${c}"><span class="t">${hhmm(l.dep)}${dl(l.dep_delay)}</span><span class="rail"></span><span class="what"><b>${esc(l.from[0] || "")}</b>` +
+        `<small>${legPic(l)} ${inf.dest ? `${T.towards} ${esc(inf.dest)}` : ""}${inf.num ? ` · ${T.trainN} ${esc(inf.num)}` : ""}</small></span></li>` +
+        `<li class="leg end" style="--lc:${c}"><span class="t">${hhmm(l.arr)}${dl(l.arr_delay)}</span><span class="rail"></span><span class="what"><b>${esc(l.to[0] || "")}</b></span></li>`;
+    }).join("") + `</ol>`;
+    if (wa) body = body.replace(`<ol class="legs">`, `<ol class="legs">` + walkRow(dep, `${T.walkTo} ${esc(first.from[0] || "")} · ${Math.round(wa / 60)} ${T.min} (${esc(ctx.a.place.label)})`));
+    if (wb) body = body.replace(/<\/ol>$/, walkRow(realT(last.arr, last.arr_delay), `${T.walkEnd} · ${Math.round(wb / 60)} ${T.min} (${esc(ctx.b.place.label)})`) + `</ol>`);
+  }
+  return `<div class="jrn${open ? " on" : ""}" role="listitem"><button class="jhead" type="button" data-j="${i}" aria-expanded="${open}">` +
+    `<span class="jtop"><span class="t">${hhmm(dep)} → ${hhmm(arr)}</span><span class="dur">${durTxt(arr - dep)}</span></span>` +
+    `<span class="chain">${wa ? WALK + `<span class="sep">›</span>` : ""}${j.legs.map(legPic).join(`<span class="sep">›</span>${j.walk_s ? WALK : ""}`)}${wb ? `<span class="sep">›</span>` + WALK : ""}<span>· ${j.legs.length > 1 ? T.oneChange : T.direct}</span></span>` +
+    `<span class="jsub ${subCls}">${sub}</span></button>${body}</div>`;
+}
+function drawJourney() {
+  ctxLayer.clearLayers();
+  const a = ctx.a, b = ctx.b, j = ctx.data && ctx.data.journeys[ctx.sel], pts = [[a.lat, a.lon], [b.lat, b.lon]];
+  const dot = (p, name, c, r) => L.circleMarker(p, {radius: r, color: "#fff", weight: 2, fillColor: c, fillOpacity: 1})
+    .bindTooltip(esc(name)).on("click", () => openStation({name, lat: p[0], lon: p[1]})).addTo(ctxLayer);
+  if (j) j.legs.forEach((l, k) => {
+    const c = legColor(l), p1 = [l.from[1], l.from[2]], p2 = [l.to[1], l.to[2]];
+    if (p1[0] != null && p2[0] != null) { L.polyline([p1, p2], {color: c, weight: 6, opacity: .9}).addTo(ctxLayer); pts.push(p1, p2); }
+    if (k > 0) { const q = j.legs[k - 1].to; if (q[1] != null && p1[0] != null) L.polyline([[q[1], q[2]], p1], {color: css("--muted"), weight: 3, dashArray: "2 7"}).addTo(ctxLayer); }
+    if (p1[0] != null) dot(p1, l.from[0], c, k ? 5 : 7);
+    if (p2[0] != null) dot(p2, l.to[0], c, k === j.legs.length - 1 ? 7 : 5);
+  });
+  else [a, b].forEach(s => dot([s.lat, s.lon], s.name, css("--blue"), 7));
+  // Marche depuis l'adresse de depart / jusqu'a l'adresse d'arrivee
+  [a, b].forEach(s => { if (!s.place) return; const pp = [s.place.lat, s.place.lon];
+    L.polyline([pp, [s.lat, s.lon]], {color: css("--muted"), weight: 3, dashArray: "2 7", interactive: false}).addTo(ctxLayer);
+    L.circleMarker(pp, {radius: 6, color: "#fff", weight: 2, fillColor: css("--fg"), fillOpacity: 1}).bindTooltip(esc(s.place.label)).addTo(ctxLayer); pts.push(pp); });
+  ctx.bounds = L.latLngBounds(pts.filter(p => p[0] != null)).pad(.15); map.fitBounds(ctx.bounds);
+}
+async function openTrip(a, b) {
+  setCtx({type: "trip", a, b, data: null, sel: 0});
+  let d = null;
+  try { d = await rpc("public_journey", {p_from_net: a.net, p_from_id: a.id, p_to_net: b.net, p_to_id: b.id}); } catch (e) { d = null; }
+  if (!ctx || ctx.type !== "trip" || ctx.a !== a || ctx.b !== b) return;
+  let js = d && d.journeys ? bestJourneys(d.journeys) : [];
+  // Depuis / vers une adresse : si rien depuis la gare la plus proche, on essaie les autres gares a pied (Gare de l'Est -> Gare du Nord)
+  if (!js.length && (a.alts || b.alts)) {
+    const as = [a, ...(a.alts || [])], bs = [b, ...(b.alts || [])], pairs = [];
+    as.forEach(x => bs.forEach(y => { if (x !== a || y !== b) pairs.push([x, y]); }));
+    pairs.sort((p, q) => (p[0].place ? p[0].place.walk_s : 0) + (p[1].place ? p[1].place.walk_s : 0) - (q[0].place ? q[0].place.walk_s : 0) - (q[1].place ? q[1].place.walk_s : 0));
+    for (const [x, y] of pairs.slice(0, 4)) {
+      let r = null; try { r = await rpc("public_journey", {p_from_net: x.net, p_from_id: x.id, p_to_net: y.net, p_to_id: y.id}); } catch (e) {}
+      if (!ctx || ctx.type !== "trip" || ctx.a !== a || ctx.b !== b) return;
+      const got = r && r.journeys ? bestJourneys(r.journeys) : [];
+      if (got.length) { js = got; ctx.a = Object.assign(x, {alts: a.alts}); ctx.b = Object.assign(y, {alts: b.alts}); break; }
+    }
+  }
+  ctx.data = {journeys: js, line_ids: [...new Set(js.flatMap(j => j.legs.map(l => l.info && l.info.line_id).filter(Boolean)))]};
+  ctx.sel = js.length ? 0 : -1;
+  drawJourney(); drawCtx(); drawList(); drawEvents();
+}
+// Boutons « Partir d'ici / Arriver ici » dans les bulles des gares
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-trip]"); if (!b) return;
+  const k = b.dataset.st, s = findSt(k) || (ctx && ctx.s && key(ctx.s) === k ? ctx.s : null); if (!s) return;
+  setEnd(b.dataset.trip, {net: s.net, id: s.id, name: s.name, lat: s.lat, lon: s.lon});
+});
+document.getElementById("tripBtn").addEventListener("click", () => {
+  if (ctx && (ctx.type === "trip" || ctx.type === "tripform")) { document.getElementById("ta")?.focus(); return; }
+  setCtx({type: "tripform"}); document.getElementById("ta")?.focus();
+});
+regionSel.addEventListener("change", () => {
+  myRegion = regionSel.value; store.set("lp-region", myRegion || null); regionLabel();
+  openRegion(myRegion);
+});
+
+// ================================================================= Profil
+function applyProfile(p, first) {
+  profile = p; store.set("lp-profile", p);
+  document.querySelectorAll("#profile button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.p === p)));
+  if (!first) setWhen(p === "quotidien" ? 0 : 7);
+  drawStations(); drawList(); if (ctx && ctx.type === "region") drawCtx();
+}
+document.getElementById("profile").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  applyProfile(b.dataset.p);
+  if (b.dataset.p === "grandes_lignes" && (!ctx || ctx.type === "region")) { setCtx(null); map.setView([46.6, 2.4], 5.5); }
+  else if (b.dataset.p === "quotidien" && myRegion && !ctx) openRegion(myRegion);
+});
+
+
+// ================================================================= Panneau flottant facon Google Maps : rien d'ouvert par defaut
+function byId(id) { return document.getElementById(id); }   // declaree tot (fonction) : utilisee des le chargement
+let panel = null, newsOpen = false;   // panel : null | "news" | "menu" ; newsOpen : perturbations depliees sous une fiche
+function updateSheet() {
+  const sheet = byId("sheet"), menu = panel === "menu", hasCtx = !!ctx && !menu && panel !== "favs";
+  byId("menuBox").hidden = !menu;
+  const fv = panel === "favs"; byId("favBox").hidden = !fv; if (fv) drawFavs();
+  byId("favBtn").setAttribute("aria-pressed", String(fv));
+  ctxEl.hidden = !hasCtx || !ctxEl.innerHTML;
+  byId("newsToggle").hidden = !hasCtx;
+  byId("newsToggle").setAttribute("aria-expanded", String(newsOpen));
+  byId("newsBox").hidden = menu || panel === "favs" || (hasCtx ? !newsOpen : panel !== "news");
+  sheet.hidden = !menu && !hasCtx && panel !== "news" && panel !== "favs";
+  byId("app").classList.toggle("sheet-open", !sheet.hidden);
+  byId("menuBtn").setAttribute("aria-expanded", String(menu));
+  byId("newsBtn").setAttribute("aria-pressed", String(!sheet.hidden && !byId("newsBox").hidden));
+  if (sheet.hidden) sheet.classList.remove("full");
+}
+byId("menuBtn").addEventListener("click", () => { panel = panel === "menu" ? null : "menu"; updateSheet(); });
+byId("newsBtn").addEventListener("click", () => {
+  if (ctx && panel !== "menu") newsOpen = !newsOpen; else panel = panel === "news" ? null : "news";
+  updateSheet();
+});
+byId("newsToggle").addEventListener("click", () => { newsOpen = !newsOpen; updateSheet(); });
+byId("sheet").addEventListener("click", e => {
+  const c = e.target.closest("[data-close]"); if (!c) return;
+  if (c.dataset.close === "menu" || c.dataset.close === "favs") panel = null; else if (ctx) newsOpen = false; else panel = null;
+  updateSheet();
+});
+byId("handle").addEventListener("click", () => byId("sheet").classList.toggle("full"));
+byId("legendBtn").addEventListener("click", () => {
+  const c = byId("legendCard"); c.hidden = !c.hidden; byId("legendBtn").setAttribute("aria-expanded", String(!c.hidden));
+});
+function regionLabel() { const r = regionById(myRegion); byId("regionBtnLbl").textContent = r ? r.name : L_().regionBtn; }
+byId("regionBtn").addEventListener("click", () => {
+  if (myRegion) { panel = null; openRegion(myRegion); }
+  else { panel = "menu"; updateSheet(); byId("region").focus(); }
+});
+byId("locBtn").addEventListener("click", () => { panel = null; openAround(); });
+byId("favBtn").addEventListener("click", () => { panel = panel === "favs" ? null : "favs"; updateSheet(); });
+byId("favList").addEventListener("click", e => {
+  const u = e.target.closest("[data-unfav]");
+  if (u) { const all = favs(); all.splice(+u.dataset.unfav, 1); store.set("lp-favs", JSON.stringify(all)); drawFavs(); return; }
+  const o = e.target.closest("[data-fav]"); if (o) { panel = null; openFav(favs()[+o.dataset.fav]); }
+});
+// Ma position dans les preferences : se localiser, choisir sur la carte, ou taper une adresse / une gare
+byId("posGeo").addEventListener("click", () => geolocate().then(p => { if (p) { panel = null; setMyPos(p); } }));
+byId("posMap").addEventListener("click", () => { panel = null; updateSheet(); startPick("pos"); });
+byId("posClear").addEventListener("click", () => setMyPos(null));
+combo(byId("posIn"), byId("posList"), "station", o => {
+  if (o.type === "mypos") { geolocate().then(p => { if (p) { panel = null; setMyPos(p); } }); return; }
+  const p = o.type === "station" ? {lat: o.st.lat, lon: o.st.lon, label: o.st.name} : {lat: o.lat, lon: o.lon, label: o.label};
+  byId("posIn").value = ""; panel = null; setMyPos(p);
+});
+showPos();
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || e.target.closest(".combo")) return;
+  if (pickFor) { endPick(); return; }
+  if (!byId("legendCard").hidden) { byId("legendBtn").click(); return; }
+  if (panel) { panel = null; updateSheet(); } else if (ctx && newsOpen) { newsOpen = false; updateSheet(); }
+});
+
+// ================================================================= Partage
+function toast(t) {
+  const el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); el.textContent = t;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 2200);
+}
+async function share() {
+  const url = location.href;
+  try { if (navigator.share) { await navigator.share({title: document.title, url}); return; } } catch (e) { return; }
+  try { await navigator.clipboard.writeText(url); toast(L_().shared); } catch (e) { prompt("URL", url); }
+}
+
+// ================================================================= Donnees (Supabase, fonctions publiques d'agregats)
+const CFG = window.LP_CONFIG || {};
+const rpc = (fn, body = {}) => fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {method: "POST", body: JSON.stringify(body),
+  headers: {apikey: CFG.key, "Content-Type": "application/json"}}).then(r => r.ok ? r.json() : Promise.reject(r.status));
+let booted = false;
+map.attributionControl.addAttribution("Tracés &copy; Île-de-France Mobilités, SNCF Réseau");
+function markCovered() {
+  if (!idfGeo || !idfGeo.stops || !stations.length) return;
+  const grid = new Map(), cellK = (a, b) => Math.round(a * 200) + ":" + Math.round(b * 140);
+  Object.values(idfGeo.stops).forEach(st => st.forEach(([a, b]) => grid.set(cellK(a, b), 1)));
+  stations.forEach(s => { s.covered = false;
+    for (const da of [-1, 0, 1]) for (const db of [-1, 0, 1]) if (grid.has((Math.round(s.lat * 200) + da) + ":" + (Math.round(s.lon * 140) + db))) s.covered = true; });
+}
+fetch("data/lignes-idf.json").then(r => r.json()).then(d => { idfGeo = d; markCovered(); drawNetwork(); drawStations(); drawList(); drawCtx(); }).catch(() => {});
+fetch("data/rfn.json").then(r => r.json()).then(d => { rfn = d; drawNetwork(); }).catch(() => {});
+function load() {
+  if (!CFG.url) { drawList(); return Promise.resolve(); }
+  // Une requete apres l'autre : en parallele, la plus lourde (les gares) depasse parfois le delai de la base.
+  return rpc("public_station_map").then(d => { stations = d.stations || []; updatedAt = d.updated_at; markCovered(); drawStations(); if (ctx && ctx.type === "region") drawCtx(); }).catch(() => {})
+    .then(() => rpc("public_disruptions", {days: 7})).then(d => { items = d.items || []; drawList(); drawEvents(); }).catch(() => drawList())
+    .then(() => lines.length ? null : rpc("public_lines").then(d => { lines = d || []; })).catch(() => {});
+}
+// Lien du copilote (#de=…&vers=…) : du texte libre, dicté ou tapé. Gare connue d'abord, sinon adresse, sinon « ma position ».
+async function placeFromText(t) {
+  const q = (t || "").trim();
+  if (!q || /^(ma position|ici|chez moi|moi|là où je suis|ma localisation)$/i.test(q)) {
+    const p = await currentPos(); return p ? resolvePoint(p.lat, p.lon, L_().myPos) : null;
+  }
+  const looksAddress = /\d|\b(rue|avenue|av\.|boulevard|bd|place|chemin|allée|impasse|quai|route|cours)\b/i.test(q);
+  if (!looksAddress) {
+    // Nom exact (« Grenoble »), sinon la gare la plus fréquentée dont le nom commence par ce mot (« Lyon » -> Lyon Part-Dieu).
+    const nq = norm(q), busiest = arr => arr.sort((x, y) => (y.n || 0) - (x.n || 0))[0];
+    const exact = busiest(stations.filter(s => norm(s.name) === nq) .slice());
+    if (exact) return exact;
+    const pre = busiest(stations.filter(s => norm(s.name).startsWith(nq + " ")));
+    if (pre) return pre;
+  }
+  const st = looksAddress ? null : suggest(q.replace(/^(la |le |l')?gare (de |du |d')?(?=\S+ )/i, ""), "station")[0] || suggest(q, "station")[0];
+  if (st && st.s >= 2) return st.st;
+  const g = (await geocode(q))[0];
+  if (g) return resolvePoint(g.lat, g.lon, g.label);
+  return st ? st.st : null;
+}
+async function openSpoken(from, to) {
+  const [a, b] = await Promise.all([placeFromText(from), placeFromText(to)]);
+  if (!b) { toast(`« ${to} » : lieu introuvable`); setCtx({type: "tripform", a}); return; }
+  if (!a) { setCtx({type: "tripform", b}); return; }
+  setEnd("a", a); setEnd("b", b);
+}
+// Ouverture : lien partage (#region=, #ligne=, #trajet=) > trajet saisi a l'inscription > region (profil quotidien) > France
+let tries = 0;
+function boot() {
+  if (booted) return;
+  // Les gares (et les lignes) sont necessaires pour ouvrir un lien : si elles ne sont pas arrivees, on reessaie.
+  if ((!stations.length || !lines.length) && CFG.url && tries++ < 4) { setTimeout(() => load().then(boot), 2500 * tries); return; }
+  booted = true;
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("region")) return openRegion(h.get("region"));
+  if (h.get("ligne")) { const [net, id] = h.get("ligne").split("|"); const l = lines.find(x => x.net === net && x.id === id); if (l) return openLine(l); }
+  if (h.get("gare")) { const s = findSt(h.get("gare")); if (s) { map.setView([s.lat, s.lon], 14); return openStation(s); } }
+  if (h.get("vers")) { openSpoken(h.get("de") || "ma position", h.get("vers")); history.replaceState(null, "", location.pathname + location.search); return; }
+  if (h.get("trajet")) { const [ka, kb] = h.get("trajet").split(">"); const a = findSt(ka), b = findSt(kb); if (a && b) return openTrip(a, b); }
+  const saved = savedTrips()[0];
+  if (saved && profile !== "grandes_lignes") { const a = findSt(saved.a), b = findSt(saved.b); if (a && b) return openTrip(a, b); }
+  const typed = store.get("lp-line");   // trajet tape a l'inscription, ex. « Lyon → Grenoble »
+  if (typed) {
+    const parts = typed.split(/\s*(?:→|->|>|–|—| - |\/| a | à | to )\s*/i).filter(Boolean);
+    if (parts.length === 2) { const a = suggest(parts[0], "station")[0], b = suggest(parts[1], "station")[0];
+      if (a && b) { store.set("lp-line", null); return openTrip(a.st, b.st); } }
+  }
+  if (myRegion && profile !== "grandes_lignes") return openRegion(myRegion);
+}
+regionSel.value = myRegion;
+applyProfile(["quotidien", "grandes_lignes", "les_deux"].includes(profile) ? profile : "les_deux", true);
+if (profile === "quotidien") setWhen(0);
+setLang(lang);
+load().then(boot);
+setInterval(load, 300000);
+// La carte se cree avant que la mise en page soit stable (polices, grille) : on lui redonne sa vraie taille.
+const fit = () => map.invalidateSize();
+window.addEventListener("load", fit); window.addEventListener("resize", fit); setTimeout(fit, 400);
+if ("ResizeObserver" in window) new ResizeObserver(fit).observe(document.getElementById("map"));
+</script>
+</body>
+</html>

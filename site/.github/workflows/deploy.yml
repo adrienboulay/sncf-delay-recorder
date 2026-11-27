@@ -1,0 +1,46 @@
+# Publie la page sur GitHub Pages. La configuration Supabase (adresse + cle PUBLIQUE "publishable")
+# est injectee depuis les secrets du depot, pour ne pas l'ecrire dans le code.
+name: deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  # Deux etapes (modele officiel GitHub) : construire l'archive du site, PUIS la publier.
+  # En une seule etape, la publication ne trouvait parfois pas l'archive (« No artifacts named github-pages »).
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generer config.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          mkdir -p public && cp -r index.html carte.html assistant.html app.html verif.html lp-core.js gus.js data pictos public/
+          BASE=$(printf '%s' "$SUPABASE_URL" | sed -nE 's#^(https://[a-z0-9-]+\.supabase\.co)(/.*)?$#\1#p')
+          KEY=$(printf '%s' "$SUPABASE_PUBLISHABLE_KEY" | grep -E '^sb_publishable_[A-Za-z0-9_-]+$' || true)
+          # Garde-fou : on ne publie QUE une adresse https://xxx.supabase.co et une cle sb_publishable_.
+          # Toute autre valeur (ex. une cle secrete collee par erreur) n'est jamais ecrite dans la page.
+          if [ -z "$BASE" ] || [ -z "$KEY" ]; then BASE=""; KEY=""; echo "::warning::SUPABASE_URL ou SUPABASE_PUBLISHABLE_KEY invalide : la page s'affiche sans donnees"; else echo "config ok"; fi
+          printf 'window.LP_CONFIG = {url: "%s", key: "%s"};\n' "$BASE" "$KEY" > public/config.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
