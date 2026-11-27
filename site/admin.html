@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tableau de bord · LateProof</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#121417">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+  --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:ui-monospace,"Cascadia Code",Consolas,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--display);font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--lime);outline-offset:2px;border-radius:6px}
+a{color:var(--lime)}
+.wrap{max-width:1200px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 48px}
+h1,h2{font-family:var(--head);font-weight:700;letter-spacing:-.015em;margin:0}
+h1{font-size:1.7rem}h2{font-size:1.05rem}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:700 1.15rem var(--head)}
+.brand small{font:700 .72rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--lime);background:rgb(212 255 58/.12);padding:4px 8px;border-radius:999px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:0;border-radius:999px;background:var(--surface2);color:var(--fg);font:700 .88rem var(--display);cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--surface3)}
+.btn.lime{background:var(--lime);color:#121417}
+.btn.danger{color:var(--orange)}
+.btn.sm{min-height:32px;padding:0 12px;font-size:.8rem}
+.login{max-width:420px;margin:12vh auto;padding:28px;border-radius:24px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06);display:grid;gap:14px}
+.login p{margin:0;color:var(--muted)}
+input{font:500 1rem var(--display);color:var(--fg);background:var(--bg);border:2px solid var(--surface3);border-radius:12px;padding:12px 14px;width:100%}
+input:focus{border-color:var(--lime);outline:none}
+.err{color:var(--orange);font-weight:700;min-height:1.2em;margin:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.tile{padding:16px;border-radius:18px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.05);display:grid;gap:4px}
+.tile .k{font:700 .72rem var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font:700 1.7rem/1.1 var(--head);letter-spacing:-.02em}
+.tile .s{font-size:.8rem;color:var(--muted)}
+.tile.warn .v{color:var(--orange)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{padding:18px;border-radius:20px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.05);display:grid;gap:12px;align-content:start;min-width:0}
+.card.full{grid-column:1/-1}
+.card .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.muted{color:var(--muted)}.small{font-size:.82rem}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;font-weight:700;color:var(--muted);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num,th.num{text-align:right}
+.mono{font-family:var(--mono);font-size:.78rem}
+.ok{color:var(--lime)}.bad{color:var(--orange)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.78rem;padding:2px 8px;border-radius:999px;background:var(--surface2)}
+.pill.ok::before,.pill.bad::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+/* Barres : une seule série, fines, extrémité arrondie de 4 px posée sur la ligne de base, 2 px d'écart */
+.bars{position:relative;display:flex;align-items:flex-end;gap:2px;height:140px;padding-top:18px;border-bottom:1px solid var(--line)}
+.bars .b{flex:1;min-width:6px;max-width:34px;height:100%;display:flex;align-items:flex-end;cursor:default}
+.bars .b i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--lime)}
+.bars .b:hover i,.bars .b:focus i{background:#E9FF8F}
+.bars .tip{position:absolute;top:-6px;transform:translateX(-50%);white-space:nowrap;padding:4px 8px;border-radius:8px;background:var(--surface3);color:var(--fg);font-size:.75rem;font-weight:700;pointer-events:none}
+.axis{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+details summary{cursor:pointer;color:var(--muted);font-size:.8rem}
+.rev{display:grid;gap:6px;padding:12px;border-radius:14px;background:var(--surface2)}
+.rev .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rev p{margin:0}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>lateproof <small>Gestion</small></a>
+    <div id="bar" hidden><button class="btn" id="refresh" type="button">↻ Actualiser</button> <button class="btn" id="logout" type="button">Se déconnecter</button></div>
+  </header>
+
+  <form class="login" id="login">
+    <h1>Tableau de bord</h1>
+    <p>Réservé à la gestion du site. Le mot de passe est le secret <code>ADMIN_TOKEN</code> du dépôt GitHub.</p>
+    <label for="pw" class="muted small">Mot de passe</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button class="btn lime" type="submit">Entrer</button>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+
+  <main id="dash" hidden>
+    <h1 style="margin-bottom:14px">Tableau de bord <span class="muted small" id="upd"></span></h1>
+    <div class="tiles" id="tiles"></div>
+    <div class="grid">
+      <section class="card"><div class="hd"><h2>Inscriptions aux nouveautés · 14 jours</h2></div><div id="cWait"></div></section>
+      <section class="card"><div class="hd"><h2>Questions à Gus · par jour</h2></div><div id="cGus"></div></section>
+      <section class="card"><div class="hd"><h2>Enregistreur</h2></div><div id="rec"></div></section>
+      <section class="card"><div class="hd"><h2>Sceaux Solana (empreintes de la nuit)</h2></div><div id="sol"></div></section>
+      <section class="card full"><div class="hd"><h2>Avis à modérer</h2><span class="muted small" id="revN"></span></div><div id="revs" style="display:grid;gap:8px"></div></section>
+      <section class="card"><div class="hd"><h2>Paiements x402</h2><a class="btn sm" href="api.html">Page API</a></div><div id="pay"></div></section>
+      <section class="card"><div class="hd"><h2>Liste d'attente</h2><button class="btn sm" id="csv" type="button">Exporter (CSV)</button></div><div id="wl"></div></section>
+      <section class="card full"><div class="hd"><h2>Base de données</h2></div><div id="db"></div></section>
+    </div>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script>
+const CFG = window.LP_CONFIG || {}, API = `${(CFG.url || "").replace(/\/+$/, "")}/functions/v1/admin`, $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const nf = new Intl.NumberFormat("fr-FR"), when = t => t ? new Date(t * 1000).toLocaleString("fr-FR", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"}) : "—";
+const ago = s => s == null ? "—" : s < 120 ? `il y a ${Math.round(s)} s` : s < 7200 ? `il y a ${Math.round(s / 60)} min` : `il y a ${Math.round(s / 3600)} h`;
+// Mot de passe gardé seulement le temps de l'onglet (sessionStorage), jamais dans le code ni sur un serveur tiers
+const tok = {get() { try { return sessionStorage.getItem("lp-admin") || ""; } catch (e) { return ""; } },
+             set(v) { try { v ? sessionStorage.setItem("lp-admin", v) : sessionStorage.removeItem("lp-admin"); } catch (e) {} }};
+async function call(what, body) {
+  const r = await fetch(body ? API : `${API}?do=${what}`, {method: body ? "POST" : "GET", headers: {"x-admin-token": tok.get(), ...(body ? {"Content-Type": "application/json"} : {})}, body: body ? JSON.stringify(body) : undefined});
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { tok.set(""); show(false); $("err").textContent = j.error || "Mot de passe incorrect"; throw new Error("401"); }
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+function show(on) { $("login").hidden = on; $("dash").hidden = !on; $("bar").hidden = !on; }
+
+// Barres d'une seule série (pas de légende : le titre la nomme), infobulle au survol, tableau en dessous
+function bars(el, rows, label) {
+  if (!rows.length) { el.innerHTML = `<p class="muted small">Pas encore de données.</p>`; return; }
+  const max = Math.max(1, ...rows.map(r => r.n));
+  el.innerHTML = `<div class="bars" role="img" aria-label="${esc(label)}">${rows.map((r, i) => `<span class="b" tabindex="0" data-i="${i}"><i style="height:${Math.max(2, 100 * r.n / max)}%"></i></span>`).join("")}<span class="tip" hidden></span></div>` +
+    `<div class="axis"><span>${esc(rows[0].label)}</span><span>max ${nf.format(max)}</span><span>${esc(rows[rows.length - 1].label)}</span></div>` +
+    `<details><summary>Voir le tableau</summary><table><thead><tr><th>Jour</th><th class="num">${esc(label)}</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td><td class="num">${nf.format(r.n)}${r.extra ? ` <span class="muted small">${esc(r.extra)}</span>` : ""}</td></tr>`).join("")}</tbody></table></details>`;
+  const box = el.querySelector(".bars"), tip = box.querySelector(".tip");
+  const on = b => { const r = rows[+b.dataset.i], x = b.offsetLeft + b.offsetWidth / 2; tip.textContent = `${r.label} : ${nf.format(r.n)}${r.extra ? ` (${r.extra})` : ""}`; tip.style.left = x + "px"; tip.hidden = false; };
+  box.querySelectorAll(".b").forEach(b => { b.addEventListener("mouseenter", () => on(b)); b.addEventListener("focus", () => on(b)); b.addEventListener("mouseleave", () => tip.hidden = true); b.addEventListener("blur", () => tip.hidden = true); });
+}
+const tile = (k, v, s, warn) => `<div class="tile${warn ? " warn" : ""}"><span class="k">${k}</span><span class="v">${v}</span>${s ? `<span class="s">${s}</span>` : ""}</div>`;
+const dayLbl = d => { const s = String(d).replace(/-/g, ""); return `${s.slice(6, 8)}/${s.slice(4, 6)}`; };
+
+async function load() {
+  const [s, revs] = await Promise.all([call("stats"), call("reviews")]);
+  const t = s.today || {}, w = s.waitlist || {}, g = s.gus || {}, x = s.x402 || {}, rc = s.recorder || {}, now = s.now;
+  const sncfAge = rc.sncf_last ? now - rc.sncf_last : null, idfAge = rc.idf_last ? now - rc.idf_last : null;
+  $("upd").textContent = `· ${when(now)}`;
+  $("tiles").innerHTML = tile("Trains suivis aujourd'hui", nf.format(t.trains || 0), `${nf.format(t.late15 || 0)} à +15 min · ${nf.format(t.cancelled || 0)} supprimés`) +
+    tile("Inscrits", nf.format(w.total || 0), `+${nf.format(w.last7 || 0)} sur 7 jours`) +
+    tile("Avis en attente", nf.format(s.reviews?.pending || 0), `${nf.format(s.reviews?.approved || 0)} publiés`, (s.reviews?.pending || 0) > 0) +
+    tile("Questions à Gus", nf.format(g.today || 0), `aujourd'hui · ${nf.format(g.users_today || 0)} personne(s)`) +
+    tile("Paiements x402", nf.format(x.count || 0), `${(x.usdc || 0).toLocaleString("fr-FR", {maximumFractionDigits: 3})} USDC (devnet)`) +
+    tile("Enregistreur", sncfAge != null && sncfAge < 600 ? "OK" : "Arrêté ?", `dernier relevé ${ago(sncfAge)}`, !(sncfAge != null && sncfAge < 600)) +
+    tile("Base", esc(s.database?.size || "—"), "taille totale");
+
+  // 14 derniers jours, jours sans inscription compris
+  const wd = new Map((w.by_day || []).map(r => [r.day, r.n])), days = [];
+  for (let i = 13; i >= 0; i--) { const d = new Date((now - i * 86400) * 1000).toLocaleDateString("fr-CA", {timeZone: "Europe/Paris"}); days.push({label: dayLbl(d), n: wd.get(d) || 0}); }
+  bars($("cWait"), days, "Inscriptions");
+  bars($("cGus"), (g.by_day || []).map(r => ({label: dayLbl(r.day), n: +r.n, extra: `${r.users} pers.`})), "Questions");
+
+  $("rec").innerHTML = `<table><tbody>
+    <tr><td>SNCF</td><td><span class="pill ${sncfAge != null && sncfAge < 600 ? "ok" : "bad"}">${ago(sncfAge)}</span></td><td class="num">${nf.format(rc.sncf_hour || 0)} relevés / h${rc.sncf_errors_hour ? ` · <span class="bad">${rc.sncf_errors_hour} erreur(s)</span>` : ""}</td></tr>
+    <tr><td>Île-de-France</td><td><span class="pill ${idfAge != null && idfAge < 600 ? "ok" : "bad"}">${ago(idfAge)}</span></td><td class="num">${nf.format(rc.idf_hour || 0)} relevés / h</td></tr></tbody></table>
+    <p class="muted small">Un relevé toutes les 2 minutes environ : ~30 par heure.</p>`;
+  $("sol").innerHTML = (s.solana || []).length ? `<table><thead><tr><th>Jour</th><th class="num">Relevés</th><th>Solana</th><th>Liste publique</th></tr></thead><tbody>` +
+    s.solana.map(r => `<tr><td>${dayLbl(r.day)}</td><td class="num">${nf.format(r.n_records)}</td><td>${r.tx ? `<a href="https://explorer.solana.com/tx/${esc(r.tx)}?cluster=devnet" target="_blank" rel="noopener">scellé ${when(r.posted_at)} ↗</a>` : `<span class="muted">pas encore publié</span>`}</td><td>${r.public_list ? `<span class="ok">✓</span>` : `<span class="muted">—</span>`}</td></tr>`).join("") + `</tbody></table>`
+    : `<p class="muted small">Aucune empreinte.</p>`;
+  $("pay").innerHTML = (x.last || []).length ? `<table><thead><tr><th>Quand</th><th>API</th><th class="num">USDC</th><th>Transaction</th></tr></thead><tbody>` +
+    x.last.map(p => `<tr><td>${when(p.at)}</td><td>${esc(p.route)}</td><td class="num">${(p.amount / 1e6).toLocaleString("fr-FR", {maximumFractionDigits: 3})}</td><td><a class="mono" href="https://explorer.solana.com/tx/${esc(p.tx)}?cluster=devnet" target="_blank" rel="noopener">${esc(p.tx.slice(0, 10))}… ↗</a></td></tr>`).join("") + `</tbody></table>`
+    : `<p class="muted small">Aucun paiement.</p>`;
+  $("wl").innerHTML = `<p style="margin:0">${nf.format(w.total || 0)} inscrit(s). Profils : ${Object.entries(w.by_profile || {}).map(([k, v]) => `${esc(k)} ${v}`).join(" · ") || "—"}</p><p class="muted small" style="margin:0">Les e-mails ne s'affichent pas ici : utilise l'export, à garder pour toi.</p>`;
+  $("db").innerHTML = `<table><thead><tr><th>Table</th><th class="num">Taille</th></tr></thead><tbody>${(s.database?.tables || []).map(r => `<tr><td class="mono">${esc(r.name)}</td><td class="num">${esc(r.size)}</td></tr>`).join("")}</tbody></table>`;
+
+  $("revN").textContent = `${revs.filter(r => !r.approved).length} en attente · ${revs.filter(r => r.approved).length} publiés`;
+  $("revs").innerHTML = revs.length ? revs.map(r => `<div class="rev"><div class="row"><b>${esc(r.name)}</b>${r.trip ? `<span class="pill">${esc(r.trip)}</span>` : ""}<span class="muted small">${when(r.at)} · ${esc(r.lang)}</span>
+      <span class="pill ${r.approved ? "ok" : "bad"}">${r.approved ? "Publié" : "En attente"}</span></div><p>${esc(r.body)}</p>
+      <div class="row">${r.approved ? `<button class="btn sm" data-rv="${r.id}" data-ap="0">Retirer de la page</button>` : `<button class="btn sm lime" data-rv="${r.id}" data-ap="1">Publier</button>`}<button class="btn sm danger" data-del="${r.id}">Supprimer</button></div></div>`).join("")
+    : `<p class="muted small">Aucun avis reçu.</p>`;
+}
+$("revs").addEventListener("click", async e => {
+  const b = e.target.closest("[data-rv],[data-del]"); if (!b) return;
+  if (b.dataset.del && !confirm("Supprimer définitivement cet avis ?")) return;
+  b.disabled = true;
+  try { await call(null, b.dataset.del ? {do: "review_delete", id: +b.dataset.del} : {do: "review", id: +b.dataset.rv, approved: b.dataset.ap === "1"}); await load(); }
+  catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
+});
+$("csv").addEventListener("click", async () => {
+  try {
+    const rows = await call("waitlist");
+    const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = ["email,langue,profil,trajet,source,inscrit_le", ...rows.map(r => [r.email, r.lang, r.profile, r.line, r.source, r.created_at].map(q).join(","))].join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"})); a.download = "lateproof-inscrits.csv"; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  } catch (err) { if (err.message !== "401") alert(err.message); }
+});
+$("login").addEventListener("submit", async e => {
+  e.preventDefault(); $("err").textContent = ""; tok.set($("pw").value.trim());
+  try { await load(); show(true); $("pw").value = ""; } catch (err) { if (err.message !== "401") $("err").textContent = err.message; }
+});
+$("refresh").addEventListener("click", () => load().catch(err => { if (err.message !== "401") alert(err.message); }));
+$("logout").addEventListener("click", () => { tok.set(""); show(false); });
+if (tok.get()) load().then(() => show(true)).catch(() => show(false));
+</script>
+</body>
+</html>

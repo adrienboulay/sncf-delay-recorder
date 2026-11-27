@@ -207,6 +207,14 @@ textarea:focus{border-color:var(--lime);outline:none}
 @keyframes lp-tap{0%{transform:scale(.6);opacity:0}15%{opacity:1}100%{transform:scale(1);opacity:0}}
 @keyframes lp-ring{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.4);opacity:0}}
 .card.press{transform:scale(.97)}
+/* Bandeau API (bas de l'accueil) */
+.apiband{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;padding:32px;border-radius:32px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
+.apiband h2{margin-top:10px;font-size:clamp(1.6rem,3vw,2.2rem)}
+.apiband p{margin:10px 0 0;color:#C9CCD3;max-width:38rem}
+.apiprices{display:grid;gap:10px;justify-items:start}
+.apiprices > span{color:var(--muted);font-size:.95rem}.apiprices b{color:var(--lime);font-weight:800}
+footer a{color:var(--muted)}footer a:hover{color:var(--fg)}
+@media (max-width:760px){.apiband{grid-template-columns:1fr;padding:24px}}
 /* ---- Revision F : barre commune, accroche animée, mots qui défilent, grille des fonctionnalités, captures ---- */
 body{position:relative}
 .wrap{position:relative;z-index:1}
@@ -466,11 +474,20 @@ body{position:relative}
       </div>
     </section>
 
+    <section id="api" aria-labelledby="tApi">
+      <div class="apiband">
+        <div><span class="kick" data-i18n="apiKick">API · x402 · Solana</span>
+          <h2 id="tApi" data-i18n="apiT">Pour les développeurs et les agents IA</h2>
+          <p data-i18n="apiP">Le conseil de trajet et l'état du réseau en direct, payés à l'appel en USDC sur Solana, sans compte ni clé d'API.</p></div>
+        <div class="apiprices"><span><b>0,01 USDC</b> <span data-i18n="apiAdv">conseil de trajet</span></span><span><b>0,005 USDC</b> <span data-i18n="apiNet">état du réseau</span></span>
+          <a class="btn lime" href="api.html" data-i18n="apiCta">Voir l'API</a></div>
+      </div>
+    </section>
   </main>
 
   <footer>
     <span data-i18n="legal">LateProof, projet en construction. Ton e-mail n'est jamais partagé.</span>
-    <span data-i18n="data">Données : SNCF open data, Île-de-France Mobilités.</span>
+    <span><a href="api.html" data-i18n="apiFoot">API pour agents</a> · <span data-i18n="data">Données : SNCF open data, Île-de-France Mobilités.</span></span>
   </footer>
 </div>
 
@@ -507,7 +524,7 @@ const I18N = {
     q2:"Is the certificate really reliable?", a2:"It's signed by your phone during the trip, checked against official SNCF and Île-de-France Mobilités records, and any edit shows. And every night, a fingerprint of all the previous day's records is published on Solana (test network during the hackathon): nobody, not even us, can change them afterwards without it showing.",
     q3:"What about my location?", a3:"It's only used, on your phone, to recognise your station at check-in. Your trips and certificates stay on your device.",
     q4:"Which trains?", a4:"All SNCF trains in France (TGV, Intercités, regional), plus RER and Transilien in Île-de-France. For metro and tram we track regularity, but no certificate yet: they publish no timetable.",
-    flipA:"With LateProof, you get", seeMap:"See the live map →", ctaMap:"See the map",
+    flipA:"With LateProof, you get", apiKick:"API · x402 · Solana", apiT:"For developers and AI agents", apiP:"Trip advice and live network status, paid per call in USDC on Solana, with no account and no API key.", apiAdv:"trip advice", apiNet:"network status", apiCta:"See the API", apiFoot:"API for agents", seeMap:"See the live map →", ctaMap:"See the map",
     revT:"What travellers say.", revP:"Every review is read before it is published, with the first name its author chose. None is made up.", revPick:"Pick a review",
     revFormT:"Your turn.", revFormP:"You've used LateProof on a trip? Tell us in a few lines what worked, or what didn't.", revName:"First name or nickname",
     revTrip:"Your route (optional)", revBody:"Your review", revConsent:"I agree that my first name, route and review are published on this page after being read. I can ask for removal at any time.",
