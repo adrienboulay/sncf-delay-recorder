@@ -159,6 +159,19 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
   #view > .btn.big, #vbody .btn.big{max-width:420px}
   .gus-intro{max-width:760px}
 }
+
+/* Aide à la réclamation */
+.claim .claimtop{display:grid;gap:4px;padding:14px;border-radius:14px;background:var(--surface2)}
+.claim .pct{font:700 1.5rem/1.15 var(--head);color:var(--lime)}
+.csteps{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:c}
+.csteps li{position:relative;display:grid;gap:6px;padding-left:38px;align-items:start}
+.csteps li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:-2px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--surface3);color:var(--lime);font:800 .85rem var(--head)}
+.csteps li.done::before{content:"✓";background:var(--lime);color:#121417}
+.csteps .btn.sm,.claim .btn.sm{min-height:34px;padding:0 12px;font-size:.82rem;justify-self:start}
+.crows{display:grid;gap:4px}
+.crow{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;border:0;border-radius:10px;background:var(--surface2);color:var(--fg);font:500 .86rem var(--display);padding:8px 10px;cursor:pointer}
+.crow:hover{background:var(--surface3)}
+.crow .cp{color:var(--muted)}
 </style>
 <link rel="stylesheet" href="lp-ui.css">
 </head>
@@ -470,7 +483,7 @@ route(/^\/voyage\/(\w+)$/, async id => {
         <span class="tm">${fmt.time(s.sched_dep || s.sched_arr)}</span><span class="rail"></span>
         ${i === 0 ? `<span class="nm">${esc(s.name || "?")}</span>` : `<button data-to="${esc(s.stop)}"><span class="nm">${esc(s.name || "?")}</span></button>`}
         <span>${i === 0 ? badge(s.dep_delay, s.skipped) : (s.arr_delay ?? 0) >= 60 || s.skipped ? badge(s.arr_delay, s.skipped) : ""}</span></li>`).join("")}</ol></section>
-    ${rightsHtml(legs, trip)}
+    ${claimHtml(v, legs, trip)}
     <div class="stack">
       ${trip.delay >= 60 || trip.cancelled ? `<a class="btn primary big" href="#/nouveau/${v.id}">${L("Créer mon justificatif de retard", "Create my delay certificate")}</a>` : `<p class="muted small">${L("Pas de retard pour l'instant : rien à justifier. Le retard se met à jour en direct.", "No delay so far: nothing to prove. The delay updates live.")}</p>`}
       <a class="btn" href="#/checkin" id="addLeg">${L("+ J'ai pris une correspondance", "+ I took a connection")}</a>
@@ -523,19 +536,96 @@ function tripTotal(legs) {
 }
 
 // ================================================================= Droits
-function rightsHtml(legs, trip) {
-  const min = fmt.min(trip.delay), modes = legs.map(l => l.mode), out = [];
-  const gl = modes.some(m => GL.includes(m)), ter = modes.some(m => m === "TER" || m === "TT"), idf = legs.some(l => l.net === "idf" && l.mode !== "TER");
-  if (gl && min >= 30) out.push(L(`<b>Garantie G30</b> (TGV INOUI, Intercités) : compensation possible dès 30 min de retard. À demander en ligne dans ton espace SNCF Connect, dans un délai limité.`, `<b>G30 guarantee</b> (TGV INOUI, Intercités): compensation possible from 30 min late. Claim it online in your SNCF Connect account, within a limited time.`));
-  if ((gl || ter) && min >= 60) out.push(L(`<b>Règlement européen 2021/782</b> : ${min >= 120 ? "50 %" : "25 %"} du prix du billet pour ${min >= 120 ? "2 h" : "1 h"} de retard ou plus à l'arrivée.`, `<b>EU regulation 2021/782</b>: ${min >= 120 ? "50%" : "25%"} of the ticket price for ${min >= 120 ? "2 h" : "1 h"} late or more on arrival.`));
-  if (idf) out.push(L(`<b>Île-de-France (Navigo)</b> : pas d'indemnisation trajet par trajet ; des dédommagements des abonnés sont parfois annoncés par Île-de-France Mobilités après de fortes perturbations.`, `<b>Paris region (Navigo)</b>: no compensation per trip; Île-de-France Mobilités sometimes announces refunds for pass holders after major disruptions.`));
-  if (min >= 5) out.push(L(`<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.`, `<b>At work or school</b>: your LateProof certificate proves the delay and that you were on the train. In France, a justified transport delay should not be sanctioned.`));
-  if (!out.length) return "";
-  const claim = legs.map(l => `${modeName(l.mode, l.line)} n° ${l.num} du ${l.day.slice(6, 8)}/${l.day.slice(4, 6)}/${l.day.slice(0, 4)}, ${l.from.name} → ${l.to ? l.to.name : "?"}${l.result ? `, retard à l'arrivée ${fmt.min(l.result.delay)} min` : ""}`).join("\n");
-  setTimeout(() => { const b = $("copyClaim"); if (b) b.onclick = () => navigator.clipboard.writeText(claim).then(() => toast(L("Informations copiées", "Details copied")), () => toast(L("Copie impossible", "Copy failed"))); });
-  return `<section class="card"><h2>${L("Tes droits", "Your rights")}</h2>${out.map(x => `<p class="small" style="margin:0">${x}</p>`).join("")}
-    <p class="muted small" style="margin:0">${L("Résumé général, à vérifier sur le site de l'opérateur.", "General summary, check with the operator.")}</p>
-    ${gl || ter ? `<button class="btn" id="copyClaim">${L("Copier les infos pour ma demande", "Copy the details for my claim")}</button>` : ""}</section>`;
+// ================================================================= Aide à la réclamation
+// Barèmes vérifiés sur les pages officielles SNCF Voyageurs (mises à jour juin 2026) : à revoir si les règles changent.
+//  - G30 (TGV INOUI, Intercités) : dès 30 min à l'arrivée finale ; 30 min-2 h : 25 %, 2-3 h : 50 %, au-delà : 75 % du billet ;
+//    de 30 à 59 min en bon d'achat seulement, dès 60 min aussi par virement (RIB) ; à demander sous 90 jours.
+//  - OUIGO : dès 1 h ; 1 h-1 h 59 : 25 %, 2 h et plus : 50 % ; versé automatiquement (e-mail), sinon service client après 15 jours.
+//  - Trains internationaux : règlement européen 2021/782, 25 % dès 1 h, 50 % dès 2 h, demande sous 3 mois.
+//  - TER : pas de barème national, chaque région fixe le sien. Île-de-France : pas d'indemnisation trajet par trajet.
+const CLAIM_URL = {
+  g30: "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/tgv-inoui-intercites/",
+  ouigo: "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/ouigo/",
+  eu: "https://europa.eu/youreurope/citizens/files/forms/reimbursement-compensation-railway/reimbursement-form_fr.pdf",
+  ter: "https://www.ter.sncf.com/",
+};
+function claimPlan(legs, trip) {
+  const min = fmt.min(trip.delay), modes = legs.map(l => l.mode), has = list => modes.some(m => list.includes(m));
+  const day = legs[0].day, t0 = Date.UTC(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6, 8), 12) / 1000;
+  if (has(["OUI", "IC", "ICN"])) {
+    const pct = min >= 180 ? 75 : min >= 120 ? 50 : min >= 30 ? 25 : 0;
+    return {k: "g30", name: L("Garantie G30 (TGV INOUI, Intercités)", "G30 guarantee (TGV INOUI, Intercités)"), pct, min, need: 30, url: CLAIM_URL.g30,
+      deadline: t0 + 90 * 86400, cash: min >= 60, auto: false};
+  }
+  if (has(["OGO"])) {
+    const pct = min >= 120 ? 50 : min >= 60 ? 25 : 0;
+    return {k: "ouigo", name: "OUIGO", pct, min, need: 60, url: CLAIM_URL.ouigo, deadline: t0 + 15 * 86400, cash: false, auto: true};
+  }
+  if (has(["LYR", "ICE", "TGV", "ES"])) {
+    const pct = min >= 120 ? 50 : min >= 60 ? 25 : 0;
+    return {k: "eu", name: L("Règlement européen 2021/782 (train international)", "EU regulation 2021/782 (international train)"), pct, min, need: 60, url: CLAIM_URL.eu,
+      deadline: t0 + 91 * 86400, cash: true, auto: false};
+  }
+  if (has(["TER", "TT"])) return {k: "ter", name: L("TER : garantie de ta région", "TER: your region's guarantee"), pct: null, min, url: CLAIM_URL.ter};
+  if (legs.some(l => l.net === "idf")) return {k: "idf", name: L("Île-de-France (Navigo)", "Paris region (Navigo)"), pct: null, min};
+  return {k: "none", pct: null, min};
+}
+const icsDate = t => new Date(t * 1000).toISOString().slice(0, 10).replace(/-/g, "");
+function claimHtml(v, legs, trip) {
+  const P = claimPlan(legs, trip), min = P.min, first = legs[0], last = legs[legs.length - 1];
+  const cert = db.certs().filter(c => legs.some(l => l.id === c.voyage)).slice(-1)[0];
+  const price = first.price || "";
+  const dateTxt = `${first.day.slice(6, 8)}/${first.day.slice(4, 6)}/${first.day.slice(0, 4)}`;
+  const trains = legs.map(l => `${modeName(l.mode, l.line)} n° ${l.num}`).join(" + ");
+  const fromTo = `${first.from.name} → ${last.to ? last.to.name : "?"}`;
+  const rows = [[L("Date du voyage", "Trip date"), dateTxt], [L("Train(s)", "Train(s)"), trains], [L("Trajet", "Route"), fromTo],
+    ...(trip.planned ? [[L("Arrivée prévue", "Scheduled arrival"), fmt.time(trip.planned)]] : []), ...(trip.real ? [[L("Arrivée réelle", "Actual arrival"), fmt.time(trip.real)]] : []),
+    [L("Retard à l'arrivée", "Arrival delay"), trip.cancelled ? L("train supprimé", "train cancelled") : `${min} min`]];
+  const msg = L(`Bonjour,\n\nJe demande la compensation prévue pour le retard de mon train :\n- ${trains}, le ${dateTxt}\n- trajet ${fromTo}\n` +
+      `${trip.planned ? `- arrivée prévue ${fmt.time(trip.planned)}${trip.real ? `, arrivée réelle ${fmt.time(trip.real)}` : ""}\n` : ""}- retard à l'arrivée : ${trip.cancelled ? "train supprimé" : `${min} minutes`}\n` +
+      `${cert ? `\nJustificatif vérifiable (relevés officiels SNCF, scellés sur Solana) : ${cert.url}\n` : ""}\nRéférence de mon dossier : [à compléter, sur mon billet]\n\nMerci,\n`,
+    `Hello,\n\nI am claiming the compensation due for the delay of my train:\n- ${trains}, on ${dateTxt}\n- route ${fromTo}\n` +
+      `${trip.planned ? `- scheduled arrival ${fmt.time(trip.planned)}${trip.real ? `, actual arrival ${fmt.time(trip.real)}` : ""}\n` : ""}- arrival delay: ${trip.cancelled ? "train cancelled" : `${min} minutes`}\n` +
+      `${cert ? `\nVerifiable certificate (official SNCF records, sealed on Solana): ${cert.url}\n` : ""}\nBooking reference: [to fill in, on my ticket]\n\nThank you,\n`);
+  setTimeout(() => {
+    view.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => navigator.clipboard.writeText(b.dataset.copy).then(() => toast(L("Copié", "Copied")), () => toast(L("Copie impossible", "Copy failed"))));
+    const pr = $("tprice"); if (pr) pr.oninput = () => { const e = parseFloat(pr.value.replace(",", ".")); legs.forEach(l => updateVoyage(l.id, {price: isNaN(e) ? null : e}));
+      const out = $("tamount"); if (out) out.textContent = isNaN(e) || !P.pct ? "" : `≈ ${(e * P.pct / 100).toLocaleString(locale, {style: "currency", currency: "EUR"})}`; };
+    const cm = $("cmsg"); if (cm) cm.onclick = () => navigator.clipboard.writeText(msg).then(() => toast(L("Message copié", "Message copied")), () => {});
+    const ics = $("cics"); if (ics) ics.onclick = () => {
+      const d = icsDate(P.deadline - 7 * 86400), body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//LateProof//FR", "BEGIN:VEVENT", `UID:${v.id}-claim@lateproof`, `DTSTAMP:${icsDate(Date.now() / 1000)}T000000Z`,
+        `DTSTART;VALUE=DATE:${d}`, `SUMMARY:${L("Demander ma compensation de retard", "Claim my delay compensation")} (${trains})`, `DESCRIPTION:${L("Date limite", "Deadline")} ${new Date(P.deadline * 1000).toLocaleDateString(locale)}. ${P.url}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], {type: "text/calendar"})); a.download = "lateproof-rappel.ics"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    };
+    const done = $("cdone"); if (done) done.onchange = () => { legs.forEach(l => updateVoyage(l.id, {claimed: done.checked ? Math.floor(Date.now() / 1000) : null})); toast(done.checked ? L("Noté : demande envoyée", "Noted: claim sent") : L("Demande non envoyée", "Claim not sent")); };
+  });
+  const work = min >= 5 || trip.cancelled ? `<p class="small" style="margin:0">${L("<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.", "<b>At work or school</b>: your LateProof certificate proves the delay and that you were on the train. A justified transport delay should not be sanctioned.")}</p>` : "";
+  const head = `<section class="card claim"><h2>${L("Réclamer une compensation", "Claim compensation")}</h2>`;
+  if (P.k === "ter") return head + `<p style="margin:0">${L("Pour les TER, il n'y a pas de barème national : chaque région fixe sa garantie (souvent réservée aux abonnés, avec un nombre de retards dans le mois).", "For TER trains there is no national scale: each region sets its own guarantee (often for season-ticket holders, after several delays in a month).")}</p>
+    <a class="btn" href="${P.url}" target="_blank" rel="noopener">${L("Voir la garantie de ma région", "See my region's guarantee")} ↗</a>${work}</section>`;
+  if (P.k === "idf") return head + `<p style="margin:0">${L("Avec le Navigo, il n'y a pas d'indemnisation trajet par trajet. Île-de-France Mobilités annonce parfois un dédommagement des abonnés après de fortes perturbations.", "With a Navigo pass there is no compensation per trip. Île-de-France Mobilités sometimes announces a refund for pass holders after major disruptions.")}</p>${work}</section>`;
+  if (P.k === "none") return work ? head + work + `</section>` : "";
+  if (!P.pct && !trip.cancelled) return head + `<p style="margin:0">${L(`Pas de compensation pour ce retard : <b>${P.name}</b> commence à ${P.need} min de retard à l'arrivée (ici ${min} min).`, `No compensation for this delay: <b>${P.name}</b> starts at ${P.need} min late on arrival (here ${min} min).`)}</p>${work}</section>`;
+  const amount = price && P.pct ? `≈ ${(price * P.pct / 100).toLocaleString(locale, {style: "currency", currency: "EUR"})}` : "";
+  const form = P.auto ? L("versé automatiquement, en bon d'achat", "paid automatically, as a voucher")
+    : P.k === "g30" ? (P.cash ? L("en bon d'achat ou par virement (avec ton RIB)", "as a voucher or by bank transfer (with your IBAN)") : L("en bon d'achat (le virement commence à 60 min)", "as a voucher (bank transfer from 60 min)"))
+    : L("en argent ou en bon, selon l'opérateur", "in cash or voucher, depending on the operator");
+  const deadline = new Date(P.deadline * 1000).toLocaleDateString(locale, {day: "numeric", month: "long", year: "numeric"});
+  return head + `<div class="claimtop"><span class="kicker">${esc(P.name)}</span>
+      <b class="pct">${trip.cancelled && !P.pct ? L("Train supprimé", "Train cancelled") : `${P.pct} % ${L("du prix du billet", "of the ticket price")}`}</b>
+      <span class="muted small">${trip.cancelled && !P.pct ? L("Si tu n'as pas voyagé, le billet est remboursable en totalité.", "If you didn't travel, the ticket is fully refundable.") : `${form} · ${L("retard", "delay")} ${min} min`}</span></div>
+    ${P.pct ? `<label class="field" for="tprice">${L("Prix de ton billet (facultatif, pour estimer)", "Your ticket price (optional, to estimate)")}<span class="row" style="flex-wrap:nowrap"><input id="tprice" inputmode="decimal" placeholder="49,90" value="${esc(price)}" style="max-width:140px"> € <b id="tamount" class="ok">${amount}</b></span></label>` : ""}
+    ${P.auto ? `<p style="margin:0">${L(`Rien à faire : OUIGO t'écrit et verse la compensation dans les jours qui suivent. <b>Sans nouvelles le ${deadline}</b>, contacte le service client avec ton justificatif.`, `Nothing to do: OUIGO emails you and pays the compensation within days. <b>If you hear nothing by ${deadline}</b>, contact customer service with your certificate.`)}</p>
+      <a class="btn" href="${P.url}" target="_blank" rel="noopener">${L("Page OUIGO en cas de retard", "OUIGO delay page")} ↗</a>`
+    : `<ol class="csteps">
+      <li class="${cert ? "done" : ""}"><b>${L("Ton justificatif", "Your certificate")}</b> ${cert ? `<a href="${esc(cert.url)}" target="_blank" rel="noopener">${L("prêt", "ready")} ✓</a>` : `<a href="#/nouveau/${v.id}">${L("le créer (1 min)", "create it (1 min)")}</a>`}<span class="muted small">${L("La preuve à joindre : le retard officiel, vérifiable par l'opérateur.", "The proof to attach: the official delay, checkable by the operator.")}</span></li>
+      <li><b>${L("Ouvre la demande officielle", "Open the official claim")}</b> <a class="btn sm" href="${P.url}" target="_blank" rel="noopener">${P.k === "g30" ? L("Demande G30 (SNCF)", "G30 claim (SNCF)") : L("Formulaire européen", "EU form")} ↗</a><span class="muted small">${P.k === "g30" ? L("Aussi dans l'appli SNCF Connect : Aide › Demande de compensation. Garde la référence de ton dossier (sur ton billet).", "Also in the SNCF Connect app: Help › Compensation claim. Keep your booking reference (on your ticket).") : L("À envoyer à l'opérateur du train.", "Send it to the train operator.")}</span></li>
+      <li><b>${L("Recopie les informations", "Copy the details")}</b><div class="crows">${rows.map(([k, val]) => `<button type="button" class="crow" data-copy="${esc(val)}"><span class="muted small">${esc(k)}</span><span>${esc(val)}</span><span class="cp" aria-hidden="true">⧉</span></button>`).join("")}</div></li>
+      <li><b>${L("Message prêt à coller", "Message ready to paste")}</b> <button type="button" class="btn sm" id="cmsg">${L("Copier le message", "Copy the message")}</button><span class="muted small">${L("Pour le champ « commentaire » ou un courrier.", "For the “comment” field or a letter.")}</span></li>
+      <li><b>${L("Avant le", "Before")} ${deadline}</b> <button type="button" class="btn sm" id="cics">${L("Me le rappeler", "Remind me")}</button><span class="muted small">${L("Rappel ajouté à ton agenda une semaine avant.", "Reminder added to your calendar a week before.")}</span></li>
+    </ol>
+    <label class="toggle" for="cdone"><span class="lbl">${L("J'ai envoyé ma demande", "I've sent my claim")}</span><span class="switch"><input type="checkbox" id="cdone"${first.claimed ? " checked" : ""}><span></span></span></label>`}
+    ${work}<p class="muted small" style="margin:0">${L("Barèmes officiels SNCF Voyageurs, à vérifier sur le site de l'opérateur. LateProof n'envoie rien à ta place.", "Official SNCF Voyageurs scales, check with the operator. LateProof never sends anything on your behalf.")}</p></section>`;
 }
 
 // ================================================================= Nouveau justificatif
