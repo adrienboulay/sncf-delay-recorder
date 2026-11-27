@@ -25,7 +25,12 @@ BEGIN
       'next', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
           SELECT num, mode, line_id, line, dest, sched, delay, cancelled FROM p
           WHERE COALESCE(dest_uic, '') <> p_id AND sched + GREATEST(delay, 0) >= t0 - 120
-          ORDER BY sched + GREATEST(delay, 0) LIMIT 40) x), '[]'::json))
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 40) x), '[]'::json),
+      -- Trains qui terminent ici (arrivees seules, absents de « next ») : pour « quand arrive le train a ... »
+      'arr', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
+          SELECT num, mode, line_id, line, sched, delay, cancelled FROM p
+          WHERE dest_uic = p_id AND sched + GREATEST(delay, 0) >= t0 - 120
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json))
     INTO r;
   ELSIF p_net = 'idf' THEN
     WITH s AS (SELECT stop_ref, name, lat, lon FROM idfm_ref_stops WHERE COALESCE(parent_ref, stop_ref) = p_id),
@@ -58,6 +63,10 @@ BEGIN
           SELECT num, mode, line_id, line, dest, sched, delay, cancelled FROM p
           WHERE aimed_departure_ts IS NOT NULL AND sched + GREATEST(delay, 0) >= t0 - 120
           ORDER BY sched + GREATEST(delay, 0) LIMIT 40) x), '[]'::json),
+      'arr', COALESCE((SELECT json_agg(x ORDER BY x.sched) FROM (
+          SELECT num, mode, line_id, line, sched, delay, cancelled FROM p
+          WHERE aimed_departure_ts IS NULL AND sched + GREATEST(delay, 0) >= t0 - 120
+          ORDER BY sched + GREATEST(delay, 0) LIMIT 15) x), '[]'::json),
       -- Metro / tram : prochaines rames ESTIMEES par ligne et direction (idfm_metro_next, mis a jour toutes les 2 min)
       'metro_next', COALESCE((SELECT json_agg(x ORDER BY x.line, x.dest) FROM (
           SELECT n.line_id, MIN(l.short_name) AS line, n.dest, (array_agg(DISTINCT n.expected_ts ORDER BY n.expected_ts))[1:3] AS t

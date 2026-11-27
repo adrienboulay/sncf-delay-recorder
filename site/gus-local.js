@@ -36,7 +36,11 @@
   // Référence à une ligne : « RER B », « métro 14 », « ligne P », « line P », « T3b », « TER C1 »
   const LINE_RE = /\b(?:rer|metro|tram|tramway|transilien|ter|ligne|line)\s+([a-z]?\d{1,2}[a-z]?|[a-z])\b|\b(t\d{1,2}[ab]?)\b/;
   function findLineRef(text) {
-    const t = norm(text), m = t.match(LINE_RE);
+    const t = norm(text);
+    // « à » après le mode est une préposition (« RER à Massy »), pas la ligne A ; « métro a » non plus (pas de ligne lettre)
+    const raw = (text || "").toLowerCase(), prep = /(^|\s)(rer|ligne|line|transilien)\s+à(\s|$)/.test(raw);
+    const m = [...t.matchAll(new RegExp(LINE_RE.source, "g"))].find((x) => !(x[1] && /^[a-z]$/.test(x[1]) &&
+      (/^(metro|tram|tramway|ter)$/.test(x[0].split(" ")[0]) || (x[1] === "a" && prep))));
     if (!m) return null;
     const mode = (t.match(/\b(rer|metro|tram|tramway|transilien|ter)\b/) || [])[1];
     return {key: (m[1] || m[2]).toLowerCase(), modes: mode ? MODE_WORDS[mode] : null};
@@ -95,18 +99,91 @@
       link: {href: "carte.html", label: L("Voir sur la carte →", "See on the map →")}};
   }
 
-  async function stationAnswer(name) {
-    const found = await rpc("public_find_stop", {p_q: name.slice(0, 80)}).catch(() => []);
-    if (!found || !found.length) return {text: L(`Je ne trouve pas la gare « ${name} ». Essaie avec son nom complet, par exemple « Lyon Part-Dieu ».`, `I can't find the station “${name}”. Try its full name, for example “Lyon Part-Dieu”.`), mood: "neutre"};
-    const s = found[0], st = await rpc("public_station", {p_net: s.net, p_id: s.id}).catch(() => null);
-    const deps = ((st && st.next) || []).filter((x) => x.sched + Math.max(x.delay || 0, 0) >= now() - 60)
-      .sort((x, y) => x.sched + Math.max(x.delay, 0) - (y.sched + Math.max(y.delay, 0))).slice(0, 3);
-    const metro = ((st && st.metro_next) || []).slice(0, 2);
-    if (!deps.length && !metro.length) return {text: L(`Pas de départ relevé à ${s.name} dans l'heure qui vient.`, `No departure recorded at ${s.name} in the coming hour.`), mood: "neutre"};
-    const parts = deps.map((x) => `${hhmm(x.sched)} ${depLine(x)} ${L("vers", "to")} ${x.dest}, ${x.cancelled ? L("supprimé", "cancelled") : late(x.delay)}`.replace(/\s+/g, " "));
-    metro.forEach((m) => { const n = (m.t || [])[0]; if (n) parts.push(`${/^t/i.test(m.line) ? "tram " : L("métro ", "metro ")}${m.line} ${L("vers", "to")} ${m.dest} ${L("dans", "in")} ${Math.max(0, Math.round((n - now()) / 60))} min`); });
+  // Une gare peut exister en double (même nom, deux codes) : on interroge les homonymes exacts et on fusionne.
+  // « want » : si on cherche une ligne précise (« RER B à Massy »), on prend la première gare du nom qui la voit passer
+  // (Massy - Palaiseau plutôt que Massy TGV).
+  async function findStation(name, want) {
+    let found = await rpc("public_find_stop", {p_q: name.slice(0, 80)}).catch(() => []);
+    if ((!found || !found.length) && /^gare (de |d |du )/.test(norm(name)))   // « la gare de Grenoble » -> « Grenoble »
+      found = await rpc("public_find_stop", {p_q: norm(name).replace(/^gare (de |d |du )/, "").slice(0, 80)}).catch(() => []);
+    if (!found || !found.length) return null;
+    const groups = [];
+    found.forEach((f) => { const g = groups.find((x) => norm(x[0].name) === norm(f.name) && x[0].net === f.net); g ? g.length < 3 && g.push(f) : groups.push([f]); });
+    let first = null;
+    for (const same of groups.slice(0, want ? 4 : 1)) {
+      const sts = (await Promise.all(same.map((f) => rpc("public_station", {p_net: f.net, p_id: f.id}).catch(() => null)))).filter(Boolean);
+      const seen = new Set(), uniq = (arr) => arr.filter((x) => { const k = `${x.num}|${x.sched}`; if (seen.has(k)) return false; seen.add(k); return true; });
+      const st = {name: same[0].name, net: same[0].net,
+        next: uniq(sts.flatMap((x) => x.next || [])), arr: uniq(sts.flatMap((x) => x.arr || [])), metro: sts.flatMap((x) => x.metro_next || [])};
+      if (!want || want(st)) return st;
+      first = first || st;
+    }
+    return first;
+  }
+  const eta = (x) => x.sched + Math.max(x.delay || 0, 0);
+  const at = (x) => (mins(x.delay) >= 1 && !x.cancelled && hhmm(eta(x)) !== hhmm(x.sched) ?L(`${hhmm(eta(x))} (prévu ${hhmm(x.sched)})`, `${hhmm(eta(x))} (due ${hhmm(x.sched)})`) : hhmm(x.sched));
+  const MODE_OF = {rer: ["RER"], metro: ["METRO"], tram: ["TRAM"], tramway: ["TRAM"], transilien: ["TRANSILIEN"], ter: ["TER"], tgv: ["OUI", "OGO", "TGV"], ouigo: ["OGO"], intercites: ["IC", "ICN"]};
+  const MODE_TXT = {rer: "RER", metro: L("métro", "metro"), tram: "tram", tramway: "tram", transilien: "Transilien", ter: "TER", tgv: "TGV", ouigo: "OUIGO", intercites: "Intercités"};
+
+  /** Prochains trains à une gare. opts.arrive : la question porte sur les arrivées (on ajoute les trains qui terminent ici) ;
+   *  opts.line : une ligne précise (« RER B à Massy ») ; opts.mode : un mode (« prochain métro à Châtelet »). */
+  async function stationAnswer(name, opts = {}) {
+    const l = opts.line, modes = opts.mode && MODE_OF[opts.mode];
+    const lineOk = (x) => x.line_id === l.id || (norm(x.line || "") === norm(l.name) && (!x.mode || x.mode === l.mode));
+    const metroOk = (m) => (l ? m.line_id === l.id || norm(m.line || "") === norm(l.name)
+      : modes.includes("METRO") ? !/^t/i.test(m.line || "") : modes.includes("TRAM") ? /^t/i.test(m.line || "") : false);
+    const has = (st) => st.next.concat(st.arr).some((x) => (l ? lineOk(x) : modes.includes(x.mode))) || st.metro.some(metroOk);
+    const st = await findStation(name, l || modes ? has : null);
+    if (!st) return {text: L(`Je ne trouve pas la gare « ${name} ». Essaie avec son nom complet, par exemple « Lyon Part-Dieu ».`, `I can't find the station “${name}”. Try its full name, for example “Lyon Part-Dieu”.`), mood: "neutre"};
+    const soon = (x) => eta(x) >= now() - 60;
+    let deps = st.next.filter(soon).map((x) => ({...x, end: false}));
+    if (opts.arrive) deps = deps.concat(st.arr.filter(soon).map((x) => ({...x, end: true})));
+    let metro = st.metro;
+    let note = "";
+    if (l || modes) {
+      const d2 = deps.filter((x) => (l ? lineOk(x) : modes.includes(x.mode)));
+      const m2 = metro.filter(metroOk);
+      if (d2.length || m2.length) { deps = d2; metro = m2; }
+      else note = L(`Pas de ${l ? lineName(l) : MODE_TXT[opts.mode]} relevé à ${st.name} dans l'heure qui vient. Les autres : `,
+        `No ${l ? lineName(l) : MODE_TXT[opts.mode]} recorded at ${st.name} in the coming hour. Others: `);
+    }
+    deps = deps.sort((x, y) => eta(x) - eta(y)).slice(0, 4);
+    metro = metro.slice(0, 2);
+    if (!deps.length && !metro.length) return {text: L(`Pas de train relevé à ${st.name} dans l'heure qui vient.`, `No train recorded at ${st.name} in the coming hour.`), mood: "neutre",
+      link: {href: "carte.html", label: L("Voir sur la carte →", "See on the map →")}};
+    const parts = deps.map((x) => `${at(x)} ${depLine(x)} ${x.end ? L("(termine ici)", "(terminates here)") : `${L("vers", "to")} ${x.dest}`}, ${x.cancelled ? L("supprimé", "cancelled") : late(x.delay)}`.replace(/\s+/g, " "));
+    metro.forEach((m) => { const n = (m.t || [])[0]; if (n) parts.push(`${/^t/i.test(m.line || "") ? "tram " : L("métro ", "metro ")}${m.line} ${L("vers", "to")} ${m.dest} ${L("dans", "in")} ${Math.max(0, Math.round((n - now()) / 60))} min`); });
     const bad = deps.some((x) => x.cancelled || mins(x.delay) >= 5);
-    return {text: L(`Prochains départs à ${s.name} : ${parts.join(" ; ")}.`, `Next departures at ${s.name}: ${parts.join("; ")}.`), mood: bad ? "retard" : "content"};
+    const head = note ? "" : opts.arrive ? L(`Prochains trains à ${st.name} : `, `Next trains at ${st.name}: `) : L(`Prochains départs à ${st.name} : `, `Next departures at ${st.name}: `);
+    return {text: `${note}${head}${parts.join(L(" ; ", "; "))}.`, mood: bad ? "retard" : "content"};
+  }
+
+  // « quand arrive le prochain train à Grenoble », « à quelle heure passe le RER B à Massy », « prochain métro à Châtelet »,
+  // « when does the next train arrive at Lyon ». Renvoie {place, dest, arrive, mode} ou null.
+  const VEHICLE = "trains?|rer|metros?|trams?|tramways?|ter|tgv|ouigo|intercites|transiliens?|rames?|bus";
+  const ASK_WORDS = new RegExp(`\\b(quand|quelle heure|prochaine?s?|arrive\\w*|passe\\w*|part|partent|est|sont|when|what time|next|arriv\\w*|leav\\w*|due|${VEHICLE})\\b`, "g");
+  function parseWhenAt(t, ref) {
+    if (!/\b(quand|quelle heure|prochaine?s?|when|what time|next|arriv\w*)\b/.test(t)) return null;
+    if (!new RegExp(`\\b(${VEHICLE}|arriv\\w*|passe\\w*|depart\\w*)\\b`).test(t) && !ref) return null;
+    let s = t;
+    if (ref) s = s.replace(new RegExp(LINE_RE.source), " ").replace(/\s+/g, " ");
+    // Le lieu suit le dernier mot de la question (« train », « arrive »...) ; sinon on essaie les précédents.
+    const ends = [...s.matchAll(ASK_WORDS)].map((m) => m.index + m[0].length).reverse();
+    for (const end of ends) { const r = placeAfter(s.slice(end), t); if (r) return r; }
+    return null;
+  }
+  function placeAfter(chunk, t) {
+    const rest = chunk.replace(/\b(maintenant|aujourd hui|ce soir|ce matin|demain|stp|s il te plait|now|today|tonight|this morning|please)\b/g, "").replace(/\s+/g, " ").trim();
+    const m = rest.match(/^(?:\S+\s+){0,3}?(a la gare de|a la gare d|a la gare du|en gare de|en gare d|en gare du|a|au|aux|at|in|into|pour|vers|direction|to|towards)\s+(.+)$/);
+    const g = !m && rest.match(/^(?:le |la |l )?(gare (?:de|du|d) .+)$/);   // « quand arrive le train gare de l'Est »
+    if (!m && !g) return null;
+    const prep = m ? m[1] : "";
+    let place = g ? g[1] : m[2].replace(/^(?:the station|station)\s+/, "").trim();
+    if (/^(a la gare|en gare)/.test(prep) && /^(lyon|l est|nord|montparnasse|austerlitz|bercy)\b/.test(place)) place = `gare ${prep.endsWith(" d") ? "d" : prep.endsWith("du") ? "du" : "de"} ${place}`;
+    if (place.length < 2) return null;
+    const mode = (t.match(/\b(rer|metro|tram|tramway|transilien|ter|tgv|ouigo|intercites)\b/) || [])[1] || null;
+    return {place, dest: /^(pour|vers|direction|to|towards)$/.test(prep),
+      arrive: /\barriv\w*/.test(t) || !/\b(depart\w*|partent|leav\w*)\b/.test(t), mode};
   }
 
   async function homeTripAnswer(trajet) {
@@ -155,13 +232,21 @@
     // 2. Droits
     if (RIGHTS_RE.test(t)) return rightsAnswer(t);
     // 3. Grèves, travaux, perturbations (éventuellement sur une ligne)
-    const ref = findLineRef(t), l = ref ? await matchLine(ref) : null;
+    const ref = findLineRef(raw), l = ref ? await matchLine(ref) : null;
     if (DISR_RE.test(t) && !MY_TRIP_RE.test(t)) return disruptionAnswer(t, l);
     // 4. Mon trajet habituel
     if (MY_TRIP_RE.test(t)) return homeTripAnswer(opts.trajet);
-    // 5. État d'une ligne
+    // 5. Prochain train à une gare (éventuellement d'une ligne ou d'un mode), ou vers une destination
+    const w = parseWhenAt(t, ref);
+    if (w && !badPlace(w.place)) {
+      if (w.dest) return {text: L(`Pour les prochains trains vers ${cap(w.place)}, je t'ouvre l'itinéraire depuis ta position : il donne les horaires en direct.`,
+          `For the next trains to ${cap(w.place)}, I'm opening the journey from your location: it shows live times.`), mood: "content",
+        link: {href: `carte.html#de=${encodeURIComponent("ma position")}&vers=${encodeURIComponent(w.place)}`, label: L("Voir l'itinéraire →", "See the journey →")}};
+      return stationAnswer(w.place, {arrive: w.arrive, line: l, mode: l ? null : w.mode});
+    }
+    // 6. État d'une ligne
     if (ref) return l ? lineAnswer(l) : {text: L("Je ne trouve pas cette ligne. Exemples : « RER B », « métro 14 », « T3b », « ligne P ».", "I can't find that line. Examples: “RER B”, “metro 14”, “T3b”, “line P”."), mood: "neutre"};
-    // 6. Départs d'une gare
+    // 7. Départs d'une gare
     const sm = t.match(STATION_RE);
     if (sm) return stationAnswer(sm[1].replace(/\b(maintenant|aujourd hui|ce soir|ce matin|now|today|tonight|this morning)\b/g, "").trim());
     return null;

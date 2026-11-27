@@ -671,13 +671,15 @@ function drawNetwork() {
       .on("click", e => { if (pickFor) { pickAt(e.latlng.lat, e.latlng.lng); return; } const lf = lineFor(code); if (lf) openLine(lf); }).addTo(segLayer); });
   // Arrets officiels : petits points de la couleur de la ligne (clic = detail de la gare)
   if (z >= 11 && !dim && idfGeo.stops) {
-    const r = z < 13 ? 2.4 : z < 15 ? 3.4 : 4.5;
+    const r = (z < 13 ? 2.4 : z < 15 ? 3.4 : 4.5) * DOT();
     Object.entries(idfGeo.stops).forEach(([code, st]) => { const l = idfGeo.lines[code]; if (!l || (l.mode === "TRAM" && z < 12)) return;
       st.forEach(([la, lo, name]) => L.circleMarker([la, lo], {renderer: canvasClick, radius: r, color: "#ffffff", weight: 1.2, fillColor: l.color, fillOpacity: 1,
         bubblingMouseEvents: false}).bindTooltip(esc(name), {direction: "top"}).on("click", () => openStationAt(la, lo, name, code)).addTo(segLayer)); });
   }
 }
 // Vue large : gares regroupees par carre de ~44 px (couleur = minutes perdues moyennes ponderees par le trafic).
+// Sur téléphone, points plus petits : l'écran est étroit et le doigt couvre déjà beaucoup.
+const DOT = () => (innerWidth < 700 ? .62 : 1);
 function clusters(list) {
   const z = map.getZoom(), cell = 44, cells = new Map();
   list.forEach(s => {
@@ -697,19 +699,19 @@ function drawStations() {
     const T = L_();
     clusters(list).forEach(c => {
       const worst = c.st.sort((a, b) => b[0] - a[0]).slice(0, 3).filter(x => x[0] >= PROBLEM);
-      L.circleMarker([c.lat, c.lon], {radius: Math.min(2.5 + Math.sqrt(c.w) / 8, 11), color: dark ? "#0f1520" : "#ffffff", weight: 1,
+      L.circleMarker([c.lat, c.lon], {radius: Math.min(2.5 + Math.sqrt(c.w) / 8, 11) * DOT(), color: dark ? "#0f1520" : "#ffffff", weight: 1,
         fillColor: heat(c.m), fillOpacity: .85}).bindTooltip(`<b>${nf().format(c.n)} ${T.grp}</b> · ${Math.round(100 * c.bad)} % ${T.inTrouble}` +
           (worst.length ? `<br>${T.grpWorst} : ` + worst.map(x => esc(x[1].name)).join(", ") : "")).on("click", () => map.setView([c.lat, c.lon], Math.max(map.getZoom() + 2, 9)))
         .addTo(stationLayer);
     });
   }
   // Gares « normales » : petits points discrets (le trace des lignes reste lisible) ; gares en difficulte : plus grosses.
-  const small = z < 11 ? 1.8 : z < 13 ? 2.8 : 4.5, big = z < 11 ? 4.5 : z < 13 ? 6 : 7.5;
+  const k = DOT(), small = (z < 11 ? 1.8 : z < 13 ? 2.8 : 4.5) * k, big = (z < 11 ? 4.5 : z < 13 ? 6 : 7.5) * k;
   if (z >= 9 && !dim) list.forEach(s => {   // vue ligne ou trajet : seules ses gares sont affichees
     const m = sev(s), bad = m != null && m >= PROBLEM;
     if (!bad && s.covered && z >= 11) return;   // deja dessinee par un arret officiel (point de la couleur de la ligne)
     const r = bad ? big * (1 + Math.min(m, .6)) : small;
-    L.circleMarker([s.lat, s.lon], {radius: r, color: dark ? "#0f1520" : "#ffffff", weight: bad ? 1.5 : .8, fillColor: color(s),
+    L.circleMarker([s.lat, s.lon], {radius: r, color: dark ? "#0f1520" : "#ffffff", weight: (bad ? 1.5 : .8) * (k < 1 ? .8 : 1), fillColor: color(s),
       fillOpacity: dim ? .1 : bad ? .95 : .85, opacity: dim ? .1 : .9, bubblingMouseEvents: false}).bindTooltip(esc(s.name), {direction: "top"})
       .on("click", () => openStation(s)).addTo(stationLayer);
   });
@@ -1113,7 +1115,7 @@ function drawCtxInner() {
       (!d ? `<p class="hint">${T.loadingCtx}</p>` : !d.length ? `<p class="hint">${T.noStationNear}</p>` :
         `<div class="favlist">${d.map((st, i) => `<div class="fav"><button type="button" data-around="open" data-i="${i}"><span class="k">${nf().format(st.dist)} m</span><span>${esc(st.name)}</span></button>` +
           `<button class="btn" type="button" data-around="from" data-i="${i}">${T.goFrom}</button></div>`).join("")}</div>`);
-    if (d) d.forEach(st => L.circleMarker([+st.lat, +st.lon], {radius: 7, color: "#fff", weight: 2, fillColor: css("--blue"), fillOpacity: 1})
+    if (d) d.forEach(st => L.circleMarker([+st.lat, +st.lon], {radius: 7 * Math.max(DOT(), .8), color: "#fff", weight: 2, fillColor: css("--blue"), fillOpacity: 1})
       .bindTooltip(esc(st.name)).on("click", () => openStation({net: st.net, id: st.id, name: st.name, lat: +st.lat, lon: +st.lon})).addTo(ctxLayer));
   } else if (ctx.type === "line") {
     const d = ctx.data, l = ctx.line;
@@ -1185,7 +1187,7 @@ function drawCtxInner() {
       ctxLayer.clearLayers();
       [[a, "A"], [b, "B"]].forEach(([e, k]) => { if (!e) return;
         if (e.place) L.polyline([[e.place.lat, e.place.lon], [e.lat, e.lon]], {color: css("--muted"), weight: 3, dashArray: "2 7", interactive: false}).addTo(ctxLayer);
-        L.circleMarker([e.lat, e.lon], {radius: 8, color: "#fff", weight: 2, fillColor: css("--blue"), fillOpacity: 1, interactive: false})
+        L.circleMarker([e.lat, e.lon], {radius: 8 * Math.max(DOT(), .8), color: "#fff", weight: 2, fillColor: css("--blue"), fillOpacity: 1, interactive: false})
           .bindTooltip(`${k} · ${esc(endLabel(e))}`, {permanent: true, direction: "top", offset: [0, -6]}).addTo(ctxLayer); });
     }
     let res = "";
@@ -1316,7 +1318,7 @@ function openLine(l) {
     const lc = official.length ? idfGeo.lines[l.id].color : blue;
     (official.length ? official : ctx.data.paths).forEach(p => { L.polyline(p, {color: lc, weight: 6, opacity: .95}).addTo(ctxLayer); pts.push(...p); });
     ctx.data.stops.forEach(s => { pts.push([s.lat, s.lon]);
-      L.circleMarker([s.lat, s.lon], {radius: 6, color: "#fff", weight: 2, fillColor: s.gap != null ? lc : color(s), fillOpacity: 1})
+      L.circleMarker([s.lat, s.lon], {radius: 6 * Math.max(DOT(), .8), color: "#fff", weight: 2, fillColor: s.gap != null ? lc : color(s), fillOpacity: 1})
         .bindTooltip(esc(s.name), {direction: "top"}).on("click", () => openStation({name: s.name, lat: s.lat, lon: s.lon})).addTo(ctxLayer); });
     if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(.1));
   }).catch(() => { ctx.data = {stops: [], paths: [], n: 0}; drawCtx(); });
