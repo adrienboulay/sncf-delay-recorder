@@ -21,7 +21,12 @@
   const MODE_WORDS = {rer: ["RER"], metro: ["METRO"], tram: ["TRAM"], tramway: ["TRAM"], transilien: ["TRANSILIEN"], ter: ["TER"],
     tgv: ["OUI", "OGO", "LYR", "ICE", "TT"], inoui: ["OUI"], ouigo: ["OGO"], intercites: ["IC", "ICN"], lyria: ["LYR"]};
   const MODE_NAME = {RER: "RER", METRO: "métro", TRAM: "tram", TRANSILIEN: "ligne", TER: "TER", OUI: "TGV", OGO: "OUIGO", IC: "Intercités", ICN: "Intercités de nuit", LYR: "Lyria", ICE: "ICE", TT: "tram-train"};
-  const lineName = (l) => `${MODE_NAME[l.mode] || l.mode} ${l.name}`;
+  const lineName = (l) => (l.mode === "TRANSILIEN" ? `ligne ${l.name}` : `${MODE_NAME[l.mode] || l.mode} ${l.name}`);
+  const onLine = (l) => (l.mode === "TRANSILIEN" ? `sur la ligne ${l.name}` : `sur le ${lineName(l)}`);
+  // « A » seul ne dit rien : « RER A », « métro 1 », « TER C1 ».
+  const depLine = (x) => (x.line && x.line.length <= 3 && MODE_NAME[x.mode] ? `${x.mode === "TRANSILIEN" ? "ligne" : MODE_NAME[x.mode]} ${x.line}` : x.line || MODE_NAME[x.mode] || "");
+  // Une perturbation déjà commencée : « depuis le … » ; à venir : « le … ».
+  const when = (it) => (!it.t_start ? "" : it.t_start <= now() ? (it.t_end ? `jusqu'au ${day(it.t_end)}` : "en cours") : `à partir du ${day(it.t_start)}`);
   // Référence à une ligne dans la phrase : « RER B », « métro 14 », « ligne P », « T3b », « TER C1 »
   const LINE_RE = /\b(?:rer|metro|tram|tramway|transilien|ter|ligne)\s+([a-z]?\d{1,2}[a-z]?|[a-z])\b|\b(t\d{1,2}[ab]?)\b/;
   function findLineRef(text) {
@@ -55,9 +60,9 @@
     const [d, disr] = await Promise.all([rpc("public_line", {p_net: l.net, p_id: l.id}).catch(() => null), rpc("public_disruptions", {days: 2}).catch(() => null)]);
     const n = d?.n ?? l.n ?? 0, l15 = d?.late15 ?? l.late15 ?? 0, cx = d?.cancelled ?? l.cancelled ?? 0;
     const items = ((disr && disr.items) || []).filter((it) => (it.line_ids || []).includes(l.id));
-    let text = n ? `${lineName(l)} aujourd'hui : ${plural(n, "train")} relevé${n > 1 ? "s" : ""}, ${l15} en retard de 15 min ou plus, ${cx ? plural(cx, "supprimé") : "aucun supprimé"}.`
+    let text = n ? `${lineName(l).replace(/^./, (c) => c.toUpperCase())} aujourd'hui : ${plural(n, "train")} relevé${n > 1 ? "s" : ""}, ${l15} en retard de 15 min ou plus, ${cx ? plural(cx, "supprimé") : "aucun supprimé"}.`
       : `${lineName(l)} : pas d'horaire publié en temps réel (métro ou tram), je regarde les perturbations.`;
-    if (items.length) text += ` Perturbation : ${String(items[0].title).slice(0, 160)}${items[0].t_end ? `, jusqu'au ${day(items[0].t_end)}` : ""}.`;
+    if (items.length) text += ` Perturbation : ${String(items[0].title).slice(0, 160)}${when(items[0]) ? ` (${when(items[0])})` : ""}.`;
     else text += " Aucune perturbation annoncée.";
     const bad = n && (l15 / n > 0.08 || cx > 0) || items.some((it) => it.severity === "bloquant" || /BLOQ/i.test(it.severity || ""));
     return {text, mood: bad ? "retard" : "content"};
@@ -70,10 +75,10 @@
     let items = ((d && d.items) || []).filter((it) => it.kind !== "greve" || it.lines || TRANSPORT.test(norm(it.title || "")));
     if (/greve|mouvement social/.test(t)) items = items.filter((it) => it.kind === "greve");
     if (l) items = items.filter((it) => (it.line_ids || []).includes(l.id));
-    if (!items.length) return {text: `Aucune ${/greve/.test(t) ? "grève" : "perturbation"} annoncée ${days === 7 ? "cette semaine" : "dans les 2 prochains jours"}${l ? ` sur le ${lineName(l)}` : ""}.`, mood: "content"};
+    if (!items.length) return {text: `Aucune ${/greve/.test(t) ? "grève" : "perturbation"} annoncée ${days === 7 ? "cette semaine" : "dans les 2 prochains jours"}${l ? ` ${onLine(l)}` : ""}.`, mood: "content"};
     items.sort((x, y) => Number(!x.lines) - Number(!y.lines));
-    const top = items.slice(0, 3).map((it) => `${String(it.title).slice(0, 110)}${it.t_start ? ` (${day(it.t_start)})` : ""}`);
-    return {text: `${plural(items.length, "perturbation")} annoncée${items.length > 1 ? "s" : ""}${l ? ` sur le ${lineName(l)}` : ""}. ${top.join(" ; ")}.`, mood: "retard",
+    const top = items.slice(0, 3).map((it) => `${String(it.title).slice(0, 110)}${when(it) ? ` (${when(it)})` : ""}`);
+    return {text: `${plural(items.length, "perturbation")} annoncée${items.length > 1 ? "s" : ""}${l ? ` ${onLine(l)}` : ""}. ${top.join(" ; ")}.`, mood: "retard",
       link: {href: "carte.html", label: "Voir sur la carte →"}};
   }
 
@@ -85,7 +90,7 @@
       .sort((x, y) => x.sched + Math.max(x.delay, 0) - (y.sched + Math.max(y.delay, 0))).slice(0, 3);
     const metro = ((st && st.metro_next) || []).slice(0, 2);
     if (!deps.length && !metro.length) return {text: `Pas de départ relevé à ${s.name} dans l'heure qui vient.`, mood: "neutre"};
-    const parts = deps.map((x) => `${hhmm(x.sched)} ${x.line || x.mode || ""} vers ${x.dest}, ${x.cancelled ? "supprimé" : late(x.delay)}`.replace(/\s+/g, " "));
+    const parts = deps.map((x) => `${hhmm(x.sched)} ${depLine(x)} vers ${x.dest}, ${x.cancelled ? "supprimé" : late(x.delay)}`.replace(/\s+/g, " "));
     metro.forEach((m) => { const n = (m.t || [])[0]; if (n) parts.push(`${m.line} vers ${m.dest} dans ${Math.max(0, Math.round((n - now()) / 60))} min`); });
     const bad = deps.some((x) => x.cancelled || mins(x.delay) >= 5);
     return {text: `Prochains départs à ${s.name} : ${parts.join(" ; ")}.`, mood: bad ? "retard" : "content"};
