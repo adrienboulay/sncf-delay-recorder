@@ -1,8 +1,8 @@
 // Tests sans reseau : la base et le modele sont simules. Lancer : deno test supabase/functions/assistant/
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { _resetCache, hhmm, matchLine, norm, runTool, type Rpc } from "./tools.ts";
+import { _resetCache, hhmm, type Json, matchLine, norm, runTool, type Rpc } from "./tools.ts";
 import { handle, type Deps } from "./handler.ts";
-import { type Chat, LlmError, mistralChat, type Msg } from "./llm.ts";
+import { type Chat, groqChat, LlmError, mistralChat, type Msg } from "./llm.ts";
 import { systemPrompt } from "./prompt.ts";
 
 const NOW = Math.floor(Date.now() / 1000);
@@ -272,4 +272,16 @@ Deno.test("voix : sans cle 501, trop long 413, limite 429", async () => {
   const stt = () => Promise.resolve("x");
   assertEquals((await handle(audio(2_100_000), { ...deps(chat), stt })).status, 413);
   assertEquals((await handle(audio(10), { ...deps(chat, false), stt })).status, 429);
+});
+
+Deno.test("groqChat : meme format, autre adresse et autre modele", async () => {
+  let url = "", body: Json = null;
+  const fakeFetch = ((u: string, init: RequestInit) => {
+    url = u; body = JSON.parse(String(init.body));
+    return Promise.resolve(new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }));
+  }) as unknown as typeof fetch;
+  const r = await groqChat("cle", undefined, fakeFetch)([{ role: "user", content: "q" }], []);
+  assertEquals(url, "https://api.groq.com/openai/v1/chat/completions");
+  assertEquals(body.model, "llama-3.3-70b-versatile");
+  assertEquals(r.text, "ok");
 });

@@ -18,8 +18,18 @@ export class LlmError extends Error {
 }
 
 export function mistralChat(apiKey: string, model = "mistral-small-latest", fetchImpl: typeof fetch = fetch): Chat {
+  return openAiChat("https://api.mistral.ai/v1/chat/completions", apiKey, model, fetchImpl);
+}
+
+/** Groq : offre gratuite sans carte bancaire, meme format que Mistral/OpenAI, appels d'outils pris en charge. */
+export function groqChat(apiKey: string, model = "llama-3.3-70b-versatile", fetchImpl: typeof fetch = fetch): Chat {
+  return openAiChat("https://api.groq.com/openai/v1/chat/completions", apiKey, model, fetchImpl);
+}
+
+/** Tout fournisseur au format « chat completions » (Mistral, Groq, OpenAI, GitHub Models, Cerebras...). */
+export function openAiChat(url: string, apiKey: string, model: string, fetchImpl: typeof fetch = fetch): Chat {
   return async (messages, tools) => {
-    const res = await fetchImpl("https://api.mistral.ai/v1/chat/completions", {
+    const res = await fetchImpl(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({

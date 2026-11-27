@@ -3,7 +3,7 @@
 // MISTRAL_MODEL, ASSISTANT_DAILY_PER_USER, ASSISTANT_DAILY_TOTAL, ALLOWED_ORIGINS.
 
 import { handle } from "./handler.ts";
-import { mistralChat } from "./llm.ts";
+import { groqChat, mistralChat } from "./llm.ts";
 import { pickStt } from "./stt.ts";
 import type { Rpc } from "./tools.ts";
 
@@ -30,13 +30,17 @@ const pub = call(PUBLIC_KEY);
 const rpc: Rpc = (fn, body) => (PUBLIC_KEY ? pub(fn, body) : Promise.reject(new Error("401")))
   .catch((e) => (/ 40[13]$|^401$/.test(String(e?.message)) ? admin(fn, body) : Promise.reject(e)));
 
-const stt = pickStt({ elevenlabs: env("ELEVENLABS_API_KEY"), mistral: env("MISTRAL_API_KEY") });
+const stt = pickStt({ groq: env("GROQ_API_KEY"), elevenlabs: env("ELEVENLABS_API_KEY"), mistral: env("MISTRAL_API_KEY") });
+// Modele : Groq (gratuit) si sa cle est posee, sinon Mistral. LLM_MODEL permet de changer de modele sans toucher au code.
+const chat = env("GROQ_API_KEY")
+  ? groqChat(env("GROQ_API_KEY"), env("LLM_MODEL", "llama-3.3-70b-versatile"))
+  : mistralChat(env("MISTRAL_API_KEY"), env("LLM_MODEL", env("MISTRAL_MODEL", "mistral-small-latest")));
 const perUser = parseInt(env("ASSISTANT_DAILY_PER_USER", "30"));
 const total = parseInt(env("ASSISTANT_DAILY_TOTAL", "800"));
 
 Deno.serve((req) =>
   handle(req, {
-    chat: mistralChat(env("MISTRAL_API_KEY"), env("MISTRAL_MODEL", "mistral-small-latest")),
+    chat,
     rpc,
     hit: (who) => admin("assistant_hit", { p_who: who, p_limit: perUser, p_global: total }).then((ok) => ok !== false),
     origins: env("ALLOWED_ORIGINS", "https://adrienboulay.github.io,http://localhost:8000,http://127.0.0.1:8000").split(","),

@@ -1,5 +1,5 @@
 // Transcription de la voix (secours quand le navigateur ne sait pas faire la dictée : Firefox, Brave, navigateurs intégrés).
-// ElevenLabs Scribe si ELEVENLABS_API_KEY est posée, sinon Mistral Voxtral avec MISTRAL_API_KEY. L'audio n'est pas gardé.
+// Groq Whisper (gratuit) si GROQ_API_KEY, sinon ElevenLabs Scribe, sinon Mistral Voxtral. L'audio n'est pas gardé.
 
 export type Stt = (audio: Uint8Array, type: string) => Promise<string>;
 
@@ -33,8 +33,14 @@ export function mistralStt(apiKey: string, fetchImpl: typeof fetch = fetch): Stt
     form(audio, type, { model: "voxtral-mini-latest", language: "fr" }), fetchImpl);
 }
 
-/** Choisit le service disponible ; null si aucune clé. */
-export function pickStt(keys: { elevenlabs?: string; mistral?: string }, fetchImpl: typeof fetch = fetch): Stt | null {
+export function groqStt(apiKey: string, fetchImpl: typeof fetch = fetch): Stt {
+  return (audio, type) => post("https://api.groq.com/openai/v1/audio/transcriptions", { Authorization: `Bearer ${apiKey}` },
+    form(audio, type, { model: "whisper-large-v3-turbo", language: "fr", response_format: "json" }), fetchImpl);
+}
+
+/** Choisit le service disponible (Groq gratuit d'abord) ; null si aucune clé. */
+export function pickStt(keys: { groq?: string; elevenlabs?: string; mistral?: string }, fetchImpl: typeof fetch = fetch): Stt | null {
+  if (keys.groq) return groqStt(keys.groq, fetchImpl);
   if (keys.elevenlabs) return elevenLabsStt(keys.elevenlabs, fetchImpl);
   if (keys.mistral) return mistralStt(keys.mistral, fetchImpl);
   return null;
