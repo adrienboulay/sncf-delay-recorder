@@ -391,7 +391,7 @@ const EN = {navApp:"My space", navCopilot:"Copilot", signup:"News", h1:"Train de
   scopeRegion:" · region", scopeLine:" · this line", scopeTrip:" · this trip", scopeStation:" · this station", scopeAround:" · around me", noData:"No train recorded on this line today.", loadingCtx:"Loading…",
   newsBtn:"Disruptions", regionBtn:"My region", settings:"Settings", legendBtn:"Legend", menu:"Settings", expand:"Expand", newsHere:"Disruptions",
   direct:"Direct", oneChange:"1 change", changeAt:"Change at", walk:"walk", waitFor:"wait", tight:"Tight connection", missed:"Connection at risk",
-  towards:"towards", journeys:"Options in the next 3 hours", noJourney:"No route found in the next 3 hours with trains, RER and Transilien (at most one change). Metro and tram are not included: they publish no timetable.",
+  towards:"towards", journeys:"Options in the next 3 hours", noJourney:"No route found in the next 3 hours (trains, RER, Transilien, metro and tram).", changes:"changes", stopsN:"stops", stop1:"stop", estNote:"Times estimated from the network map: metro and tram publish no timetable.", liveFirst:"next departure live", estimated:"estimated times",
   journeyNote:"Times and delays from live data. Connection checked with the known delays.", arrLate:"late on arrival", arrOk:"on time on arrival", leaveAt:"Leave", arriveAt:"arrive",
   dur:"min", hr:"h", trainN:"train", origFr:"original in French",
   mapPick:"Pick on the map", pickA:"Click the map or a station to choose the departure", pickB:"Click the map or a station to choose the arrival", pickPos:"Click the map to set your position",
@@ -419,7 +419,7 @@ Object.assign(FR, {tabGL:"TGV & Intercités", tabTER:"TER & régionaux", noHour:
   scopeRegion:" · région", scopeLine:" · cette ligne", scopeTrip:" · ce trajet", scopeStation:" · cette gare", scopeAround:" · autour de moi", noData:"Aucun train enregistré sur cette ligne aujourd'hui.", loadingCtx:"Chargement…",
   tripBtn:"Mon trajet", menu:"Préférences", expand:"Agrandir", newsHere:"Perturbations",
   direct:"Direct", oneChange:"1 correspondance", changeAt:"Correspondance à", walk:"à pied", waitFor:"attente", tight:"Correspondance juste", missed:"Correspondance compromise",
-  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", noJourney:"Aucun itinéraire trouvé dans les 3 prochaines heures en train, RER et Transilien (une correspondance au plus). Le métro et le tram ne sont pas inclus : ils ne publient pas d'horaires.",
+  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", noJourney:"Aucun itinéraire trouvé dans les 3 prochaines heures (train, RER, Transilien, métro et tram).", changes:"correspondances", stopsN:"arrêts", stop1:"arrêt", estNote:"Horaires estimés d'après le plan du réseau : le métro et le tram ne publient pas d'horaires.", liveFirst:"prochain passage en direct", estimated:"horaires estimés",
   journeyNote:"Horaires et retards en temps réel. Correspondance vérifiée avec les retards connus.", arrLate:"de retard à l'arrivée", arrOk:"à l'heure à l'arrivée", leaveAt:"Départ", arriveAt:"arrivée",
   dur:"min", hr:"h", trainN:"train", origFr:"texte d'origine en français",
   mapPick:"Choisir sur la carte", pickA:"Clique sur la carte ou sur une gare pour choisir le départ", pickB:"Clique sur la carte ou sur une gare pour choisir l'arrivée", pickPos:"Clique sur la carte pour choisir ta position",
@@ -1353,6 +1353,7 @@ function xferOf(j) {
   return {slack, at: l2.from[0], walk: j.walk_s || 0, cls: slack < 120 ? "bad" : slack < 300 ? "warn" : ""};
 }
 function journeyHtml(j, i) {
+  if (j.est) return metroJourneyHtml(j, i);
   const T = L_(), first = j.legs[0], last = j.legs[j.legs.length - 1], open = ctx.sel === i, x = xferOf(j);
   const wa = ctx.a && ctx.a.place ? ctx.a.place.walk_s : 0, wb = ctx.b && ctx.b.place ? ctx.b.place.walk_s : 0;
   const dep = realT(first.dep, first.dep_delay) - wa, arr = realT(last.arr, last.arr_delay) + wb, late = Math.round(Math.max(last.arr_delay || 0, 0) / 60);
@@ -1387,20 +1388,153 @@ function drawJourney() {
     .bindTooltip(esc(name)).on("click", () => openStation({name, lat: p[0], lon: p[1]})).addTo(ctxLayer);
   if (j) j.legs.forEach((l, k) => {
     const c = legColor(l), p1 = [l.from[1], l.from[2]], p2 = [l.to[1], l.to[2]];
-    if (p1[0] != null && p2[0] != null) { L.polyline([p1, p2], {color: c, weight: 6, opacity: .9}).addTo(ctxLayer); pts.push(p1, p2); }
+    if (l.path && l.path.length > 1) { L.polyline(l.path, {color: c, weight: 6, opacity: .9}).addTo(ctxLayer); pts.push(...l.path); }
+    else if (p1[0] != null && p2[0] != null) { L.polyline([p1, p2], {color: c, weight: 6, opacity: .9}).addTo(ctxLayer); pts.push(p1, p2); }
     if (k > 0) { const q = j.legs[k - 1].to; if (q[1] != null && p1[0] != null) L.polyline([[q[1], q[2]], p1], {color: css("--muted"), weight: 3, dashArray: "2 7"}).addTo(ctxLayer); }
     if (p1[0] != null) dot(p1, l.from[0], c, k ? 5 : 7);
     if (p2[0] != null) dot(p2, l.to[0], c, k === j.legs.length - 1 ? 7 : 5);
   });
   else [a, b].forEach(s => dot([s.lat, s.lon], s.name, css("--blue"), 7));
   // Marche depuis l'adresse de depart / jusqu'a l'adresse d'arrivee
-  [a, b].forEach(s => { if (!s.place) return; const pp = [s.place.lat, s.place.lon];
+  if (j && j.est) [j.from, j.to].forEach((p, k) => { const s = k ? j.legs[j.legs.length - 1].to : j.legs[0].from;
+    if (Math.hypot(p[0] - s[1], (p[1] - s[2]) * .66) > .0005) { L.polyline([p, [s[1], s[2]]], {color: css("--muted"), weight: 3, dashArray: "2 7", interactive: false}).addTo(ctxLayer); pts.push(p); } });
+  else [a, b].forEach(s => { if (!s.place) return; const pp = [s.place.lat, s.place.lon];
     L.polyline([pp, [s.lat, s.lon]], {color: css("--muted"), weight: 3, dashArray: "2 7", interactive: false}).addTo(ctxLayer);
     L.circleMarker(pp, {radius: 6, color: "#fff", weight: 2, fillColor: css("--fg"), fillOpacity: 1}).bindTooltip(esc(s.place.label)).addTo(ctxLayer); pts.push(pp); });
   ctx.bounds = L.latLngBounds(pts.filter(p => p[0] != null)).pad(.15); map.fitBounds(ctx.bounds);
 }
+
+// ================================================================= Itinéraires métro / tram (et RER, Transilien) d'après le plan du réseau
+// Le métro et le tram ne publient pas d'horaires : on calcule le chemin sur le plan (data/lignes-idf.json : tronçons entre
+// arrêts), avec des vitesses et des attentes moyennes. Si la gare de départ annonce le prochain passage en direct, on part de là.
+const MSPEED = {METRO: 7.5, TRAM: 5, RER: 12, TRANSILIEN: 13, NAVETTE: 6, CABLE: 5};      // m/s, arrêts compris
+const MWAIT = {METRO: 150, TRAM: 240, RER: 300, TRANSILIEN: 420, NAVETTE: 300, CABLE: 120};  // attente moyenne (s)
+const WALK_MS = 1.2 / 1.3;   // à pied, détours compris
+let mgraph = null;
+function geoDist(a, b) { const k = Math.cos((a[0] + b[0]) * Math.PI / 360); return Math.hypot((a[0] - b[0]) * 111195, (a[1] - b[1]) * 111195 * k); }
+function buildMetroGraph() {
+  if (mgraph || !idfGeo || !idfGeo.stops) return mgraph;
+  const nodes = [], adj = [], byLine = {};
+  Object.entries(idfGeo.stops).forEach(([code, st]) => { const l = idfGeo.lines[code]; if (!l || !MSPEED[l.mode]) return;
+    byLine[code] = st.map(([la, lo, name]) => { const n = {id: nodes.length, code, mode: l.mode, name, p: [la, lo]}; nodes.push(n); adj.push([]); return n; }); });
+  // Trajet : chaque tronçon du plan relie deux arrêts de la même ligne
+  idfGeo.shapes.forEach(([code, poly]) => { const ns = byLine[code]; if (!ns || poly.length < 2) return;
+    const near = q => { let b = null, bd = 350; ns.forEach(n => { const d = geoDist(q, n.p); if (d < bd) { bd = d; b = n; } }); return b; };
+    const u = near(poly[0]), v = near(poly[poly.length - 1]); if (!u || !v || u === v) return;
+    let len = 0; for (let i = 1; i < poly.length; i++) len += geoDist(poly[i - 1], poly[i]);
+    const w = len / MSPEED[u.mode] + 20;
+    adj[u.id].push({v: v.id, w, ride: true, path: poly}); adj[v.id].push({v: u.id, w, ride: true, path: [...poly].reverse()}); });
+  // Correspondances : arrêts d'autres lignes à moins de 350 m (marche + attente de la nouvelle ligne)
+  const cell = n => `${Math.floor(n.p[0] / .004)}:${Math.floor(n.p[1] / .006)}`, grid = new Map();
+  nodes.forEach(n => { const k = cell(n); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(n); });
+  nodes.forEach(n => { const [cy, cx] = cell(n).split(":").map(Number);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) (grid.get(`${cy + dy}:${cx + dx}`) || []).forEach(m => {
+      if (m.code === n.code) return; const d = geoDist(n.p, m.p); if (d > 350) return;
+      adj[n.id].push({v: m.id, w: 60 + d / WALK_MS + MWAIT[m.mode], walk: d / WALK_MS}); }); });
+  return (mgraph = {nodes, adj});
+}
+// Terminus atteignables en continuant sur la ligne après « to » sans revenir sur « prev » (plusieurs si la ligne a des branches)
+function terminiAfter(g, prev, to) {
+  const seen = new Set([prev, to]), out = new Set(), names = new Set(), stack = [to];
+  while (stack.length) { const u = stack.pop(); let more = false;
+    g.adj[u].forEach(e => { if (e.ride && !seen.has(e.v)) { seen.add(e.v); stack.push(e.v); names.add(g.nodes[e.v].name); more = true; } });
+    if (!more && u !== to) out.add(g.nodes[u].name); }
+  return {termini: [...out], names};
+}
+function metroRoute(from, to) {
+  const g = buildMetroGraph(); if (!g) return null;
+  const N = g.nodes.length, cost = new Float64Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1), pedge = new Array(N), walk0 = new Float64Array(N);
+  const near = (q, r) => g.nodes.filter(n => geoDist(q, n.p) <= r);
+  let starts = near(from, 700); if (!starts.length) starts = near(from, 1200);
+  let ends = near(to, 700); if (!ends.length) ends = near(to, 1200);
+  if (!starts.length || !ends.length) return null;
+  const endWalk = new Map(ends.map(n => [n.id, geoDist(to, n.p) / WALK_MS]));
+  const heap = [];   // file de priorité simple (petit graphe)
+  const push = (c, u) => { heap.push([c, u]); let i = heap.length - 1; while (i > 0) { const pa = (i - 1) >> 1; if (heap[pa][0] <= heap[i][0]) break; [heap[pa], heap[i]] = [heap[i], heap[pa]]; i = pa; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i;
+    if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+  starts.forEach(n => { walk0[n.id] = geoDist(from, n.p) / WALK_MS; const c = walk0[n.id] + MWAIT[n.mode]; if (c < cost[n.id]) { cost[n.id] = c; push(c, n.id); } });
+  let best = Infinity, bestEnd = -1;
+  while (heap.length) { const [c, u] = pop(); if (c > cost[u]) continue; if (c >= best) break;
+    if (endWalk.has(u) && c + endWalk.get(u) < best) { best = c + endWalk.get(u); bestEnd = u; }
+    g.adj[u].forEach(e => { const nc = c + e.w; if (nc < cost[e.v]) { cost[e.v] = nc; prev[e.v] = u; pedge[e.v] = e; push(nc, e.v); } }); }
+  if (bestEnd < 0) return null;
+  const seq = []; for (let u = bestEnd; u >= 0; u = prev[u]) seq.unshift(u);
+  // Découpage en tronçons d'une même ligne
+  const legs = []; let cur = null;
+  for (let k = 0; k < seq.length; k++) { const n = g.nodes[seq[k]], e = pedge[seq[k]];
+    if (k === 0 || !e.ride) { cur = {code: n.code, mode: n.mode, nodes: [n.id], path: [n.p], ride: 0, walk_before: k === 0 ? walk0[n.id] : e.walk}; legs.push(cur); }
+    else { cur.nodes.push(n.id); cur.path.push(...e.path); cur.ride += e.w; } }
+  const real = legs.filter(l => l.nodes.length > 1);
+  if (!real.length) return null;
+  // Une « correspondance » sans trajet (arrêt traversé à pied) : sa marche va au tronçon suivant
+  for (let k = 1; k < legs.length; k++) if (legs[k - 1].nodes.length < 2) legs[k].walk_before += legs[k - 1].walk_before;
+  const endN = g.nodes[real[real.length - 1].nodes.slice(-1)[0]];
+  return {legs: real.map(l => { const a = g.nodes[l.nodes[0]], b = g.nodes[l.nodes[l.nodes.length - 1]], t = terminiAfter(g, l.nodes[l.nodes.length - 2], l.nodes[l.nodes.length - 1]);
+      return {code: l.code, mode: l.mode, from: a, to: b, path: l.path, ride: l.ride, walk_before: l.walk_before, stops: l.nodes.length - 1, termini: t.termini.length ? t.termini : [b.name], ahead: t.names}; }),
+    walk_end: geoDist(to, endN.p) / WALK_MS, from, to};
+}
+// Prochain passage en direct au départ (métro / tram : estimations RATP ; RER / Transilien : horaires temps réel)
+async function liveFirstDeparture(r) {
+  const l0 = r.legs[0];
+  let near = []; try { near = await rpc("public_find_stop", {p_q: l0.from.name}); } catch (e) {}
+  const ids = (near || []).filter(x => x.net === "idf" && geoDist([x.lat, x.lon], l0.from.p) < 400).slice(0, 2);
+  const want = new Set([...l0.ahead, ...l0.termini].map(n => normName(n)));
+  const okDest = d => { const k = normName(d || ""); return [...want].some(w => w && (k.includes(w) || w.includes(k))); };
+  const t0 = Math.floor(Date.now() / 1000) + Math.round(l0.walk_before);
+  for (const x of ids) {
+    let st = null; try { st = await rpc("public_station", {p_net: "idf", p_id: x.id}); } catch (e) {}
+    if (!st) continue;
+    const m = (st.metro_next || []).filter(o => o.line_id === l0.code && okDest(o.dest)).flatMap(o => (o.t || []).map(t => ({t, dest: o.dest}))).filter(o => o.t >= t0).sort((p, q) => p.t - q.t)[0];
+    if (m) return m;
+    const n = (st.next || []).filter(o => o.line_id === l0.code && !o.cancelled && okDest(o.dest)).map(o => ({t: o.sched + Math.max(o.delay || 0, 0), dest: o.dest})).filter(o => o.t >= t0).sort((p, q) => p.t - q.t)[0];
+    if (n) return n;
+  }
+  return null;
+}
+const normName = t => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const IDF_BOX = p => p[0] > 48.1 && p[0] < 49.25 && p[1] > 1.4 && p[1] < 3.6;
+async function metroJourney(a, b) {
+  const from = a.place ? [a.place.lat, a.place.lon] : [a.lat, a.lon], to = b.place ? [b.place.lat, b.place.lon] : [b.lat, b.lon];
+  if (!IDF_BOX(from) || !IDF_BOX(to) || geoDist(from, to) < 400 || !idfGeo) return null;
+  const r = metroRoute(from, to); if (!r) return null;
+  const live = await liveFirstDeparture(r).catch(() => null);
+  let t = Math.floor(Date.now() / 1000);
+  const legs = r.legs.map((l, k) => {
+    t += l.walk_before;
+    const dep = k === 0 && live ? Math.max(live.t, t) : t + MWAIT[l.mode], arr = dep + l.ride; t = arr;
+    const g = idfGeo.lines[l.code] || {};
+    return {dep, arr, dep_delay: 0, arr_delay: 0, from: [l.from.name, l.from.p[0], l.from.p[1]], to: [l.to.name, l.to.p[0], l.to.p[1]], path: l.path,
+      walk_before: l.walk_before, stops: l.stops, info: {line_id: l.code, line: g.name, mode: l.mode, dest: k === 0 && live ? live.dest : l.termini.join(" / ")}};
+  });
+  const last = legs[legs.length - 1];
+  return {est: true, live: !!live, legs, start: live ? legs[0].dep - Math.round(legs[0].walk_before) : Math.floor(Date.now() / 1000), arr: last.arr + r.walk_end, arr_delay: 0, walk_end: r.walk_end,
+    transfers: legs.length - 1, from: r.from, to: r.to};
+}
+function metroJourneyHtml(j, i) {
+  const T = L_(), open = ctx.sel === i, n = j.legs.length - 1, mins = s => Math.max(1, Math.round(s / 60));
+  const walkRow = (t, txt) => `<li class="xfer"><span class="t">${hhmm(t)}</span><span class="rail"></span><span class="what">${WALK} ${txt}</span></li>`;
+  let body = "";
+  if (open) {
+    body = `<ol class="legs">` + j.legs.map((l, k) => {
+      const c = legColor(l), inf = l.info;
+      const before = l.walk_before >= 45 ? walkRow(k === 0 ? j.start : j.legs[k - 1].arr, k === 0 ? `${T.walkTo} ${esc(l.from[0])} · ${mins(l.walk_before)} ${T.min}` : `${T.changeAt} ${esc(l.from[0])} · ${mins(l.walk_before)} ${T.min} ${T.walk}`)
+        : k > 0 ? `<li class="xfer"><span></span><span class="rail"></span><span class="what">${T.changeAt} ${esc(l.from[0])}</span></li>` : "";
+      return before +
+        `<li class="leg" style="--lc:${c}"><span class="t">${hhmm(l.dep)}</span><span class="rail"></span><span class="what"><b>${esc(l.from[0])}</b>` +
+        `<small>${legPic(l)} ${inf.dest ? `${T.towards} ${esc(inf.dest)}` : ""} · ${l.stops} ${l.stops > 1 ? T.stopsN : T.stop1}</small></span></li>` +
+        `<li class="leg end" style="--lc:${c}"><span class="t">${hhmm(l.arr)}</span><span class="rail"></span><span class="what"><b>${esc(l.to[0])}</b></span></li>`;
+    }).join("") + (j.walk_end >= 45 ? walkRow(j.legs[n].arr, `${T.walkEnd} · ${mins(j.walk_end)} ${T.min}`) : "") + `</ol><p class="hint">${T.estNote}</p>`;
+  }
+  const dep = j.start;
+  return `<div class="jrn${open ? " on" : ""}" role="listitem"><button class="jhead" type="button" data-j="${i}" aria-expanded="${open}">` +
+    `<span class="jtop"><span class="t">${hhmm(dep)} → ≈ ${hhmm(j.arr)}</span><span class="dur">≈ ${durTxt(j.arr - dep)}</span></span>` +
+    `<span class="chain">${j.legs.map(legPic).join(`<span class="sep">›</span>`)}<span>· ${n === 0 ? T.direct : n === 1 ? T.oneChange : `${n} ${T.changes}`}</span></span>` +
+    `<span class="jsub">${j.live ? T.liveFirst + " · " + T.estimated : T.estimated}</span></button>${body}</div>`;
+}
 async function openTrip(a, b) {
   setCtx({type: "trip", a, b, data: null, sel: 0});
+  const me = ctx;
   let d = null;
   try { d = await rpc("public_journey", {p_from_net: a.net, p_from_id: a.id, p_to_net: b.net, p_to_id: b.id}); } catch (e) { d = null; }
   if (!ctx || ctx.type !== "trip" || ctx.a !== a || ctx.b !== b) return;
@@ -1416,6 +1550,15 @@ async function openTrip(a, b) {
       const got = r && r.journeys ? bestJourneys(r.journeys) : [];
       if (got.length) { js = got; ctx.a = Object.assign(x, {alts: a.alts}); ctx.b = Object.assign(y, {alts: b.alts}); break; }
     }
+  }
+  let mj = null; try { mj = await metroJourney(ctx.a, ctx.b); } catch (e) { mj = null; }
+  if (ctx !== me) return;
+  // Seulement RER / Transilien : les vrais horaires (déjà proposés) valent mieux qu'une estimation
+  if (mj && js.length && mj.legs.every(l => l.info.mode === "RER" || l.info.mode === "TRANSILIEN")) mj = null;
+  if (mj) {
+    const arrOf = j => realT(j.arr, j.arr_delay) + (ctx.b && ctx.b.place && !j.est ? ctx.b.place.walk_s : 0);
+    // Le métro passe devant si on arrive plus tôt qu'avec le premier train proposé
+    if (!js.length || arrOf(mj) < arrOf(js[0])) js.unshift(mj); else js.push(mj);
   }
   ctx.data = {journeys: js, line_ids: [...new Set(js.flatMap(j => j.legs.map(l => l.info && l.info.line_id).filter(Boolean)))]};
   ctx.sel = js.length ? 0 : -1;
@@ -1553,11 +1696,12 @@ async function placeFromText(t) {
     const p = await currentPos(); return p ? resolvePoint(p.lat, p.lon, L_().myPos) : null;
   }
   const looksAddress = /\d|\b(rue|avenue|av\.|boulevard|bd|place|chemin|allée|impasse|quai|route|cours)\b/i.test(q);
+  // Nom exact d'une gare ou station, même s'il ressemble à une adresse (« Place d'Italie »)
+  const nq = norm(q), busiest = arr => arr.sort((x, y) => (y.n || 0) - (x.n || 0))[0];
+  const exact = busiest(stations.filter(s => norm(s.name) === nq).slice());
+  if (exact) return exact;
   if (!looksAddress) {
-    // Nom exact (« Grenoble »), sinon la gare la plus fréquentée dont le nom commence par ce mot (« Lyon » -> Lyon Part-Dieu).
-    const nq = norm(q), busiest = arr => arr.sort((x, y) => (y.n || 0) - (x.n || 0))[0];
-    const exact = busiest(stations.filter(s => norm(s.name) === nq) .slice());
-    if (exact) return exact;
+    // Sinon la gare la plus fréquentée dont le nom commence par ce mot (« Lyon » -> Lyon Part-Dieu).
     const pre = busiest(stations.filter(s => norm(s.name).startsWith(nq + " ")));
     if (pre) return pre;
   }
