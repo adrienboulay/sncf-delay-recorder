@@ -1,42 +1,62 @@
-# French rail delay recorder
+# LateProof
 
-Records real-time train data for France into Postgres every 2 minutes, so a train-by-train history of delays, cancellations and disruptions is kept. No public source publishes this history: the real-time feeds are snapshots, and only monthly averages are released.
+**When your train is late, LateProof tells you what to do, and proves your delay to your boss in 3 seconds.**
 
-## Sources
-| Network | Source | What we get |
+- **Live app:** https://adrienboulay.github.io/lateproof/
+- **Solana program (devnet):** `8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu` ([explorer](https://explorer.solana.com/address/8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu?cluster=devnet))
+- Built for the Dev3pack Global Hackathon (27–29 November 2026), solo.
+
+## The problem
+French trains run late often: about one TGV in seven arrives more than 15 minutes late. Commuters and business travellers then face three questions at once: what do I take instead, what am I entitled to, and how do I prove to my employer or school that I was really on that late train? Screenshots of an app are easy to fake, so a "late certificate" today is worth very little.
+
+## What it does
+1. **Before the trip:** live delays for every SNCF train in France (TGV, Intercités, TER) and, in Île-de-France, RER, Transilien, metro and tram, refreshed every 2 minutes. Strikes and planned works are flagged on your route.
+2. **During the trip:** **Gus**, a small robot conductor, answers by text or voice: "is the RER B on time?", "I want to go to Massy". It reads our live data through tools, and opens the journey planner (one connection, walking included) on the right trip.
+3. **After the trip:** a **delay certificate** signed on your phone (passkey: Face ID or fingerprint), shared as a link. Your manager opens it and checks it in their own browser, with no account and no server trust: the signature, and the train's real delay against the record **anchored on Solana**. You choose which fields to reveal (selective disclosure).
+
+## How Solana is used
+Program: [`program/`](program/) (Rust, Anchor), deployed on devnet, with an [initialize transaction](https://explorer.solana.com/tx/W7PJY6AD6JHNmJ74gqJox44Y6fKubv38aPwHfnePNC7YDdxoEGrgc53p97mpyfBZxg5TGixDua1LBVnndAmFwLR?cluster=devnet). It stores **fingerprints only**: no names, e-mails or locations.
+
+- **`post_delay_root`:** every night, the oracle publishes the Merkle root of every train delay recorded that day. The full list is archived so anyone can rebuild the root. First root: 26 November 2026, 61,867 delay records ([transaction](https://explorer.solana.com/tx/4iCgbnZeUKDvdzxvtCEVYKD14WeM9Rk5ayBuBHFCTf6ssV8UADbZ9seE8LZUspQaypNVxjsw4H2AdBKyw8txWQ6B?cluster=devnet)).
+- **`post_cert_root`:** each hour, the root of the certificates created in that hour. The program rejects a root posted outside a 2-hour window, so a certificate cannot be backdated, not even by us.
+- **`verify_delay` / `verify_certificate`:** anyone can check a record against the published root (sorted-pair SHA-256 Merkle proof, domain-separated leaves). The same Merkle code runs in Rust, Python and the browser, checked by shared test vectors.
+
+## Repository layout
+| Folder | What | Runs on |
 |---|---|---|
-| SNCF national: TER, TGV INOUI, OUIGO, Intercités, Lyria, international trains | GTFS-RT trip updates and service alerts (transport.data.gouv.fr), SNCF static GTFS | Delay per train and per station, cancellations, alerts with cause and effect |
-| Île-de-France: RER A–E, Transilien H–V, TER inside the region, timetabled trams (T4, T9–T14) | PRIM (Île-de-France Mobilités): "Prochains passages – requête globale" (SIRI Lite estimated timetable), IDFM GTFS | Planned and expected time at each stop, so delay per train and per station, cancellations, train number |
-| Île-de-France: metro lines 1–14 and RATP trams (T1–T3, T5–T8) | Same PRIM feed | Expected times only, see below |
-| Île-de-France: all modes | PRIM "Messages Info Trafic – requête globale" | Every current and planned disruption (works, incidents, closures) with severity and affected lines, every 10 minutes |
+| [`program/`](program/) | Solana program (Anchor) and its tests (LiteSVM) | Solana devnet |
+| [`recorder/`](recorder/) | Real-time delay recorder (SNCF GTFS-RT, Île-de-France PRIM), nightly archive, nightly Solana publication | GitHub Actions + Supabase Postgres |
+| [`supabase/functions/assistant/`](supabase/functions/assistant/) | Copilot server: LLM with tools on our data, voice transcription | Supabase Edge Functions (Deno) |
+| [`site/`](site/) | Web app: home, live map and journey planner, copilot, my trips and certificates, verification page | GitHub Pages |
+| `.github/workflows/` | Recorder, nightly archive and roots, copilot tests and deploy, site deploy | GitHub Actions |
 
-## Coverage and known limitations
-- **Metro and RATP trams have no published timetable in real time, so exact delays cannot be measured.**
-  - The feed gives the expected time of the next vehicles at each stop, but no planned time and no train number.
-  - No open data source publishes actual metro passage times. We checked PRIM, the RATP open data portal and data.gouv.fr.
-  - **Our method:** we follow each vehicle's expected time at each stop. The last expected time before the vehicle leaves the feed is recorded as its **actual passage**, accurate to the 2-minute polling interval. Passages are then aggregated per line, stop, direction and hour (`idfm_metro_hourly`: number of passages, mean and maximum gap between vehicles). This measures **regularity**, the way metro operators do, rather than delay.
-  - **Inference from disruptions:** a metro or tram line with **no disruption** in the Info Trafic feed is assumed to run normally, on its planned frequency (IDFM GTFS). A line with a disruption carries its severity (`PERTURBEE`, `BLOQUANTE`) and time window. The **extra waiting time** is the measured gap minus the planned interval. This gives the same answer an application needs: was this line disrupted at this time, and by how much.
-  - In short: exact delays for every train (SNCF, RER, Transilien, timetabled trams). Disruptions plus measured gaps for the metro and RATP trams.
-- **On-time trains do not always appear** in the SNCF feed, which mostly reports trains about to run or delayed. Planned trains are counted from the static timetables (`ref_trips`, `ref_calendar`).
-- **Foreign stations** (Switzerland, Germany, Belgium, Luxembourg, Italy, Spain) are present because they are served by SNCF international trains. This is expected.
-- **Other operators** are not covered yet: for example the Marseille – Toulon – Nice regional trains run by Transdev, Trenitalia France and Eurostar.
-- Polling every 2 minutes means a delay is known to within about 2 minutes.
+## APIs and services
+- **Data:** SNCF open data (GTFS / GTFS-RT via transport.data.gouv.fr), Île-de-France Mobilités PRIM, Base Adresse Nationale (address search). Licence Mobilités / ODbL.
+- **LLM:** any "chat completions" provider with tool calling. Groq (free tier, Llama 3.3 70B) when `GROQ_API_KEY` is set, Mistral otherwise.
+- **Voice:**
+  - Speech to text: the browser's own dictation (Web Speech API) first.
+  - Server fallback for browsers without dictation, in this order: Groq Whisper, then the **ElevenLabs Speech-to-Text API (Scribe, `/v1/speech-to-text`)**, then Mistral Voxtral, depending on which key is set.
+  - Text to speech: the browser's speech synthesis.
+- **Storage:** Supabase (Postgres, Storage, Edge Functions).
 
-## Storage
-The free Postgres tier is limited to 500 MB, and the raw detail grows by several tens of MB per day. So:
-- the database keeps the **last 2 full days in full detail** (plus the current day), plus a **permanent daily summary** per line (`daily_line_stats`: trains, cancellations, trains late by 5, 15, 30 and 60 minutes);
-- every night, each finished day is exported as **compressed CSV** (about 15 to 25 times smaller) to object storage (`archive/YYYY/MM/DD/<table>.csv.gz`), and its detail is removed from the database only once the archive is confirmed (`archive_log`).
+## Built before / during the hackathon
+The hackathon allows existing code; here is the honest split, which matches the git history.
+- **Before the kickoff (23–26 November 2026):**
+  - the delay recorder and its database;
+  - the web app (map, journey planner, my trips, certificates, verification page);
+  - the first version of the copilot;
+  - the Solana program code and its tests (not deployed);
+  - the development environment.
+- **During the hackathon (from 27 November 2026):**
+  - devnet deployment and initialization of the program;
+  - first on-chain delay root published by the nightly job;
+  - copilot on a free LLM provider, plus server voice transcription;
+  - live voice dictation that opens the right journey;
+  - database write reduction;
+  - merge of the three repositories into this one.
+  - The rest is listed in the commit history as it lands.
 
-## Layout
-- `recorder/record_sncf_cloud.py`: long-running recorder (one poll every 2 minutes for about 5h45, then the next run is started), SNCF and Île-de-France.
-- `recorder/idfm.py`: Île-de-France module (trains, metro passage reconstruction, disruptions).
-- `recorder/load_reference.py`, `recorder/load_reference_idfm.py`: nightly reference data (lines, stations, planned trains).
-- `recorder/archive_prune.py`: nightly summary, archive and purge.
-- `recorder/schema.sql`, `recorder/schema_idfm.sql`: tables and views.
-- `recorder/report.py`: row counts and table sizes only, because Actions logs are public.
-- `recorder/record_sncf.py`: local variant writing to SQLite.
-- `tests_phase0/`: feasibility scripts (feed decoding, station check-in from GPS coordinates).
-
-Required secrets: `DATABASE_URL`, `PRIM_API_KEY`, and for archiving `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
-
-Data sources: SNCF open data (GTFS / GTFS-RT, via transport.data.gouv.fr) and Île-de-France Mobilités (PRIM), under the Licence Mobilités / ODbL.
+## Run it yourself
+- **Program:** open the repository in GitHub Codespaces (`.devcontainer/` installs Rust, Solana CLI and Anchor), then `cd program && anchor build && cargo test`.
+- **Recorder and copilot:** see [`recorder/README.md`](recorder/README.md) and the workflows. Secrets live only in GitHub Actions secrets, never in the code.
+- **Site:** static files in `site/`. Any static server works; `config.js` (Supabase URL and *publishable* key) is generated at deploy time.
