@@ -11,3 +11,15 @@ CREATE TABLE IF NOT EXISTS delay_roots (
   tx_signature TEXT,                 -- signature de la transaction post_delay_root (NULL tant que non publiee)
   posted_at BIGINT);
 ALTER TABLE delay_roots ENABLE ROW LEVEL SECURITY;
+
+-- Preuve verifiable par tous : adresse du compte Solana de l'empreinte (PDA) et chemin PUBLIC de la liste exacte
+-- des enregistrements (bucket « proofs »). La page de verification recalcule la racine dans le navigateur.
+ALTER TABLE delay_roots ADD COLUMN IF NOT EXISTS pda TEXT;
+ALTER TABLE delay_roots ADD COLUMN IF NOT EXISTS public_path TEXT;
+CREATE OR REPLACE FUNCTION public.public_delay_root(p_day TEXT) RETURNS JSON
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT json_build_object('day', day, 'root', root, 'n', n_records, 'format', format, 'tx', tx_signature,
+                           'posted_at', posted_at, 'pda', pda, 'list', public_path)
+  FROM delay_roots WHERE day = p_day $$;
+REVOKE ALL ON FUNCTION public.public_delay_root(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.public_delay_root(TEXT) TO anon;

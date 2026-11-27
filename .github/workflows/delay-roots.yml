@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       day:
-        description: "Journee AAAAMMJJ (vide = la veille)"
+        description: "Journee AAAAMMJJ (vide = la veille ; backfill = publier les listes des jours deja scelles)"
         default: ""
 permissions:
   contents: read

@@ -154,6 +154,7 @@ async function main() {
       <div class="check"><i aria-hidden="true" class="${browserKey ? "w" : ""}">${browserKey ? "!" : "✓"}</i><span>${browserKey ? L("Signé par <b>la clé du navigateur</b> de son titulaire (sans déverrouillage par visage ou empreinte).", "Signed by <b>its holder's browser key</b> (no face or fingerprint unlock).") : `${L("Signé par <b>le téléphone de son titulaire</b>", "Signed by <b>its holder's phone</b>")}${sig.userVerified ? L(", déverrouillé par visage, empreinte ou code", ", unlocked by face, fingerprint or PIN") : ""}.`}${F.titulaire ? ` ${L("Titulaire", "Holder")} : <b>${esc(F.titulaire)}</b>.` : ""}</span></div>
       <div class="check"><i aria-hidden="true">✓</i><span>${L("Scellé le", "Sealed on")} ${new Date(c.at * 1000).toLocaleString(locale, {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"})} : ${L("<b>impossible à modifier</b> sans que cette page passe à l'orange.", "<b>cannot be changed</b> without this page turning orange.")}</span></div>
       <div class="check" id="cross"><i aria-hidden="true" class="w">…</i><span>${L("Comparaison avec les relevés officiels…", "Comparing with the official records…")}</span></div>
+      <div class="check" id="chain"><i aria-hidden="true" class="w">…</i><span>${L("Vérification du sceau sur Solana…", "Checking the seal on Solana…")}</span></div>
       ${hidden.length ? `<div class="check"><i aria-hidden="true" class="w">◦</i><span class="muted">${L("Non montré par le titulaire, mais scellé", "Not shown by the holder, but sealed")} : ${esc(hidden.join(", "))}.</span></div>` : ""}
     </section>
     <details><summary>${L("Pourquoi c'est fiable ?", "Why can I trust it?")}</summary><div class="in">${L(`
@@ -176,6 +177,7 @@ async function main() {
     <p class="foot">${L("Vérification faite dans votre navigateur, sans compte et sans passer par nos serveurs.<br>Seul ce site fait foi. Code du justificatif", "Checked in your browser, with no account and without going through our servers.<br>Only this site is authoritative. Certificate code")} : <b>${esc(code)}</b></p>`;
   const g = $("gotit"); if (g) g.onclick = () => { LP.store.set("lpv-intro", true); $("intro").remove(); };
   crossCheck(F).catch(() => setCross("w", L("Comparaison avec les relevés indisponible pour le moment.", "Comparison with the records is unavailable right now.")));
+  sealCheck(F).catch(() => setChain("w", L("Vérification sur Solana indisponible pour le moment.", "Solana check unavailable right now.")));
 }
 const seenIntro = () => LP.store.get("lpv-intro");
 function setCross(k, html) { const el = $("cross"); if (el) el.innerHTML = `<i aria-hidden="true" class="${k}">${k === "x" ? "✕" : k === "w" ? "!" : "✓"}</i><span>${html}</span>`; }
@@ -197,6 +199,77 @@ async function crossCheck(F) {
   if (diff.length) return setCross("x", L(`Écart avec nos relevés pour le train ${esc(diff.join(", "))} : le retard a pu évoluer après la signature.`, `Differs from our records for train ${esc(diff.join(", "))}: the delay may have changed after signing.`));
   setCross("", L(`<b>Identique aux relevés officiels</b> enregistrés par LateProof (${same} relevé${same > 1 ? "s" : ""}).`, `<b>Matches the official records</b> kept by LateProof (${same} record${same > 1 ? "s" : ""}).`));
 }
+// ------------------------------------------------------------------ Sceau Solana, vérifié ici même, sans nous faire confiance :
+// 1. on lit l'empreinte de la journée directement sur Solana (compte du programme LateProof, réseau devnet) ;
+// 2. on télécharge la liste publique EXACTE des relevés de ce jour-là et on recalcule l'empreinte dans le navigateur
+//    (mêmes règles que le programme : feuille = SHA-256(0x00 « DLY » relevé), nœud = SHA-256(0x01 min max)) ;
+// 3. on vérifie que les relevés de ce justificatif font partie de la liste.
+const SOL_RPC = "https://api.devnet.solana.com", PROGRAM = "8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu";
+const hexOf = b => Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+const explorer = (kind, id) => `https://explorer.solana.com/${kind}/${id}?cluster=devnet`;
+function setChain(k, html) { const el = $("chain"); if (el) el.innerHTML = `<i aria-hidden="true" class="${k}">${k === "x" ? "✕" : k === "w" ? "!" : "✓"}</i><span>${html}</span>`; }
+async function sha(bytes) { return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)); }
+function lessEq(a, b) { for (let i = 0; i < 32; i++) { if (a[i] !== b[i]) return a[i] < b[i]; } return true; }
+async function merkleRoot(lines, progress) {
+  const enc = new TextEncoder();
+  let level = [];
+  for (let i = 0; i < lines.length; i += 4000) {   // par paquets : la page reste fluide
+    level.push(...await Promise.all(lines.slice(i, i + 4000).map(l => { const b = enc.encode(l), m = new Uint8Array(4 + b.length); m.set([0, 68, 76, 89]); m.set(b, 4); return sha(m); })));
+    progress(i / lines.length / 2);
+  }
+  while (level.length > 1) {
+    const nxt = [];
+    for (let i = 0; i < level.length; i += 2) {
+      if (i + 1 >= level.length) { nxt.push(Promise.resolve(level[i])); continue; }
+      const [lo, hi] = lessEq(level[i], level[i + 1]) ? [level[i], level[i + 1]] : [level[i + 1], level[i]];
+      const m = new Uint8Array(65); m[0] = 1; m.set(lo, 1); m.set(hi, 33); nxt.push(sha(m));
+    }
+    level = await Promise.all(nxt);
+  }
+  return hexOf(level[0]);
+}
+async function sealCheck(F) {
+  let recs = []; try { recs = JSON.parse(F.releves || "[]"); } catch (e) {}
+  const day = recs.length ? recs[0].split("|")[2] : String(F.date || "").replace(/-/g, "");
+  if (!/^\d{8}$/.test(day)) return setChain("w", L("Aucun relevé à rapprocher de l'empreinte publiée sur Solana.", "No record to match with the fingerprint published on Solana."));
+  const dayTxt = new Date(`${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6)}T12:00:00`).toLocaleDateString(locale, {day: "numeric", month: "long"});
+  const d = await LP.rpc("public_delay_root", {p_day: day}).catch(() => null);
+  if (!d || !d.tx) return setChain("w", L(`Les relevés du ${dayTxt} seront scellés sur Solana dans la nuit qui suit ; revenez sur cette page demain pour la preuve complète.`,
+    `The records of ${dayTxt} are sealed on Solana the following night; come back tomorrow for the full proof.`));
+  const txLink = `<a href="${explorer("tx", esc(d.tx))}" target="_blank" rel="noopener">${L("voir la transaction", "see the transaction")} ↗</a>`;
+  const anchor = $("anchor");
+  if (anchor) anchor.innerHTML = `${L("Ancrage public", "Public anchor")} : ${L("empreinte des relevés du", "fingerprint of the records of")} ${dayTxt} <code>${esc(d.root)}</code> (${new Intl.NumberFormat(locale).format(d.n)} ${L("relevés", "records")}), ` +
+    `${L("publiée sur Solana (devnet)", "published on Solana (devnet)")} : ${txLink}${d.pda ? ` · <a href="${explorer("address", esc(d.pda))}" target="_blank" rel="noopener">${L("compte de l'empreinte", "fingerprint account")} ↗</a>` : ""} · <a href="${explorer("address", PROGRAM)}" target="_blank" rel="noopener">${L("programme", "program")} ↗</a>.`;
+  // 1. L'empreinte telle qu'elle est écrite sur Solana
+  let onChain = null;
+  if (d.pda) {
+    const r = await fetch(SOL_RPC, {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({jsonrpc: "2.0", id: 1, method: "getAccountInfo", params: [d.pda, {encoding: "base64", commitment: "finalized"}]})}).then(x => x.json()).catch(() => null);
+    const b64 = r && r.result && r.result.value && r.result.value.data && r.result.value.data[0];
+    // Compte Anchor : 8 octets d'en-tête, jour (4), racine (32), nombre (4), date (8)
+    if (b64) { const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); onChain = hexOf(raw.slice(12, 44)); }
+  }
+  if (onChain && onChain !== d.root) return setChain("x", L(`<b>Écart avec Solana</b> : l'empreinte du ${dayTxt} lue sur la blockchain ne correspond pas. ${txLink}`, `<b>Mismatch with Solana</b>: the fingerprint of ${dayTxt} read on the blockchain does not match. ${txLink}`));
+  if (!d.list || !recs.length || !("DecompressionStream" in window)) return setChain(onChain ? "" : "w", L(`Les relevés du ${dayTxt} sont scellés sur Solana. ${txLink}`, `The records of ${dayTxt} are sealed on Solana. ${txLink}`));
+  // 2. La liste publique exacte, recalculée ici
+  const nf = new Intl.NumberFormat(locale);
+  setChain("w", L(`Recalcul de l'empreinte du ${dayTxt} à partir de ses ${nf.format(d.n)} relevés publics…`, `Recomputing the fingerprint of ${dayTxt} from its ${nf.format(d.n)} public records…`));
+  const res = await fetch(`${LP.CFG.url}/storage/v1/object/public/${d.list}`);
+  if (!res.ok) return setChain(onChain ? "" : "w", L(`Les relevés du ${dayTxt} sont scellés sur Solana. ${txLink}`, `The records of ${dayTxt} are sealed on Solana. ${txLink}`));
+  const text = await new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).text();
+  const lines = text.split("\n").filter(Boolean), set = new Set(lines);
+  const missing = recs.filter(r => !set.has(r));
+  if (missing.length) return setChain("x", L(`<b>Absent de l'empreinte du ${dayTxt}</b> : ${missing.length} relevé${missing.length > 1 ? "s" : ""} de ce justificatif ne figure${missing.length > 1 ? "nt" : ""} pas dans les relevés scellés sur Solana. ${txLink}`,
+    `<b>Not in the ${dayTxt} fingerprint</b>: ${missing.length} record${missing.length > 1 ? "s" : ""} of this certificate ${missing.length > 1 ? "are" : "is"} not in the records sealed on Solana. ${txLink}`));
+  const t0 = performance.now();
+  const root = await merkleRoot(lines, f => setChain("w", L(`Recalcul de l'empreinte du ${dayTxt}… ${Math.round(f * 100)} %`, `Recomputing the fingerprint of ${dayTxt}… ${Math.round(f * 100)} %`)));
+  const target = onChain || d.root;
+  if (root !== target) return setChain("x", L(`<b>Empreinte différente</b> : la liste publique du ${dayTxt} ne redonne pas l'empreinte scellée sur Solana. ${txLink}`, `<b>Fingerprint differs</b>: the public list of ${dayTxt} does not give back the fingerprint sealed on Solana. ${txLink}`));
+  const posted = d.posted_at ? new Date(d.posted_at * 1000).toLocaleString(locale, {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"}) : "";
+  setChain("", L(`<b>Scellé sur Solana</b> : ce retard fait partie des ${nf.format(lines.length)} relevés du ${dayTxt}, dont l'empreinte est inscrite sur la blockchain${posted ? ` depuis le ${posted}` : ""}${onChain ? "" : " (lecture directe de la blockchain indisponible : empreinte de notre registre)"}. Empreinte recalculée dans votre navigateur en ${(Math.max(.1, (performance.now() - t0) / 1000)).toFixed(1)} s : identique. ${txLink}`,
+    `<b>Sealed on Solana</b>: this delay is one of the ${nf.format(lines.length)} records of ${dayTxt}, whose fingerprint is written on the blockchain${posted ? ` since ${posted}` : ""}${onChain ? "" : " (direct blockchain read unavailable: fingerprint from our registry)"}. Fingerprint recomputed in your browser in ${(Math.max(.1, (performance.now() - t0) / 1000)).toFixed(1)} s: identical. ${txLink}`));
+}
+
 main();
 </script>
 </body>

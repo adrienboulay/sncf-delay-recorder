@@ -111,6 +111,48 @@ def selftest_tx():
     print(f"transaction de test OK : {len(raw)} octets, compte de l'empreinte {pda}")
 
 
+# ----------------------------------------------------------------- Liste publique : chacun peut recalculer la racine
+PUBLIC_BUCKET = "proofs"
+DEFAULT_PROGRAM = "8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu"
+
+
+def delay_pda(day):
+    from solders.pubkey import Pubkey
+    program = Pubkey.from_string(os.environ.get("LATEPROOF_PROGRAM_ID") or DEFAULT_PROGRAM)
+    return str(Pubkey.find_program_address([b"delay", struct.pack("<I", int(day))], program)[0])
+
+
+def publish_list(con, day):
+    """Copie la liste EXACTE archivee (privee) dans le bucket public « proofs » et note l'adresse du compte Solana.
+    La page de verification la telecharge, recalcule la racine et la compare a celle lue sur Solana."""
+    from archive_prune import storage
+    row = con.execute("SELECT leaves_path FROM delay_roots WHERE day = %s", (day,)).fetchone()
+    if not row or not row[0]:
+        print(f"{day} : pas de liste archivee, rien a publier"); return
+    st, body = storage("GET", f"bucket/{PUBLIC_BUCKET}")
+    if st != 200:
+        st, body = storage("POST", "bucket", json.dumps({"id": PUBLIC_BUCKET, "name": PUBLIC_BUCKET, "public": True}).encode())
+        if st not in (200, 201): raise RuntimeError(f"creation du bucket public impossible ({st}) {body[:200]!r}")
+    from archive_prune import BUCKET
+    st, gz = storage("GET", f"object/{BUCKET}/{row[0]}")
+    if st != 200: raise RuntimeError(f"lecture de l'archive impossible ({st})")
+    lines = gzip.decompress(gz).split(bytes([10]))
+    assert lines and lines[-1] == b"" and lines[:-1] == sorted(lines[:-1]), "liste archivee non triee"
+    rel = f"{day[:4]}/{day[4:6]}/{day[6:]}/delays-{FORMAT}.txt.gz"
+    st, body = storage("POST", f"object/{PUBLIC_BUCKET}/{rel}", gz, "application/gzip")
+    if st not in (200, 201): raise RuntimeError(f"publication de la liste impossible ({st}) {body[:200]!r}")
+    con.execute("UPDATE delay_roots SET pda = %s, public_path = %s WHERE day = %s", (delay_pda(day), f"{PUBLIC_BUCKET}/{rel}", day))
+    con.commit()
+    print(f"{day} : liste publique {PUBLIC_BUCKET}/{rel} ({len(lines) - 1} enregistrements)", flush=True)
+
+
+def backfill():
+    with psycopg.connect(os.environ["DATABASE_URL"]) as con:
+        apply_schema(con)
+        for (day,) in con.execute("SELECT day FROM delay_roots WHERE leaves_path IS NOT NULL ORDER BY day").fetchall():
+            publish_list(con, day)
+
+
 def main():
     day = os.environ.get("DAY") or (datetime.datetime.now(PARIS).date() - datetime.timedelta(days=1)).strftime("%Y%m%d")
     assert day.isdigit() and len(day) == 8
@@ -144,6 +186,9 @@ def main():
                        WHERE delay_roots.tx_signature IS NULL""",
                     (day, root.hex(), len(recs), FORMAT, path, int(time.time())))
         con.commit()
+        if path:
+            try: publish_list(con, day)
+            except Exception as e: print(f"liste publique non publiee : {e}", flush=True)
         posted = con.execute("SELECT tx_signature, root FROM delay_roots WHERE day = %s", (day,)).fetchone()
         if posted[0]:
             print(f"deja publiee sur Solana (transaction {posted[0][:12]}...) : racine conservee {posted[1][:16]}...")
@@ -160,4 +205,6 @@ def main():
 
 
 if __name__ == "__main__":
-    selftest_tx() if os.environ.get("SELFTEST_TX") == "1" else main()
+    if os.environ.get("SELFTEST_TX") == "1": selftest_tx()
+    elif os.environ.get("DAY") == "backfill": backfill()
+    else: main()
