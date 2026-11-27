@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -q "psycopg[binary]"
       - name: Fonctions SQL du tableau de bord
-        run: python -c "import sys, psycopg; sys.path.insert(0, 'recorder'); from sncf_common import apply_schema; c = psycopg.connect(__import__('os').environ['DATABASE_URL']); apply_schema(c); c.close(); print('schéma appliqué')"
+        run: python -c "import sys, psycopg; sys.path.insert(0, 'recorder'); from sncf_common import apply_schema; c = psycopg.connect(__import__('os').environ['DATABASE_URL']); apply_schema(c); n = len(c.execute('SELECT admin_stats()::text').fetchone()[0]); r = len(c.execute('SELECT admin_reviews()::text').fetchone()[0]); c.close(); print(f'schéma appliqué, statistiques OK ({n} caractères), avis OK ({r})')"
       - uses: supabase/setup-cli@v1
         with:
           version: latest
