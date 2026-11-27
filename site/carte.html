@@ -115,9 +115,12 @@ button.pill[aria-expanded="true"]{background:var(--fg);color:var(--bg)}
 @media (max-width:720px){
   .side{left:8px;right:8px;top:8px;width:auto;max-height:none}
   .sheet{position:fixed;left:0;right:0;bottom:0;max-height:52dvh;border-radius:16px 16px 0 0;z-index:1001;box-shadow:0 -2px 14px rgb(0 0 0/.25)}
-  .sheet.full{max-height:calc(100dvh - 64px)}
-  .sheet .handle{display:block;flex:none;width:100%;height:22px;border:0;cursor:pointer;background:var(--surface)}
-  .sheet .handle::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:8px auto}
+  .sheet{transition:max-height .28s cubic-bezier(.2,.8,.2,1)}
+  .sheet.dragging{transition:none}
+  .sheet[data-pos="full"]{max-height:var(--sheet-full,calc(100dvh - 140px));height:var(--sheet-full,calc(100dvh - 140px))}
+  .sheet[data-pos="mini"]{max-height:30px;overflow:hidden}
+  .sheet .handle{display:block;flex:none;width:100%;height:30px;border:0;cursor:grab;background:var(--surface);touch-action:none}
+  .sheet .handle::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--muted);opacity:.6;margin:12px auto}
   .mapinfo{left:8px;transform:none;max-width:calc(100% - 66px);bottom:24px}
   .app.sheet-open .mapinfo,.app.sheet-open .legendcard{display:none}
   .legendcard{left:8px;transform:none;width:calc(100% - 16px)}
@@ -417,7 +420,7 @@ const EN = {navApp:"My space", navCopilot:"Copilot", signup:"News", h1:"Train de
   scopeRegion:" · region", scopeLine:" · this line", scopeTrip:" · this trip", scopeStation:" · this station", scopeAround:" · around me", noData:"No train recorded on this line today.", loadingCtx:"Loading…",
   newsBtn:"Disruptions", regionBtn:"My region", settings:"Settings", legendBtn:"Legend", menu:"Settings", expand:"Expand", newsHere:"Disruptions",
   direct:"Direct", oneChange:"1 change", changeAt:"Change at", walk:"walk", waitFor:"wait", tight:"Tight connection", missed:"Connection at risk",
-  towards:"towards", journeys:"Options in the next 3 hours", launch:"Start my trip", gKick:"On my way", gStop:"Stop", gGoTo:"Head to", gDepAt:"departs", gAtSt:"You're at the station", gBoard:"Board", gOnBoard:"On board", gGetOff:"Get off at", gArrAt:"arrival", gArrived:"Arrived", gArrivedAt:"You've arrived at", gBoardBtn:"I'm on board", gOffBtn:"I've got off", gNoGps:"Location off: confirm each step with the buttons.", gGps:"Your position confirms each step.", gLate:"late", gRisk:"Connection at risk", gPlanB:"Plan B", gTakeB:"Take this plan B", gReplan:"Looking for another route…", gNoB:"No other route found for now. Ask staff on the platform.", gMissed:"Your train has left", gCancel:"Train cancelled", gSaved:"Trip saved in My space", gProof:"Create my certificate", gTotal:"Arrival", gWalk:"Walk to", gStep:"stop", gLive:"Live, updated every minute", gPlanBOn:"Plan B adopted", gEnd:"Done",
+  towards:"towards", journeys:"Options in the next 3 hours", launch:"Start my trip", notFound:"place not found", collapse:"Collapse", gKick:"On my way", gStop:"Stop", gGoTo:"Head to", gDepAt:"departs", gAtSt:"You're at the station", gBoard:"Board", gOnBoard:"On board", gGetOff:"Get off at", gArrAt:"arrival", gArrived:"Arrived", gArrivedAt:"You've arrived at", gBoardBtn:"I'm on board", gOffBtn:"I've got off", gNoGps:"Location off: confirm each step with the buttons.", gGps:"Your position confirms each step.", gLate:"late", gRisk:"Connection at risk", gPlanB:"Plan B", gTakeB:"Take this plan B", gReplan:"Looking for another route…", gNoB:"No other route found for now. Ask staff on the platform.", gMissed:"Your train has left", gCancel:"Train cancelled", gSaved:"Trip saved in My space", gProof:"Create my certificate", gTotal:"Arrival", gWalk:"Walk to", gStep:"stop", gLive:"Live, updated every minute", gPlanBOn:"Plan B adopted", gEnd:"Done",
   noJourney:"No route found in the next 3 hours (trains, RER, Transilien, metro and tram).", changes:"changes", stopsN:"stops", stop1:"stop", estNote:"Times estimated from the network map: metro and tram publish no timetable.", liveFirst:"next departure live", estimated:"estimated times",
   journeyNote:"Times and delays from live data. Connection checked with the known delays.", arrLate:"late on arrival", arrOk:"on time on arrival", leaveAt:"Leave", arriveAt:"arrive",
   dur:"min", hr:"h", trainN:"train", origFr:"original in French",
@@ -446,7 +449,7 @@ Object.assign(FR, {tabGL:"TGV & Intercités", tabTER:"TER & régionaux", noHour:
   scopeRegion:" · région", scopeLine:" · cette ligne", scopeTrip:" · ce trajet", scopeStation:" · cette gare", scopeAround:" · autour de moi", noData:"Aucun train enregistré sur cette ligne aujourd'hui.", loadingCtx:"Chargement…",
   tripBtn:"Mon trajet", menu:"Préférences", expand:"Agrandir", newsHere:"Perturbations",
   direct:"Direct", oneChange:"1 correspondance", changeAt:"Correspondance à", walk:"à pied", waitFor:"attente", tight:"Correspondance juste", missed:"Correspondance compromise",
-  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", launch:"Lancer mon trajet", posPh:"Adresse ou gare", gKick:"En route", gStop:"Arrêter", gGoTo:"Rejoins", gDepAt:"départ", gAtSt:"Tu es à la gare", gBoard:"Monte dans le", gOnBoard:"À bord", gGetOff:"Descends à", gArrAt:"arrivée", gArrived:"Arrivé", gArrivedAt:"Tu es arrivé à", gBoardBtn:"Je suis à bord", gOffBtn:"Je suis descendu", gNoGps:"Position désactivée : valide chaque étape avec les boutons.", gGps:"Ta position valide chaque étape.", gLate:"de retard", gRisk:"Correspondance compromise", gPlanB:"Plan B", gTakeB:"Prendre ce plan B", gReplan:"Je cherche un autre itinéraire…", gNoB:"Pas d'autre itinéraire pour l'instant. Demande au personnel en gare.", gMissed:"Ton train est parti", gCancel:"Train supprimé", gSaved:"Voyage enregistré dans Mon espace", gProof:"Créer mon justificatif", gTotal:"Arrivée", gWalk:"Marche jusqu'à", gStep:"arrêt", gLive:"En direct, mis à jour chaque minute", gPlanBOn:"Plan B adopté", gEnd:"Terminer",
+  towards:"direction", journeys:"Itinéraires des 3 prochaines heures", launch:"Lancer mon trajet", notFound:"lieu introuvable", collapse:"Réduire", posPh:"Adresse ou gare", gKick:"En route", gStop:"Arrêter", gGoTo:"Rejoins", gDepAt:"départ", gAtSt:"Tu es à la gare", gBoard:"Monte dans le", gOnBoard:"À bord", gGetOff:"Descends à", gArrAt:"arrivée", gArrived:"Arrivé", gArrivedAt:"Tu es arrivé à", gBoardBtn:"Je suis à bord", gOffBtn:"Je suis descendu", gNoGps:"Position désactivée : valide chaque étape avec les boutons.", gGps:"Ta position valide chaque étape.", gLate:"de retard", gRisk:"Correspondance compromise", gPlanB:"Plan B", gTakeB:"Prendre ce plan B", gReplan:"Je cherche un autre itinéraire…", gNoB:"Pas d'autre itinéraire pour l'instant. Demande au personnel en gare.", gMissed:"Ton train est parti", gCancel:"Train supprimé", gSaved:"Voyage enregistré dans Mon espace", gProof:"Créer mon justificatif", gTotal:"Arrivée", gWalk:"Marche jusqu'à", gStep:"arrêt", gLive:"En direct, mis à jour chaque minute", gPlanBOn:"Plan B adopté", gEnd:"Terminer",
   noJourney:"Aucun itinéraire trouvé dans les 3 prochaines heures (train, RER, Transilien, métro et tram).", changes:"correspondances", stopsN:"arrêts", stop1:"arrêt", estNote:"Horaires estimés d'après le plan du réseau : le métro et le tram ne publient pas d'horaires.", liveFirst:"prochain passage en direct", estimated:"horaires estimés",
   journeyNote:"Horaires et retards en temps réel. Correspondance vérifiée avec les retards connus.", arrLate:"de retard à l'arrivée", arrOk:"à l'heure à l'arrivée", leaveAt:"Départ", arriveAt:"arrivée",
   dur:"min", hr:"h", trainN:"train", origFr:"texte d'origine en français",
@@ -1286,7 +1289,7 @@ const findSt = k => stations.find(s => key(s) === k);
 
 function setCtx(c) {
   if (ctx && ctx.type === "guide" && c !== ctx) stopGuide(ctx);
-  if (c && c !== ctx) { panel = null; newsOpen = false; }
+  if (c && c !== ctx) { panel = null; newsOpen = false; const sh = document.getElementById("sheet"); if (sh && sh.dataset.pos === "mini") sh.dataset.pos = "mid"; }
   ctx = c; ctxLayer.clearLayers(); focusLayer.clearLayers();
   drawNetwork(); drawStations(); drawCtx(); drawList(); drawEvents();
   const h = !c || c.type === "tripform" || c.type === "around" ? "" : c.type === "region" ? "region=" + c.r.id :
@@ -1798,6 +1801,17 @@ document.addEventListener("click", e => {
   setEnd(b.dataset.trip, {net: s.net, id: s.id, name: s.name, lat: s.lat, lon: s.lon});
 });
 document.getElementById("tripBtn").addEventListener("click", () => {
+  // Ce qui est tapé dans la recherche (ou la gare ouverte) devient la destination
+  const q = byId("q"), typed = q.value.trim();
+  if (typed) {
+    q.value = ""; byId("qList").hidden = true;
+    const keepA = ctx && (ctx.type === "trip" || ctx.type === "tripform") ? ctx.a : null;
+    setCtx({type: "tripform", a: keepA || undefined});
+    placeFromText(typed).then(e => { if (e) setEnd("b", e); else toast(`« ${typed} » : ${L_().notFound || "lieu introuvable"}`); });
+    if (!keepA) setTimeout(() => byId("ta")?.focus({preventScroll: true}), 0);
+    return;
+  }
+  if (ctx && ctx.type === "station" && ctx.s) { const s = ctx.s; setEnd("b", {net: s.net, id: s.id, name: s.name, lat: s.lat, lon: s.lon}); return; }
   if (ctx && (ctx.type === "trip" || ctx.type === "tripform")) { document.getElementById("ta")?.focus(); return; }
   setCtx({type: "tripform"}); document.getElementById("ta")?.focus();
 });
@@ -1837,7 +1851,7 @@ function updateSheet() {
   byId("app").classList.toggle("sheet-open", !sheet.hidden);
   byId("menuBtn").setAttribute("aria-expanded", String(menu));
   byId("newsBtn").setAttribute("aria-pressed", String(!sheet.hidden && !byId("newsBox").hidden));
-  if (sheet.hidden) sheet.classList.remove("full");
+  if (sheet.hidden) sheet.dataset.pos = "mid";
 }
 byId("menuBtn").addEventListener("click", () => { panel = panel === "menu" ? null : "menu"; updateSheet(); });
 byId("newsBtn").addEventListener("click", () => {
@@ -1850,7 +1864,35 @@ byId("sheet").addEventListener("click", e => {
   if (c.dataset.close === "menu" || c.dataset.close === "favs") panel = null; else if (ctx) newsOpen = false; else panel = null;
   updateSheet();
 });
-byId("handle").addEventListener("click", () => byId("sheet").classList.toggle("full"));
+// Languette : glisser vers le haut (plein écran, la recherche reste visible) ou vers le bas (il ne reste que la languette)
+(function () {
+  const sheet = byId("sheet"), h = byId("handle");
+  sheet.dataset.pos = "mid";
+  const fullH = () => { const sb = document.querySelector(".searchbar").getBoundingClientRect(), r = sheet.getBoundingClientRect();
+    return Math.max(200, r.bottom - sb.bottom - 10); };
+  const setFull = () => sheet.style.setProperty("--sheet-full", fullH() + "px");
+  addEventListener("resize", setFull);
+  let y0 = null, h0 = 0, moved = false, t0 = 0;
+  h.addEventListener("pointerdown", e => { if (!matchMedia("(max-width:720px)").matches) return;
+    setFull(); y0 = e.clientY; h0 = sheet.getBoundingClientRect().height; moved = false; t0 = performance.now();
+    h.setPointerCapture(e.pointerId); sheet.classList.add("dragging"); });
+  h.addEventListener("pointermove", e => { if (y0 == null) return; const dy = e.clientY - y0; if (Math.abs(dy) > 6) moved = true;
+    if (moved) { sheet.style.maxHeight = sheet.style.height = Math.max(30, Math.min(fullH(), h0 - dy)) + "px"; } });
+  const end = e => { if (y0 == null) return;
+    const dy = e.clientY - y0, v = dy / Math.max(1, performance.now() - t0), hNow = h0 - dy; y0 = null;
+    sheet.classList.remove("dragging"); sheet.style.maxHeight = sheet.style.height = "";
+    const mid = innerHeight * .52, full = fullH();
+    let pos;
+    if (!moved) pos = sheet.dataset.pos === "mini" ? "mid" : sheet.dataset.pos === "mid" ? "full" : "mid";   // simple appui
+    else if (v < -.5) pos = sheet.dataset.pos === "mini" ? "mid" : "full";                                  // lancer vers le haut
+    else if (v > .5) pos = sheet.dataset.pos === "full" ? "mid" : "mini";                                    // lancer vers le bas
+    else pos = [["mini", 30], ["mid", mid], ["full", full]].sort((a, b) => Math.abs(a[1] - hNow) - Math.abs(b[1] - hNow))[0][0];
+    sheet.dataset.pos = pos; h.setAttribute("aria-label", pos === "full" ? L_().collapse || "Réduire" : L_().expand);
+  };
+  h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+  h.addEventListener("keydown", e => { if (e.key === "ArrowUp") { setFull(); sheet.dataset.pos = sheet.dataset.pos === "mini" ? "mid" : "full"; } if (e.key === "ArrowDown") sheet.dataset.pos = sheet.dataset.pos === "full" ? "mid" : "mini"; });
+  h.addEventListener("click", e => { if (e.detail === 0) { setFull(); sheet.dataset.pos = sheet.dataset.pos === "full" ? "mid" : "full"; } });   // clavier (Entrée)
+})();
 byId("legendBtn").addEventListener("click", () => {
   const c = byId("legendCard"); c.hidden = !c.hidden; byId("legendBtn").setAttribute("aria-expanded", String(!c.hidden));
 });
