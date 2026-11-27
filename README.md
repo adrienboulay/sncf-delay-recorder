@@ -19,7 +19,7 @@ Program: [`program/`](program/) (Rust, Anchor), deployed on devnet, with an [ini
 
 - **`post_delay_root`:** every night, the oracle publishes the Merkle root of every train delay recorded that day. The full list is archived so anyone can rebuild the root. First root: 26 November 2026, 61,867 delay records ([transaction](https://explorer.solana.com/tx/4iCgbnZeUKDvdzxvtCEVYKD14WeM9Rk5ayBuBHFCTf6ssV8UADbZ9seE8LZUspQaypNVxjsw4H2AdBKyw8txWQ6B?cluster=devnet)).
 - **`post_cert_root`:** each hour, the root of the certificates created in that hour. The program rejects a root posted outside a 2-hour window, so a certificate cannot be backdated, not even by us.
-- **`verify_delay` / `verify_certificate`:** anyone can check a record against the published root (sorted-pair SHA-256 Merkle proof, domain-separated leaves). The same Merkle code runs in Rust, Python and the browser, checked by shared test vectors.
+- **`verify_delay` / `verify_certificate`:** anyone can check a record against the published root (sorted-pair SHA-256 Merkle proof, domain-separated leaves). The Rust program and the Python publisher compute identical roots, checked by shared test vectors on every nightly run.
 
 ## Repository layout
 | Folder | What | Runs on |
