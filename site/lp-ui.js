@@ -65,7 +65,15 @@
     // Pages vitrines (accueil, avis) : barre collante qui devient une pilule au défilement
     if (document.body.dataset.lpnSticky !== undefined) {
       top.classList.add("lpn-sticky");
-      const onScroll = () => top.classList.toggle("lpn-on", scrollY > 60);
+      // Pilule en haut ; elle s'efface quand on descend et revient dès qu'on remonte
+      let lastY = scrollY;
+      const onScroll = () => {
+        const y = scrollY, down = y > lastY + 4, up = y < lastY - 4;
+        top.classList.toggle("lpn-on", y > 60);
+        if (y < 140 || up || top.querySelector(".lpn-panel")) top.classList.remove("lpn-hide");
+        else if (down) top.classList.add("lpn-hide");
+        if (down || up) lastY = y;
+      };
       addEventListener("scroll", onScroll, {passive: true}); onScroll();
     }
     relabel();

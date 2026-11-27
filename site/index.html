@@ -112,7 +112,7 @@ details p{margin:.7em 0 0;color:#C9CCD3}
 footer{border-top:1px solid var(--line);padding-block:26px 40px;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
 @media (max-width:900px){.hero,.demo,.signup,.biz{grid-template-columns:1fr}.three,.faq{grid-template-columns:1fr}.board{grid-template-columns:1fr 1fr}.board .lbl{grid-column:1/-1}.dial{max-width:300px}.nav a.hs{display:none}}
 @media (max-width:480px){.row{grid-template-columns:1fr}.board{grid-template-columns:1fr}.phone{max-width:320px;margin:0 auto}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.dial .arc{stroke-dasharray:120 360}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
 /* ---- Revision E : calme et relief ---- */
 h1,h2,h3{font-weight:700;letter-spacing:-.015em}
@@ -180,6 +180,33 @@ textarea:focus{border-color:var(--lime);outline:none}
 @media (max-width:900px){.revgrid{grid-template-columns:1fr;gap:28px}}
 @media (max-width:480px){.formcard{padding:22px;border-radius:26px}.rv{padding:22px;height:280px}.stack{height:320px}}
 @media (prefers-reduced-motion:reduce){.rv{transition:none}}
+
+/* ---- Téléphones réalistes ---- */
+.phone,.phonehero{position:relative;border-radius:52px;padding:11px;
+  background:linear-gradient(145deg,#4a5059,#23272d 30%,#15181c 60%,#3a3f47);
+  box-shadow:inset 0 0 0 1.5px rgb(255 255 255/.14),inset 0 0 0 5px #0c0e11,0 40px 80px rgb(0 0 0/.55),0 8px 20px rgb(0 0 0/.35)}
+.phone::before,.phonehero::before{content:"";position:absolute;right:-3px;top:150px;width:4px;height:74px;border-radius:0 3px 3px 0;background:linear-gradient(90deg,#2a2e34,#4a5059)}
+.phone::after,.phonehero::after{content:"";position:absolute;left:-3px;top:120px;width:4px;height:44px;border-radius:3px 0 0 3px;background:linear-gradient(270deg,#2a2e34,#4a5059);
+  box-shadow:0 62px 0 #3a3f47}
+.screen,.ph{position:relative;border-radius:42px;overflow:hidden;padding-top:8px!important;padding-bottom:26px!important;
+  box-shadow:inset 0 0 0 1px rgb(255 255 255/.04)}
+.sbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:34px;margin:0 2px 6px;font:700 .82rem var(--display);color:var(--fg)}
+.sbar .clk{padding-left:10px;letter-spacing:.01em}
+.sbar .isl{width:92px;height:28px;border-radius:20px;background:#000;box-shadow:inset 0 0 0 1px rgb(255 255 255/.04)}
+.sbar .ics{justify-self:end;display:flex;align-items:center;gap:5px;padding-right:8px}
+.sbar svg{fill:var(--fg)}
+.sbar .bat{position:relative;width:24px;height:12px;border-radius:4px;border:1.5px solid rgb(230 230 224/.55);padding:1.5px}
+.sbar .bat::after{content:"";position:absolute;right:-4px;top:3px;width:2px;height:4px;border-radius:0 1px 1px 0;background:rgb(230 230 224/.55)}
+.sbar .bat i{display:block;width:72%;height:100%;border-radius:2px;background:var(--fg)}
+.homebar{position:absolute;left:50%;bottom:9px;width:120px;height:5px;margin-left:-60px;border-radius:3px;background:rgb(230 230 224/.7)}
+.phonehero{width:min(340px,100%)}
+/* ---- Démonstration automatique : un « doigt » touche l'écran ---- */
+.tap{position:absolute;z-index:5;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgb(230 230 224/.28) 0 38%,transparent 40%);animation:lp-tap .9s ease-out forwards}
+.tap::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgb(212 255 58/.7);animation:lp-ring .9s ease-out forwards}
+@keyframes lp-tap{0%{transform:scale(.6);opacity:0}15%{opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes lp-ring{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+.card.press{transform:scale(.97)}
 /* ---- Revision F : barre commune, accroche animée, mots qui défilent, grille des fonctionnalités, captures ---- */
 body{position:relative}
 .wrap{position:relative;z-index:1}
@@ -246,7 +273,7 @@ body{position:relative}
 .shots::before{top:0;background:linear-gradient(var(--surface),transparent)}.shots::after{bottom:0;background:linear-gradient(transparent,var(--surface))}
 .shots.paused .col{animation-play-state:paused}
 @media (max-width:700px){.shots{height:460px}.shots .plane{width:1000px;gap:14px}.shots .col{gap:14px}}
-@media (prefers-reduced-motion:reduce){.hero h1 .w,.hero .lede,.hero .ctas,.hero .phonehero{animation:none}.rails{display:none}.flipw span{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.hero h1 .w,.hero .lede,.hero .ctas,.hero .phonehero{animation:none}.rails{display:none}}
 </style>
 <link rel="stylesheet" href="lp-ui.css">
 </head>
@@ -280,6 +307,7 @@ body{position:relative}
       </div>
       <div class="phonehero" role="img" aria-label="Démonstration animée : le train avance, le retard se met à jour, le plan B s'affiche, puis le justificatif est prêt">
         <div class="ph">
+          <div class="sbar" aria-hidden="true"><span class="clk">12:21</span><span class="isl"></span><span class="ics"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.2c2.2 0 4.2.8 5.7 2.2l1.2-1.3A10 10 0 0 0 7.5.4 10 10 0 0 0 .6 3.1l1.2 1.3A8.3 8.3 0 0 1 7.5 2.2zm0 3.4c1.3 0 2.4.5 3.3 1.3l1.2-1.3a6.6 6.6 0 0 0-9 0l1.2 1.3c.9-.8 2-1.3 3.3-1.3zm0 3.3c-.5 0-.9.2-1.2.5l1.2 1.3 1.2-1.3c-.3-.3-.7-.5-1.2-.5z"/></svg><span class="bat"><i></i></span></span></div>
           <span class="ph-sub" data-i18n="phSub">TER C18 · vers Saint-Étienne</span>
           <span class="ph-row"><b id="phArr">Arrivée 12h40</b><b id="phDelay" class="ph-ok">à l'heure</b></span>
           <div class="ph-track"><span class="ph-rail"></span><span class="ph-fill" id="phFill"></span>
@@ -288,6 +316,7 @@ body{position:relative}
           <span class="ph-names"><span>Lyon</span><span>Givors</span><span>Rive-de-G.</span><span>St-Étienne</span></span>
           <div class="ph-card" id="phAdvice"><b data-i18n="phAdvT">Correspondance de 13h02 compromise</b><span data-i18n="phAdvS">Prends le car de 13h10, arrivée 13h35.</span><span class="ph-btn" data-i18n="phAdvB">Voir le plan B</span></div>
           <div class="ph-proof" id="phProof"><span class="ph-ok-dot"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#121417" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n-html="phProof"><b>Justificatif prêt</b><br>un lien, vérifiable en 3 s</span></div>
+          <span class="homebar" aria-hidden="true"></span>
         </div>
       </div>
     </div>
@@ -342,12 +371,14 @@ body{position:relative}
     <section aria-labelledby="tDemo">
       <div class="sh"><h2 id="tDemo" data-i18n="demoTitle">Une matinée avec LateProof.</h2><p data-i18n="demoLede">Appuie sur « Étape suivante » pour suivre un trajet, du quai jusqu'au justificatif.</p></div>
       <div class="demo">
-        <div class="phone" aria-hidden="true"><div class="screen">
+        <div class="phone" aria-hidden="true"><div class="screen" id="screen">
+          <div class="sbar" aria-hidden="true"><span class="clk">09:41</span><span class="isl"></span><span class="ics"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.2c2.2 0 4.2.8 5.7 2.2l1.2-1.3A10 10 0 0 0 7.5.4 10 10 0 0 0 .6 3.1l1.2 1.3A8.3 8.3 0 0 1 7.5 2.2zm0 3.4c1.3 0 2.4.5 3.3 1.3l1.2-1.3a6.6 6.6 0 0 0-9 0l1.2 1.3c.9-.8 2-1.3 3.3-1.3zm0 3.3c-.5 0-.9.2-1.2.5l1.2 1.3 1.2-1.3c-.3-.3-.7-.5-1.2-.5z"/></svg><span class="bat"><i></i></span></span></div>
           <div class="hd"><svg width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="6" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/></svg>lateproof</div>
           <div class="card" id="c1"><span class="t">07:59 · Lyon Part-Dieu</span><b data-i18n="c1">À bord : TER 8h12 vers Grenoble</b></div>
           <div class="card hide" id="c2"><span class="t">08:20</span><b data-i18n="c2">Ton train prend du retard</b><span class="chip o">+27 min</span></div>
           <div class="card lime hide" id="c3"><span class="t c3h"><span class="c3gus" id="c3gus"></span><span data-i18n="c3t">GUS, TON COPILOTE</span></span><b data-i18n="c3">Ta correspondance est perdue. Prends le 9h04, voie B.</b></div>
           <div class="card hide" id="c4"><span class="t">09:41</span><b data-i18n="c4">Justificatif envoyé à ton manager</b><span class="chip k" data-i18n="c4c">Vérifié</span></div>
+          <span class="homebar"></span>
         </div></div>
         <div>
           <ol class="steps" id="steps">
@@ -363,6 +394,33 @@ body{position:relative}
 
     <section aria-label="Captures d'écran de LateProof" data-i18n-aria="shotsAlt">
       <div class="shots lp-rv" id="shots" role="img" aria-label="Captures d'écran de LateProof : carte, copilote, espace personnel, vérification" data-i18n-aria="shotsAlt"><div class="plane" id="plane"></div></div>
+    </section>
+
+    <section id="avis" aria-labelledby="tRev">
+      <div class="sh"><h2 id="tRev" data-i18n="revT">Ce qu'en disent les voyageurs.</h2><p data-i18n="revP">Chaque avis est relu avant d'être publié, avec le prénom choisi par son auteur. Aucun n'est inventé.</p></div>
+      <div class="revgrid">
+        <div>
+          <div class="stack" id="stack" aria-live="off"></div>
+          <div class="dots" id="dots" role="group" aria-label="Choisir un avis" data-i18n-aria="revPick"></div>
+          <p class="revnote" id="revNote"></p>
+        </div>
+        <div class="formcard">
+          <h3 data-i18n="revFormT">À toi.</h3>
+          <p data-i18n="revFormP">Tu as utilisé LateProof sur un trajet ? Dis-nous en quelques lignes ce qui a marché, ou pas.</p>
+          <form id="revForm" novalidate>
+            <div class="row">
+              <label for="rName"><span data-i18n="revName">Prénom ou pseudo</span><input id="rName" name="name" type="text" required maxlength="40" autocomplete="given-name" placeholder="Camille"></label>
+              <label for="rTrip"><span data-i18n="revTrip">Ton trajet (facultatif)</span><input id="rTrip" name="trip" type="text" maxlength="60" placeholder="Lyon → Grenoble"></label>
+            </div>
+            <label for="rBody"><span data-i18n="revBody">Ton avis</span><textarea id="rBody" name="body" required minlength="10" maxlength="400"></textarea></label>
+            <span class="cnt" id="rCnt">0 / 400</span>
+            <input class="hp" type="text" id="rSite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <label class="check" for="rConsent"><input id="rConsent" name="consent" type="checkbox" required><span data-i18n="revConsent">J'accepte que mon prénom, mon trajet et mon avis soient publiés sur cette page après relecture. Je peux demander leur retrait à tout moment.</span></label>
+            <button class="btn lime" id="rSubmit" type="submit" data-i18n="revSend">Envoyer mon avis</button>
+            <p class="msg" id="rMsg" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
     </section>
 
     <section aria-labelledby="tBiz">
@@ -408,32 +466,6 @@ body{position:relative}
       </div>
     </section>
 
-    <section id="avis" aria-labelledby="tRev">
-      <div class="sh"><h2 id="tRev" data-i18n="revT">Ce qu'en disent les voyageurs.</h2><p data-i18n="revP">Chaque avis est relu avant d'être publié, avec le prénom choisi par son auteur. Aucun n'est inventé.</p></div>
-      <div class="revgrid">
-        <div>
-          <div class="stack" id="stack" aria-live="off"></div>
-          <div class="dots" id="dots" role="group" aria-label="Choisir un avis" data-i18n-aria="revPick"></div>
-          <p class="revnote" id="revNote"></p>
-        </div>
-        <div class="formcard">
-          <h3 data-i18n="revFormT">À toi.</h3>
-          <p data-i18n="revFormP">Tu as utilisé LateProof sur un trajet ? Dis-nous en quelques lignes ce qui a marché, ou pas.</p>
-          <form id="revForm" novalidate>
-            <div class="row">
-              <label for="rName"><span data-i18n="revName">Prénom ou pseudo</span><input id="rName" name="name" type="text" required maxlength="40" autocomplete="given-name" placeholder="Camille"></label>
-              <label for="rTrip"><span data-i18n="revTrip">Ton trajet (facultatif)</span><input id="rTrip" name="trip" type="text" maxlength="60" placeholder="Lyon → Grenoble"></label>
-            </div>
-            <label for="rBody"><span data-i18n="revBody">Ton avis</span><textarea id="rBody" name="body" required minlength="10" maxlength="400"></textarea></label>
-            <span class="cnt" id="rCnt">0 / 400</span>
-            <input class="hp" type="text" id="rSite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-            <label class="check" for="rConsent"><input id="rConsent" name="consent" type="checkbox" required><span data-i18n="revConsent">J'accepte que mon prénom, mon trajet et mon avis soient publiés sur cette page après relecture. Je peux demander leur retrait à tout moment.</span></label>
-            <button class="btn lime" id="rSubmit" type="submit" data-i18n="revSend">Envoyer mon avis</button>
-            <p class="msg" id="rMsg" role="status" aria-live="polite"></p>
-          </form>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer>
@@ -560,13 +592,33 @@ form.addEventListener("submit", async e => {
 });
 
 // ------------------------------------------------------------------ Demonstration pas a pas
-let step = 0;
-document.getElementById("nextStep").addEventListener("click", e => {
-  step = (step + 1) % 4;
+let step = 0, demoVisible = false, demoHold = 0;
+const nextBtn = document.getElementById("nextStep"), screenEl = document.getElementById("screen");
+function showStep(n) {
+  step = n;
   ["c2", "c3", "c4"].forEach((id, i) => document.getElementById(id).classList.toggle("hide", step < i + 1));
   document.querySelectorAll("#steps li").forEach((li, i) => li.classList.toggle("on", i <= step));
-  e.currentTarget.textContent = step === 3 ? I18N[lang].restart : I18N[lang].next;
-});
+  nextBtn.textContent = step === 3 ? I18N[lang].restart : I18N[lang].next;
+}
+// Un toucher discret sur l'écran : un cercle qui s'élargit là où l'on appuierait
+function tapOn(el) {
+  if (!el || !screenEl) return;
+  const r = el.getBoundingClientRect(), b = screenEl.getBoundingClientRect();
+  const t = document.createElement("span"); t.className = "tap";
+  t.style.left = (r.left - b.left + r.width * .72) + "px"; t.style.top = (r.top - b.top + r.height * .55) + "px";
+  screenEl.appendChild(t); el.classList.add("press");
+  setTimeout(() => el.classList.remove("press"), 180); setTimeout(() => t.remove(), 950);
+}
+nextBtn.addEventListener("click", () => { demoHold = Date.now() + 12000; showStep((step + 1) % 4); });
+// Lecture automatique : le geste « à bord », le retard qui tombe, le plan B de Gus, le justificatif envoyé
+const TAPS = ["c1", null, "c3", "c4"];
+setInterval(() => {
+  if (!demoVisible || document.hidden || Date.now() < demoHold) return;
+  const next = (step + 1) % 4, target = next === 0 ? "c1" : TAPS[step];
+  if (target) tapOn(document.getElementById(target));
+  setTimeout(() => showStep(next), target ? 420 : 0);
+}, 3200);
+new IntersectionObserver(es => { demoVisible = es[0].isIntersecting; }, {threshold: .4}).observe(document.querySelector(".demo"));
 
 
 // ------------------------------------------------------------------ Telephone de l'accueil : le train avance, le retard monte, le plan B arrive
@@ -576,7 +628,7 @@ document.getElementById("nextStep").addEventListener("click", e => {
   if (!fill) return;
   const stops = [...document.querySelectorAll(".ph-stop")];
   const c = x => Math.max(0, Math.min(1, x)), e = x => 1 - Math.pow(1 - x, 3);
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = false;   // animation douce : elle tourne même avec « réduire les animations »
   function frame(T) {
     const p = e(c(T / 9000)), late = Math.round(18 * e(c((T - 1500) / 3000)));
     fill.style.width = (p * 100) + "%"; train.style.left = (p * 100) + "%";
@@ -632,7 +684,7 @@ function flipReset() {
   flipSr.textContent = words.join(", ") + ".";
 }
 function flipTick() { if (!flipVisible || document.hidden) return; const words = FLIP[lang]; flipI = (flipI + 1) % words.length; flipShow(words[flipI], true); }
-if (flipBox && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+if (flipBox) {
   new IntersectionObserver(es => { flipVisible = es[0].isIntersecting; }).observe(flipBox);
   flipTimer = setInterval(flipTick, 2800);
 }
@@ -641,7 +693,7 @@ if (flipBox && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
 (function () {
   const cv = document.getElementById("net"); if (!cv) return;
   let lines = null, trains = [], visible = false, started = false;
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = false;
   const box = {la0: 42.2, la1: 51.2, lo0: -4.9, lo1: 8.4};
   function size() { const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2); cv.width = r.width * d; cv.height = r.height * d; return d; }
   function proj(W, H) {
@@ -685,7 +737,7 @@ if (flipBox && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   const plane = document.getElementById("plane"), box = document.getElementById("shots"); if (!plane) return;
   const SHOTS = ["carte", "copilote", "appli", "itineraire", "verification", "ligne", "profil", "copilote-tel", "accueil"];
   const cols = [0, 1, 2, 3].map(c => [0, 1, 2, 3, 4].map(r => SHOTS[(c * 3 + r) % SHOTS.length]));
-  plane.innerHTML = cols.map(col => `<div class="col">${col.map(n => `<img src="img/${n}.jpg" alt="" loading="lazy" decoding="async">`).join("")}</div>`).join("");
+  plane.innerHTML = cols.map(col => `<div class="col">${col.map(n => `<img src="img/${n}.jpg" alt="" decoding="async">`).join("")}</div>`).join("");
   new IntersectionObserver(es => box.classList.toggle("paused", !es[0].isIntersecting)).observe(box);
 })();
 
@@ -698,7 +750,7 @@ const RV = {
     noName: "Please enter a first name or nickname.", short: "Your review needs at least 10 characters.", consent: "Please tick the box so we can publish your review.",
     off: "Sending isn't available right now.", sending: "Sending…", ok: "Thank you! Your review will show here once it's been read.", fail: "Sending didn't go through. Please try again later."}};
 let reviews = [], rvFront = 0, rvTimer = null;
-const rvStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rvStill = false;
 const escH = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 function rvPlace() {
   const cards = [...document.getElementById("stack").children], n = cards.length;
