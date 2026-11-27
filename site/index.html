@@ -177,14 +177,14 @@ input,select{background:var(--bg);border-color:var(--surface3)}
       </div>
       <div class="phonehero" role="img" aria-label="Démonstration animée : le train avance, le retard se met à jour, le plan B s'affiche, puis le justificatif est prêt">
         <div class="ph">
-          <span class="ph-sub">TER C18 · vers Saint-Étienne</span>
+          <span class="ph-sub" data-i18n="phSub">TER C18 · vers Saint-Étienne</span>
           <span class="ph-row"><b id="phArr">Arrivée 12h40</b><b id="phDelay" class="ph-ok">à l'heure</b></span>
           <div class="ph-track"><span class="ph-rail"></span><span class="ph-fill" id="phFill"></span>
             <span class="ph-stop" style="left:0%"></span><span class="ph-stop" style="left:33%"></span><span class="ph-stop" style="left:66%"></span><span class="ph-stop" style="left:100%"></span>
             <span class="ph-train" id="phTrain"></span></div>
           <span class="ph-names"><span>Lyon</span><span>Givors</span><span>Rive-de-G.</span><span>St-Étienne</span></span>
-          <div class="ph-card" id="phAdvice"><b>Correspondance de 13h02 compromise</b><span>Prends le car de 13h10, arrivée 13h35.</span><span class="ph-btn">Voir le plan B</span></div>
-          <div class="ph-proof" id="phProof"><span class="ph-ok-dot"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#121417" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b>Justificatif prêt</b><br>un lien, vérifiable en 3 s</span></div>
+          <div class="ph-card" id="phAdvice"><b data-i18n="phAdvT">Correspondance de 13h02 compromise</b><span data-i18n="phAdvS">Prends le car de 13h10, arrivée 13h35.</span><span class="ph-btn" data-i18n="phAdvB">Voir le plan B</span></div>
+          <div class="ph-proof" id="phProof"><span class="ph-ok-dot"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#121417" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n-html="phProof"><b>Justificatif prêt</b><br>un lien, vérifiable en 3 s</span></div>
         </div>
       </div>
     </div>
@@ -294,11 +294,12 @@ input,select{background:var(--bg);border-color:var(--surface3)}
 
 <script src="config.js"></script>
 <script src="gus.js"></script>
-<script>document.getElementById("c3gus").innerHTML = Gus.svg({head: true, size: 28, mood: "content"}); Gus.fab({tip: "Une question ? Demande à Gus."});</script>
+<script>document.getElementById("c3gus").innerHTML = Gus.svg({head: true, size: 28, mood: "content"}); Gus.fab();</script>
 <script>
 // ------------------------------------------------------------------ Textes FR / EN
 const I18N = {
-  en: {navMap:"Map", navCopilot:"Copilot", navApp:"My space", kick:"Trains, RER, Transilien · France",
+  en: {phSub:"TER C18 · to Saint-Étienne", phAdvT:"1:02 pm connection at risk", phAdvS:"Take the 1:10 pm coach, arriving 1:35 pm.", phAdvB:"See plan B", phProof:"<b>Proof ready</b><br>one link, checked in 3 s",
+    navMap:"Map", navCopilot:"Copilot", navApp:"My space", kick:"Trains, RER, Transilien · France",
     h1:"Your train derails. <em>Your day doesn't.</em>",
     lede:"LateProof tracks your trip live, gives you a plan B before anyone else, and proves your delay with a simple link your manager checks in 3 seconds, with nothing to install.",
     cta1:"Open the app", cta2:"Get the news", boardTitle:"Today in France", boardSub:"checked every 2 min",
@@ -343,6 +344,8 @@ function setLang(l) {
   document.querySelectorAll("[data-i18n-html]").forEach(el => { const v = I18N[l][el.dataset.i18nHtml]; if (v) el.innerHTML = v; });
   document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
   try { localStorage.setItem("lp-lang", l); } catch (e) {}
+  document.title = l === "en" ? "LateProof · Delays, proven" : "LateProof · Le retard, prouvé";
+  if (window.Gus && Gus.setLang) Gus.setLang(l);
   if (lastStats) showStats(lastStats);
 }
 document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));

@@ -119,8 +119,17 @@
     const st = document.createElement("style"); st.id = "gus-css"; st.textContent = css; document.head.appendChild(st);
   }
 
+  // Langue du site (« lp-lang », partagée par toutes les pages) : textes du bouton flottant.
+  const curLang = () => { try { return localStorage.getItem("lp-lang") || (navigator.language || "fr").slice(0, 2); } catch (e) { return "fr"; } };
+  const FAB_TXT = {fr: ["Une question ? Demande à Gus.", "Parler à Gus, ton copilote"], en: ["Questions? Ask Gus.", "Talk to Gus, your trip copilot"]};
+  function fabText(a, l) {
+    const t = FAB_TXT[l] || FAB_TXT.fr;
+    a.querySelector(".tip").textContent = t[0]; a.setAttribute("aria-label", t[1]);
+  }
+
   const Gus = {
     MOODS,
+    setLang(l) { const a = document.querySelector(".gus-fab"); if (a) fabText(a, l); },
     svg(opts = {}) { injectCss(); return draw({size: 120, ...opts}); },
     // Remplit un élément et renvoie un contrôleur pour changer d'humeur ou de pose.
     mount(el, opts = {}) {
@@ -136,8 +145,8 @@
       if (document.querySelector(".gus-fab")) return null;
       const a = document.createElement("a");
       a.className = "gus-fab"; a.href = opts.href || "assistant.html";
-      a.setAttribute("aria-label", opts.label || "Parler à Gus, ton copilote");
-      a.innerHTML = draw({head: true, size: 56, mood: opts.mood || "neutre"}) + `<span class="tip" aria-hidden="true">${opts.tip || "Une question ? Demande à Gus."}</span>`;
+      a.innerHTML = draw({head: true, size: 56, mood: opts.mood || "neutre"}) + `<span class="tip" aria-hidden="true"></span>`;
+      fabText(a, curLang());
       if (opts.bottom) a.style.setProperty("--gus-fab-bottom", opts.bottom);
       if (opts.z) a.style.zIndex = opts.z;
       document.body.appendChild(a);

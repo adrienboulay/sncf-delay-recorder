@@ -95,7 +95,8 @@ button.pill[aria-expanded="true"]{background:var(--fg);color:var(--bg)}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.2rem;color:var(--fg);text-decoration:none}
 .brand b{color:var(--blue)}
 .nav{display:flex;align-items:center;gap:12px}
-.nav a{color:var(--muted);font-weight:600;text-decoration:none}.nav a:hover{color:var(--blue)}
+.nav a{color:var(--muted);font-weight:600;text-decoration:none;white-space:nowrap}
+@media (max-width:420px){.nav .hide-xs{display:none}.top{gap:8px}}.nav a:hover{color:var(--blue)}
 .lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
 .lang button{border:0;background:none;color:var(--muted);font:600 .8rem var(--mono);padding:6px 11px;cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--blue);color:var(--on-blue)}
@@ -260,7 +261,7 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
 <body>
 <header class="top wrap">
   <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
-  <nav class="nav"><a href="app.html">Mon espace</a><a href="assistant.html">Copilote</a><a class="hide-sm" href="./#nouveautes" data-i18n="signup">Nouveautés</a>
+  <nav class="nav"><a href="app.html" data-i18n="navApp">Mon espace</a><a class="hide-xs" href="assistant.html" data-i18n="navCopilot">Copilote</a><a class="hide-sm" href="./#nouveautes" data-i18n="signup">Nouveautés</a>
     <div class="lang" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr" aria-pressed="true">FR</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></nav>
 </header>
 <h1 class="sr" data-i18n="h1">Les retards en direct, et ce qui arrive</h1>
@@ -365,7 +366,7 @@ button.pill[aria-expanded="true"]{background:var(--surface3);color:var(--lime)}
 <script>Gus.fab({bottom: "178px", z: 960});</script>
 <script>
 // ================================================================= Textes FR / EN
-const EN = {signup:"News", h1:"Train delays live, and what's coming", sub:"Search your region, your line or your trip: the map shows today's delays, the list the strikes and works that affect you.",
+const EN = {navApp:"My space", navCopilot:"Copilot", signup:"News", h1:"Train delays live, and what's coming", sub:"Search your region, your line or your trip: the map shows today's delays, the list the strikes and works that affect you.",
   kSt:"stations tracked", kLate:"arrivals 15+ min late", kCanc:"cancelled stops", kUpd:"last update", qLabel:"Search", qPh:"A region, a line (RER A, TER C30…), a station",
   profLbl:"My profile", pQ:"Daily commute", pG:"Long distance", pB:"Both", regLbl:"My region", regAll:"All of France", tripBtn:"My trip",
   lg0:"smooth", lg2:"heavily disrupted", lgE:"disruption announced here",
@@ -434,6 +435,7 @@ const store = {get: k => { try { return localStorage.getItem(k); } catch (e) { r
 function setLang(l) {
   lang = l; document.documentElement.lang = l;
   document.querySelectorAll("[data-i18n]").forEach(el => { const v = L_()[el.dataset.i18n]; if (v) el.textContent = v; });
+  if (window.Gus && Gus.setLang) Gus.setLang(l);
   document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = L_()[el.dataset.i18nPh]);
   document.querySelectorAll("[data-i18n-aria]").forEach(el => { const v = L_()[el.dataset.i18nAria]; if (v) { el.setAttribute("aria-label", v); el.title = v; } });
   document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
