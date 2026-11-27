@@ -1,0 +1,68 @@
+# Démo x402 de bout en bout : prépare Solana devnet, déploie l'API payante « advice », puis un agent l'appelle (et paie).
+# Secrets : DATABASE_URL, SOLANA_RPC_URL, ORACLE_KEYPAIR (sert d'agent payeur pour la démo), SUPABASE_URL, SUPABASE_ACCESS_TOKEN.
+name: x402
+on:
+  workflow_dispatch:
+    inputs:
+      de:
+        description: "Départ"
+        default: "Paris Gare de Lyon"
+      vers:
+        description: "Arrivée"
+        default: "Lyon Part-Dieu"
+      pay:
+        description: "Faire un appel payé (sinon : seulement la réponse 402)"
+        type: boolean
+        default: true
+permissions:
+  contents: read
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q "psycopg[binary]" solders
+      - run: python x402/setup.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          ORACLE_KEYPAIR: ${{ secrets.ORACLE_KEYPAIR }}
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Déployer la fonction advice (publique, les agents paient sans compte)
+        run: |
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -nE 's#^https://([a-z0-9]+)[.]supabase[.]co.*#\1#p')
+          supabase functions deploy advice --project-ref "$REF" --no-verify-jwt --use-api --yes
+  agent:
+    needs: [setup, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+        working-directory: x402
+      - name: Réponse 402, puis appel payé
+        working-directory: x402
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          AGENT_KEYPAIR: ${{ secrets.ORACLE_KEYPAIR }}
+          DE: ${{ inputs.de }}
+          VERS: ${{ inputs.vers }}
+          PAY: ${{ inputs.pay }}
+        run: node agent.mjs

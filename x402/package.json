@@ -1,0 +1,11 @@
+{
+  "name": "lateproof-x402-agent",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@x402/fetch": "latest",
+    "@x402/core": "latest",
+    "@x402/svm": "latest",
+    "@solana/kit": "latest"
+  }
+}
