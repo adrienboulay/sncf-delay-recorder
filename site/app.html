@@ -172,6 +172,9 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 .crow{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;border:0;border-radius:10px;background:var(--surface2);color:var(--fg);font:500 .86rem var(--display);padding:8px 10px;cursor:pointer}
 .crow:hover{background:var(--surface3)}
 .crow .cp{color:var(--muted)}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rgrid > div{padding:12px;border-radius:12px;background:var(--surface2)}
+@media (max-width:560px){.rgrid{grid-template-columns:1fr}}
 </style>
 <link rel="stylesheet" href="lp-ui.css">
 </head>
@@ -470,6 +473,7 @@ route(/^\/voyage\/(\w+)$/, async id => {
   await Promise.all(legsOf(v).filter(x => x.id !== v.id).map(x => resolveLeg(x).catch(() => null)));
   const legs = legsOf(voyageById(v.id));
   const trip = tripTotal(legs);
+  await compReady;
   $("vbody").innerHTML = `
     <section class="card hero"><span class="kicker">${legs.length > 1 ? L(`Trajet en ${legs.length} étapes`, `${legs.length}-leg trip`) : L("Arrivée à ", "Arriving at ") + esc(to ? to.name : "?")}</span>
       <div class="big-num"><b class="${trip.delay < 60 && !trip.cancelled ? "ok" : ""}">${trip.cancelled ? L("Supprimé", "Cancelled") : trip.delay < 60 ? L("À l'heure", "On time") : "+" + fmt.min(trip.delay)}</b>${trip.delay >= 60 && !trip.cancelled ? `<span>min ${legs.length > 1 ? L("au total", "in total") : L("de retard", "late")}</span>` : ""}</div>
@@ -549,26 +553,44 @@ const CLAIM_URL = {
   eu: "https://europa.eu/youreurope/citizens/files/forms/reimbursement-compensation-railway/reimbursement-form_fr.pdf",
   ter: "https://www.ter.sncf.com/",
 };
+// Base des règles par opérateur et par région (sources et date de vérification dans le fichier)
+let COMP = null;
+const compReady = fetch("data/compensations.json").then(r => r.json()).then(j => { COMP = j; }).catch(() => {});
+function regionAt(lat, lon) {
+  if (!COMP || lat == null) return null;
+  const hit = COMP.region_boxes.filter(([, a, b, c, d]) => lat >= a && lat <= c && lon >= b && lon <= d)
+    .sort((x, y) => (x[3] - x[1]) * (x[4] - x[2]) - (y[3] - y[1]) * (y[4] - y[2]))[0];   // la plus petite zone qui contient la gare
+  return hit && COMP.regions[hit[0]] ? {id: hit[0], ...COMP.regions[hit[0]]} : null;
+}
+const pctOf = (tiers, min) => (tiers || []).reduce((p, [m, v]) => (min >= m ? v : p), 0);
 function claimPlan(legs, trip) {
-  const min = fmt.min(trip.delay), modes = legs.map(l => l.mode), has = list => modes.some(m => list.includes(m));
+  const min = fmt.min(trip.delay), modes = legs.map(l => l.mode);
   const day = legs[0].day, t0 = Date.UTC(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6, 8), 12) / 1000;
-  if (has(["OUI", "IC", "ICN"])) {
-    const pct = min >= 180 ? 75 : min >= 120 ? 50 : min >= 30 ? 25 : 0;
-    return {k: "g30", name: L("Garantie G30 (TGV INOUI, Intercités)", "G30 guarantee (TGV INOUI, Intercités)"), pct, min, need: 30, url: CLAIM_URL.g30,
-      deadline: t0 + 90 * 86400, cash: min >= 60, auto: false};
+  if (COMP) {
+    // Grandes lignes et internationaux : l'opérateur du train le plus « fort » du trajet (G30 d'abord, comme la SNCF)
+    const order = ["g30", "lyria", "ouigo", "eurostar", "trenitalia", "renfe", "eu"];
+    const k = order.find(id => COMP.operators[id] && COMP.operators[id].modes.some(m => modes.includes(m)));
+    if (k) {
+      const o = COMP.operators[k];
+      return {k, name: o.name, pct: pctOf(o.tiers, min), min, need: o.tiers[0][0], url: o.url, how: o.how, auto: !!o.auto,
+        cashFrom: o.cash_from || null, cash: o.cash_from ? min >= o.cash_from : true, deadline: t0 + (o.deadline_days || 90) * 86400, sources: o.sources};
+    }
+    const ter = legs.find(l => l.mode === "TER" || l.mode === "TT"), idf = legs.find(l => l.net === "idf");
+    const at = ter || idf;
+    if (at) {
+      const R = (idf && !ter) ? (COMP.regions.idf ? {id: "idf", ...COMP.regions.idf} : null) : regionAt(at.from.lat, at.from.lon);
+      if (R) return {k: R.id === "idf" ? "idf" : "ter", R, min, name: R.name, url: R.url, how: R.ticket,
+        pct: pctOf(R.ticket_tiers, min), need: R.ticket_tiers ? R.ticket_tiers[0][0] : null, deadline: t0 + (R.ticket_deadline_days || 90) * 86400, auto: false, cash: false, sources: R.sources};
+    }
   }
-  if (has(["OGO"])) {
-    const pct = min >= 120 ? 50 : min >= 60 ? 25 : 0;
-    return {k: "ouigo", name: "OUIGO", pct, min, need: 60, url: CLAIM_URL.ouigo, deadline: t0 + 15 * 86400, cash: false, auto: true};
-  }
-  if (has(["LYR", "ICE", "TGV", "ES"])) {
-    const pct = min >= 120 ? 50 : min >= 60 ? 25 : 0;
-    return {k: "eu", name: L("Règlement européen 2021/782 (train international)", "EU regulation 2021/782 (international train)"), pct, min, need: 60, url: CLAIM_URL.eu,
-      deadline: t0 + 91 * 86400, cash: true, auto: false};
-  }
-  if (has(["TER", "TT"])) return {k: "ter", name: L("TER : garantie de ta région", "TER: your region's guarantee"), pct: null, min, url: CLAIM_URL.ter};
-  if (legs.some(l => l.net === "idf")) return {k: "idf", name: L("Île-de-France (Navigo)", "Paris region (Navigo)"), pct: null, min};
-  return {k: "none", pct: null, min};
+  // Secours (fichier des règles indisponible)
+  const has = list => modes.some(m => list.includes(m));
+  if (has(["OUI", "IC", "ICN"])) return {k: "g30", name: L("Garantie G30 (TGV INOUI, Intercités)", "G30 guarantee (TGV INOUI, Intercités)"), pct: min >= 180 ? 75 : min >= 120 ? 50 : min >= 30 ? 25 : 0, min, need: 30, url: CLAIM_URL.g30, deadline: t0 + 90 * 86400, cash: min >= 60, cashFrom: 60, auto: false};
+  if (has(["OGO"])) return {k: "ouigo", name: "OUIGO", pct: min >= 120 ? 50 : min >= 60 ? 25 : 0, min, need: 60, url: CLAIM_URL.ouigo, deadline: t0 + 15 * 86400, auto: true};
+  if (has(["LYR", "ICE", "TGV", "ES"])) return {k: "eu", name: L("Règlement européen 2021/782", "EU regulation 2021/782"), pct: min >= 120 ? 50 : min >= 60 ? 25 : 0, min, need: 60, url: CLAIM_URL.eu, deadline: t0 + 91 * 86400, cash: true, auto: false};
+  if (has(["TER", "TT"])) return {k: "ter", name: L("TER : garantie de ta région", "TER: your region's guarantee"), pct: 0, min, url: CLAIM_URL.ter};
+  if (legs.some(l => l.net === "idf")) return {k: "idf", name: L("Île-de-France (Navigo)", "Paris region (Navigo)"), pct: 0, min};
+  return {k: "none", pct: 0, min};
 }
 const icsDate = t => new Date(t * 1000).toISOString().slice(0, 10).replace(/-/g, "");
 function claimHtml(v, legs, trip) {
@@ -601,14 +623,26 @@ function claimHtml(v, legs, trip) {
   });
   const work = min >= 5 || trip.cancelled ? `<p class="small" style="margin:0">${L("<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.", "<b>At work or school</b>: your LateProof certificate proves the delay and that you were on the train. A justified transport delay should not be sanctioned.")}</p>` : "";
   const head = `<section class="card claim"><h2>${L("Réclamer une compensation", "Claim compensation")}</h2>`;
-  if (P.k === "ter") return head + `<p style="margin:0">${L("Pour les TER, il n'y a pas de barème national : chaque région fixe sa garantie (souvent réservée aux abonnés, avec un nombre de retards dans le mois).", "For TER trains there is no national scale: each region sets its own guarantee (often for season-ticket holders, after several delays in a month).")}</p>
+  const verified = COMP ? `${L("Vérifié le", "Checked on")} ${new Date(COMP.verified + "T12:00:00").toLocaleDateString(locale)}` : "";
+  const srcs = (P.sources || []).length ? ` · ${L("sources", "sources")} : ${P.sources.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${i + 1}</a>`).join(" ")}` : "";
+  if ((P.k === "ter" || P.k === "idf") && P.R && !(P.pct > 0)) {
+    const R = P.R;
+    return head + `<div class="claimtop"><span class="kicker">${esc(R.name)}</span><span class="muted small">${L("Retard", "Delay")} ${min} min${trip.cancelled ? ` · ${L("train supprimé", "train cancelled")}` : ""}</span></div>
+      <div class="rgrid"><div><b>${L("Avec un billet", "With a ticket")}</b><p class="small" style="margin:4px 0 0">${esc(R.ticket || "")}</p></div>
+        <div><b>${L("Avec un abonnement", "With a pass")}</b><p class="small" style="margin:4px 0 0">${esc(R.subscription || "")}</p></div></div>
+      <div class="row"><a class="btn sm" href="${esc(R.url)}" target="_blank" rel="noopener">${L("Page officielle", "Official page")} ↗</a>${R.url2 ? `<a class="btn sm" href="${esc(R.url2)}" target="_blank" rel="noopener">${L("Autre démarche", "Other claim")} ↗</a>` : ""}
+        ${R.id !== "idf" ? `<a class="btn sm" href="#/nouveau/${v.id}">${L("Créer le justificatif à joindre", "Create the certificate to attach")}</a>` : ""}</div>
+      ${work}<p class="muted small" style="margin:0">${verified}${srcs}. ${L("Résumé : les conditions exactes font foi sur le site de la région.", "Summary: the region's site is authoritative.")}</p></section>`;
+  }
+  if (P.k === "ter" && !P.R) return head + `<p style="margin:0">${L("Pour les TER, il n'y a pas de barème national : chaque région fixe sa garantie (souvent réservée aux abonnés, avec un nombre de retards dans le mois).", "For TER trains there is no national scale: each region sets its own guarantee (often for season-ticket holders, after several delays in a month).")}</p>
     <a class="btn" href="${P.url}" target="_blank" rel="noopener">${L("Voir la garantie de ma région", "See my region's guarantee")} ↗</a>${work}</section>`;
-  if (P.k === "idf") return head + `<p style="margin:0">${L("Avec le Navigo, il n'y a pas d'indemnisation trajet par trajet. Île-de-France Mobilités annonce parfois un dédommagement des abonnés après de fortes perturbations.", "With a Navigo pass there is no compensation per trip. Île-de-France Mobilités sometimes announces a refund for pass holders after major disruptions.")}</p>${work}</section>`;
+  if (P.k === "idf" && !P.R) return head + `<p style="margin:0">${L("Avec le Navigo, il n'y a pas d'indemnisation trajet par trajet. Île-de-France Mobilités annonce parfois un dédommagement des abonnés après de fortes perturbations.", "With a Navigo pass there is no compensation per trip. Île-de-France Mobilités sometimes announces a refund for pass holders after major disruptions.")}</p>${work}</section>`;
   if (P.k === "none") return work ? head + work + `</section>` : "";
   if (!P.pct && !trip.cancelled) return head + `<p style="margin:0">${L(`Pas de compensation pour ce retard : <b>${P.name}</b> commence à ${P.need} min de retard à l'arrivée (ici ${min} min).`, `No compensation for this delay: <b>${P.name}</b> starts at ${P.need} min late on arrival (here ${min} min).`)}</p>${work}</section>`;
   const amount = price && P.pct ? `≈ ${(price * P.pct / 100).toLocaleString(locale, {style: "currency", currency: "EUR"})}` : "";
   const form = P.auto ? L("versé automatiquement, en bon d'achat", "paid automatically, as a voucher")
-    : P.k === "g30" ? (P.cash ? L("en bon d'achat ou par virement (avec ton RIB)", "as a voucher or by bank transfer (with your IBAN)") : L("en bon d'achat (le virement commence à 60 min)", "as a voucher (bank transfer from 60 min)"))
+    : P.cashFrom ? (P.cash ? L("en bon d'achat ou par virement (avec ton RIB)", "as a voucher or by bank transfer (with your IBAN)") : L(`en bon d'achat (le virement commence à ${P.cashFrom} min)`, `as a voucher (bank transfer from ${P.cashFrom} min)`))
+    : P.k === "ter" ? L("selon les conditions de la région", "under the region's conditions")
     : L("en argent ou en bon, selon l'opérateur", "in cash or voucher, depending on the operator");
   const deadline = new Date(P.deadline * 1000).toLocaleDateString(locale, {day: "numeric", month: "long", year: "numeric"});
   return head + `<div class="claimtop"><span class="kicker">${esc(P.name)}</span>
@@ -616,16 +650,17 @@ function claimHtml(v, legs, trip) {
       <span class="muted small">${trip.cancelled && !P.pct ? L("Si tu n'as pas voyagé, le billet est remboursable en totalité.", "If you didn't travel, the ticket is fully refundable.") : `${form} · ${L("retard", "delay")} ${min} min`}</span></div>
     ${P.pct ? `<label class="field" for="tprice">${L("Prix de ton billet (facultatif, pour estimer)", "Your ticket price (optional, to estimate)")}<span class="row" style="flex-wrap:nowrap"><input id="tprice" inputmode="decimal" placeholder="49,90" value="${esc(price)}" style="max-width:140px"> € <b id="tamount" class="ok">${amount}</b></span></label>` : ""}
     ${P.auto ? `<p style="margin:0">${L(`Rien à faire : OUIGO t'écrit et verse la compensation dans les jours qui suivent. <b>Sans nouvelles le ${deadline}</b>, contacte le service client avec ton justificatif.`, `Nothing to do: OUIGO emails you and pays the compensation within days. <b>If you hear nothing by ${deadline}</b>, contact customer service with your certificate.`)}</p>
-      <a class="btn" href="${P.url}" target="_blank" rel="noopener">${L("Page OUIGO en cas de retard", "OUIGO delay page")} ↗</a>`
+      <a class="btn" href="${esc(P.url)}" target="_blank" rel="noopener">${L("Page OUIGO en cas de retard", "OUIGO delay page")} ↗</a>`
     : `<ol class="csteps">
       <li class="${cert ? "done" : ""}"><b>${L("Ton justificatif", "Your certificate")}</b> ${cert ? `<a href="${esc(cert.url)}" target="_blank" rel="noopener">${L("prêt", "ready")} ✓</a>` : `<a href="#/nouveau/${v.id}">${L("le créer (1 min)", "create it (1 min)")}</a>`}<span class="muted small">${L("La preuve à joindre : le retard officiel, vérifiable par l'opérateur.", "The proof to attach: the official delay, checkable by the operator.")}</span></li>
-      <li><b>${L("Ouvre la demande officielle", "Open the official claim")}</b> <a class="btn sm" href="${P.url}" target="_blank" rel="noopener">${P.k === "g30" ? L("Demande G30 (SNCF)", "G30 claim (SNCF)") : L("Formulaire européen", "EU form")} ↗</a><span class="muted small">${P.k === "g30" ? L("Aussi dans l'appli SNCF Connect : Aide › Demande de compensation. Garde la référence de ton dossier (sur ton billet).", "Also in the SNCF Connect app: Help › Compensation claim. Keep your booking reference (on your ticket).") : L("À envoyer à l'opérateur du train.", "Send it to the train operator.")}</span></li>
+      <li><b>${L("Ouvre la demande officielle", "Open the official claim")}</b> <a class="btn sm" href="${esc(P.url)}" target="_blank" rel="noopener">${P.k === "g30" ? L("Demande G30 (SNCF)", "G30 claim (SNCF)") : P.k === "eu" ? L("Formulaire européen", "EU form") : L("Faire la demande", "Make the claim")} ↗</a><span class="muted small">${esc(P.how || (P.k === "g30" ? L("Aussi dans l'appli SNCF Connect : Aide › Demande de compensation. Garde la référence de ton dossier (sur ton billet).", "Also in the SNCF Connect app: Help › Compensation claim. Keep your booking reference (on your ticket).") : L("À envoyer à l'opérateur du train.", "Send it to the train operator.")))}</span></li>
       <li><b>${L("Recopie les informations", "Copy the details")}</b><div class="crows">${rows.map(([k, val]) => `<button type="button" class="crow" data-copy="${esc(val)}"><span class="muted small">${esc(k)}</span><span>${esc(val)}</span><span class="cp" aria-hidden="true">⧉</span></button>`).join("")}</div></li>
       <li><b>${L("Message prêt à coller", "Message ready to paste")}</b> <button type="button" class="btn sm" id="cmsg">${L("Copier le message", "Copy the message")}</button><span class="muted small">${L("Pour le champ « commentaire » ou un courrier.", "For the “comment” field or a letter.")}</span></li>
       <li><b>${L("Avant le", "Before")} ${deadline}</b> <button type="button" class="btn sm" id="cics">${L("Me le rappeler", "Remind me")}</button><span class="muted small">${L("Rappel ajouté à ton agenda une semaine avant.", "Reminder added to your calendar a week before.")}</span></li>
     </ol>
     <label class="toggle" for="cdone"><span class="lbl">${L("J'ai envoyé ma demande", "I've sent my claim")}</span><span class="switch"><input type="checkbox" id="cdone"${first.claimed ? " checked" : ""}><span></span></span></label>`}
-    ${work}<p class="muted small" style="margin:0">${L("Barèmes officiels SNCF Voyageurs, à vérifier sur le site de l'opérateur. LateProof n'envoie rien à ta place.", "Official SNCF Voyageurs scales, check with the operator. LateProof never sends anything on your behalf.")}</p></section>`;
+    ${P.R && P.R.subscription ? `<p class="small" style="margin:0"><b>${L("Avec un abonnement", "With a pass")}</b> : ${esc(P.R.subscription)}</p>` : ""}
+    ${work}<p class="muted small" style="margin:0">${verified}${srcs}. ${L("Résumé des règles officielles, à vérifier sur le site de l'opérateur. LateProof n'envoie rien à ta place.", "Summary of the official rules, check with the operator. LateProof never sends anything on your behalf.")}</p></section>`;
 }
 
 // ================================================================= Nouveau justificatif

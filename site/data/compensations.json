@@ -1,0 +1,413 @@
+{
+ "about": "Règles de compensation en cas de retard, par opérateur et par région (TER). Chaque entrée cite ses sources officielles et la date de vérification. Résumé général : les conditions exactes font foi sur le site de l'opérateur ou de la région.",
+ "verified": "2026-11-28",
+ "operators": {
+  "g30": {
+   "name": "Garantie G30 (TGV INOUI, Intercités)",
+   "modes": [
+    "OUI",
+    "IC",
+    "ICN"
+   ],
+   "tiers": [
+    [
+     30,
+     25
+    ],
+    [
+     120,
+     50
+    ],
+    [
+     180,
+     75
+    ]
+   ],
+   "cash_from": 60,
+   "deadline_days": 90,
+   "auto": false,
+   "how": "Demande en ligne (SNCF Connect › Aide › Demande de compensation G30) ou par courrier. De 30 à 59 min : bon d'achat seulement ; dès 60 min : bon d'achat ou virement avec RIB.",
+   "url": "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/tgv-inoui-intercites/",
+   "sources": [
+    "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/tgv-inoui-intercites/"
+   ]
+  },
+  "ouigo": {
+   "name": "OUIGO (et OUIGO Train Classique)",
+   "modes": [
+    "OGO"
+   ],
+   "tiers": [
+    [
+     60,
+     25
+    ],
+    [
+     120,
+     50
+    ]
+   ],
+   "deadline_days": 15,
+   "auto": true,
+   "how": "Rien à faire : OUIGO prévient par e-mail et verse la compensation automatiquement, en bon d'achat. Sans nouvelles 15 jours après le voyage, contacter le service client.",
+   "url": "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/ouigo/",
+   "sources": [
+    "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/ouigo/",
+    "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/billet-direct/"
+   ]
+  },
+  "lyria": {
+   "name": "TGV Lyria (France–Suisse)",
+   "modes": [
+    "LYR"
+   ],
+   "tiers": [
+    [
+     30,
+     25
+    ],
+    [
+     120,
+     50
+    ]
+   ],
+   "cash_from": 60,
+   "deadline_days": 90,
+   "auto": false,
+   "how": "Même démarche que la G30 : en ligne ou par courrier, sous 90 jours. Moins d'1 h : bon d'achat seulement.",
+   "url": "https://www.sncf-connect.com/train/garantie-30min",
+   "sources": [
+    "https://www.sncf-connect.com/aide/retard-de-votre-train-et-remboursement",
+    "https://www.sncf-connect.com/train/garantie-30min"
+   ]
+  },
+  "eurostar": {
+   "name": "Eurostar",
+   "modes": [
+    "ES"
+   ],
+   "tiers": [
+    [
+     60,
+     25
+    ],
+    [
+     120,
+     50
+    ]
+   ],
+   "deadline_days": 90,
+   "auto": false,
+   "how": "Demande sur eurostar.com, au moins 24 h après le voyage. De 60 à 119 min : 25 % en argent ou un e-voucher plus élevé (30 % selon Eurostar) ; dès 120 min : 50 %. Pour une correspondance SNCF, s'adresser à la SNCF.",
+   "url": "https://www.eurostar.com/fr-fr/voyage/informations-trafic/politique-de-compensation",
+   "sources": [
+    "https://www.eurostar.com/fr-fr/voyage/informations-trafic/politique-de-compensation",
+    "https://www.eurostar.com/uk-en/rail-passengers-rights"
+   ]
+  },
+  "trenitalia": {
+   "name": "Trenitalia France (Frecciarossa)",
+   "modes": [
+    "FR",
+    "FRECCIAROSSA"
+   ],
+   "tiers": [
+    [
+     30,
+     25
+    ],
+    [
+     60,
+     25
+    ],
+    [
+     120,
+     50
+    ]
+   ],
+   "deadline_days": 365,
+   "auto": false,
+   "how": "De 30 à 59 min : bonus de 25 % utilisable 12 mois ; dès 60 min : règlement européen (25 %, puis 50 % dès 2 h). Demande sur trenitalia.com (automatique pour les comptes Trenitalia selon certaines sources).",
+   "url": "https://www.trenitalia.com/fr/information/les-indemnites-encasderetard.html",
+   "sources": [
+    "https://www.trenitalia.com/fr/information/les-indemnites-encasderetard.html"
+   ]
+  },
+  "renfe": {
+   "name": "Renfe (AVE France–Espagne)",
+   "modes": [
+    "AVE"
+   ],
+   "tiers": [
+    [
+     15,
+     50
+    ],
+    [
+     30,
+     100
+    ]
+   ],
+   "deadline_days": 90,
+   "auto": false,
+   "how": "Engagement de ponctualité Renfe : 50 % du billet au-delà de 15 min, 100 % au-delà de 30 min. Exclusion pour les billets achetés depuis le 31/01/2026 quand le retard vient de limitations de vitesse.",
+   "url": "https://www.renfe.com/es/fr/ayuda/engagement-de-ponctualite",
+   "sources": [
+    "https://www.renfe.com/es/fr/ayuda/engagement-de-ponctualite"
+   ]
+  },
+  "eu": {
+   "name": "Règlement européen 2021/782 (autres trains internationaux)",
+   "modes": [
+    "ICE",
+    "TGV"
+   ],
+   "tiers": [
+    [
+     60,
+     25
+    ],
+    [
+     120,
+     50
+    ]
+   ],
+   "deadline_days": 91,
+   "auto": false,
+   "how": "Demande à l'opérateur du train, sous 3 mois, avec le formulaire européen si besoin.",
+   "url": "https://europa.eu/youreurope/citizens/files/forms/reimbursement-compensation-railway/reimbursement-form_fr.pdf",
+   "sources": [
+    "https://europa.eu/youreurope/citizens/travel/passenger-rights/rail/index_fr.htm"
+   ]
+  }
+ },
+ "regions": {
+  "ara": {
+   "name": "TER Auvergne-Rhône-Alpes",
+   "ticket": "Billets directs (avec correspondance) : indemnisation possible depuis le 01/01/2025 en cas de retard ou de suppression, demande sur le site SNCF Voyageurs. Trajet occasionnel sans correspondance : pas d'indemnisation.",
+   "subscription": "Pas de garantie automatique confirmée pour les abonnés en 2026 : réclamation au service client TER.",
+   "url": "https://www.ter.sncf.com/auvergne-rhone-alpes/services-contacts/contacts/information-reclamation",
+   "url2": "https://www.sncf-voyageurs.com/fr/contactez-nous/en-cas-de-retard/billet-direct/",
+   "sources": [
+    "https://www.ter.sncf.com/auvergne-rhone-alpes/services-contacts/questions-reponses"
+   ]
+  },
+  "bfc": {
+   "name": "TER Mobigo Bourgogne-Franche-Comté · Engagement ponctualité",
+   "subscription": "Abonnés mensuels et illimités (achetés en ligne) : 25 % du coût mensuel quand au moins 20 % des trains déclarés ont plus de 15 min de retard ou sont supprimés (suppressions non prévues). Bon d'achat envoyé par e-mail avant le 15 du mois suivant, sans démarche.",
+   "ticket": "Billets occasionnels : pas de garantie de ponctualité, réclamation au service client.",
+   "url": "https://www.ter.sncf.com/bourgogne-franche-comte/services-contacts/engagement-ponctualite/abonnement-mensuel",
+   "sources": [
+    "https://www.ter.sncf.com/bourgogne-franche-comte/services-contacts/engagement-ponctualite/abonnement-mensuel",
+    "https://www.ter.sncf.com/bourgogne-franche-comte/services-contacts/engagement-ponctualite/abonnement-illimite-pass-mobigo"
+   ]
+  },
+  "bre": {
+   "name": "TER BreizhGo Bretagne · Engagement ponctualité",
+   "subscription": "Abonnés annuels inscrits (gratuit) : 20 % déduits de la mensualité suivante en cas de retards ou suppressions répétés imputables à TER BreizhGo.",
+   "ticket": "Billets occasionnels : pas de garantie horaire, conditions d'échange et de remboursement du tarif.",
+   "url": "https://www.ter.sncf.com/bretagne/services-contacts/services/engagement-ponctualite",
+   "sources": [
+    "https://www.ter.sncf.com/bretagne/services-contacts/services/engagement-ponctualite"
+   ]
+  },
+  "cvl": {
+   "name": "Rémi Centre-Val de Loire · Garanties voyageurs",
+   "subscription": "Abonnés hebdomadaires, mensuels et annuels : 30 % du mois concerné quand plus de 15 % des trains de la ligne ont été supprimés ou ont eu plus de 10 min de retard.",
+   "ticket": "Billets (hors abonnements) : Garantie voyageurs, demande sur la plateforme dans les 90 jours. Rémi Express : garantie ponctualité dédiée.",
+   "ticket_deadline_days": 90,
+   "url": "https://www.ter.sncf.com/centre-val-de-loire/services-contacts/garantie-voyageurs",
+   "url2": "https://www.ter.sncf.com/centre-val-de-loire/abonnements/remboursement-abonnes",
+   "sources": [
+    "https://www.ter.sncf.com/centre-val-de-loire/services-contacts/garantie-voyageurs",
+    "https://www.ter.sncf.com/centre-val-de-loire/abonnements/remboursement-abonnes",
+    "https://www.ter.sncf.com/centre-val-de-loire/services-contacts/garantie-ponctualite-remi-express"
+   ]
+  },
+  "ges": {
+   "name": "TER Fluo Grand Est",
+   "ticket": "Pas de barème publié : chaque demande d'indemnisation (retard ou suppression) est examinée au cas par cas par le service client.",
+   "subscription": "Pas de garantie automatique publiée pour les abonnés ; des remboursements exceptionnels sont parfois décidés après de fortes perturbations.",
+   "url": "https://www.ter.sncf.com/grand-est/services-contacts/contacts",
+   "sources": [
+    "https://www.ter.sncf.com/grand-est/services-contacts/questions-reponses"
+   ]
+  },
+  "hdf": {
+   "name": "TER Hauts-de-France · Garantie TER",
+   "subscription": "Abonnés annuels et mensuels (Mon Abo+, Mon Abo mensuel, étudiant non boursier), inscrits sur la plateforme : indemnisation quand la régularité de la ligne passe sous 87 % pour des causes éligibles ; versement sous environ 2 mois. Hors intempéries, malveillance, accidents de personnes, manifestations.",
+   "ticket": "Billets occasionnels : pas de garantie automatique, réclamation au service client.",
+   "url": "https://www.ter.sncf.com/hauts-de-france/services-et-contacts/garantie-ter-hauts-de-france-v1",
+   "sources": [
+    "https://www.ter.sncf.com/hauts-de-france/services-et-contacts/garantie-ter-hauts-de-france-v1"
+   ]
+  },
+  "nor": {
+   "name": "SNCF Nomad Train Normandie · Garantie voyageurs",
+   "ticket": "Billets Krono et Krono+ : 25 % du billet de 30 min à 1 h 59, 50 % de 2 h à 2 h 59, 75 % dès 3 h (si au moins 4 €), en bon d'achat valable 1 an. Demande en ligne à partir de 24 h après l'arrivée prévue et dans les 30 jours.",
+   "ticket_tiers": [
+    [
+     30,
+     25
+    ],
+    [
+     120,
+     50
+    ],
+    [
+     180,
+     75
+    ]
+   ],
+   "ticket_deadline_days": 30,
+   "subscription": "Abonnés annuels Tempo Normandie et Paris Nomad : Garantie Voyageurs Abonnés en cas de retard de leur train habituel (conditions sur la page).",
+   "url": "https://www.ter.sncf.com/normandie/services-contacts/sav/garantie-voyageurs-occasionnels",
+   "url2": "https://www.ter.sncf.com/normandie/services-contacts/sav/garantie-voyageurs-abonnes",
+   "sources": [
+    "https://www.ter.sncf.com/normandie/services-contacts/sav/garantie-voyageurs-occasionnels",
+    "https://www.ter.sncf.com/normandie/services-contacts/sav/garantie-voyageurs-abonnes"
+   ]
+  },
+  "naq": {
+   "name": "TER Nouvelle-Aquitaine · Garantie Fiabilité",
+   "subscription": "Abonnés annuels Pass Abonné : indemnisation quand un train habituel enregistré a eu au moins 8 retards de plus de 15 min ou suppressions dans le mois. Trains à déclarer avant le 25 pour le mois suivant ; Intercités et cars exclus.",
+   "ticket": "Billets occasionnels : pas de garantie automatique, réclamation au service client.",
+   "url": "https://www.ter.sncf.com/nouvelle-aquitaine/garantie-fiabilite",
+   "sources": [
+    "https://www.ter.sncf.com/nouvelle-aquitaine/garantie-fiabilite"
+   ]
+  },
+  "occ": {
+   "name": "liO Train Occitanie",
+   "ticket": "Pas de compensation individuelle prévue en cas de retard ou de suppression sur liO Train.",
+   "subscription": "Pas de garantie automatique ; la Région reverse parfois les pénalités de la SNCF aux abonnés annuels (« Prime Fidélité liO », un mois offert en 2026).",
+   "url": "https://www.ter.sncf.com/occitanie/services-contacts/contacts/information-reclamation",
+   "sources": [
+    "https://www.ter.sncf.com/occitanie/services-contacts/questions-reponses",
+    "https://www.connexionfrance.com/news/train-passengers-in-occitanie-to-be-reimbursed-over-frequent-delays-and-cancellations/768008"
+   ]
+  },
+  "pdl": {
+   "name": "Aléop Pays de la Loire · Garantie Ponctualité",
+   "subscription": "Abonnés tutti illimité inscrits : plus de 8 retards de plus de 10 min dans le mois = 20 % sur le prélèvement suivant, automatiquement. Mensuels et hebdomadaires : inscription avec l'abonnement nominatif.",
+   "ticket": "Billets occasionnels : Garantie Ponctualité occasionnels (trains TER et cars des lignes 6 et 11), conditions et formulaire sur la page.",
+   "url": "https://www.ter.sncf.com/pays-de-la-loire/services-contacts/garantie-ponctualite",
+   "url2": "https://www.ter.sncf.com/pays-de-la-loire/services-contacts/garantie-ponctualite-occasionnels",
+   "sources": [
+    "https://www.ter.sncf.com/pays-de-la-loire/services-contacts/garantie-ponctualite-abonnes",
+    "https://www.ter.sncf.com/pays-de-la-loire/services-contacts/garantie-ponctualite-occasionnels"
+   ]
+  },
+  "pac": {
+   "name": "ZOU ! TER Sud Provence-Alpes-Côte d'Azur · Garantie fiabilité",
+   "subscription": "Abonnés mensuels : 30 % remboursés ; annuels : 30 % de réduction sur une mensualité, en cas de perturbations. Inscription dès le 1er du mois pour en bénéficier le mois suivant.",
+   "ticket": "Billets occasionnels : réclamation au service client. Train ZOU ! Marseille–Nice opéré par Transdev : réclamation à Transdev (circuit distinct).",
+   "url": "https://www.ter.sncf.com/sud-provence-alpes-cote-d-azur/services-contacts/garantie-fiabilite",
+   "sources": [
+    "https://www.ter.sncf.com/sud-provence-alpes-cote-d-azur/services-contacts/garantie-fiabilite"
+   ]
+  },
+  "idf": {
+   "name": "Île-de-France Mobilités (Navigo)",
+   "ticket": "Pas d'indemnisation trajet par trajet.",
+   "subscription": "Campagnes de remboursement des abonnés Navigo (annuel, senior, imagine R) quand une ligne est restée sous 80 % de ponctualité plus de 3 mois, ou après de fortes perturbations. Demande uniquement sur le compte officiel IDFM Connect, pendant la campagne (attention aux faux sites).",
+   "url": "https://www.iledefrance-mobilites.fr/dedommagement",
+   "sources": [
+    "https://www.iledefrance-mobilites.fr/actualites/campagne-2026-remboursement-qualite-de-service-transports"
+   ]
+  }
+ },
+ "region_boxes": [
+  [
+   "idf",
+   48.12,
+   1.44,
+   49.24,
+   3.56
+  ],
+  [
+   "hdf",
+   48.83,
+   1.38,
+   51.09,
+   4.26
+  ],
+  [
+   "nor",
+   48.18,
+   -1.95,
+   50.07,
+   1.8
+  ],
+  [
+   "ges",
+   47.42,
+   3.38,
+   50.17,
+   8.23
+  ],
+  [
+   "bre",
+   47.28,
+   -5.14,
+   48.9,
+   -1.01
+  ],
+  [
+   "pdl",
+   46.27,
+   -2.56,
+   48.57,
+   0.92
+  ],
+  [
+   "cvl",
+   46.35,
+   0.05,
+   48.94,
+   3.13
+  ],
+  [
+   "bfc",
+   46.15,
+   2.85,
+   48.4,
+   7.14
+  ],
+  [
+   "naq",
+   42.78,
+   -1.79,
+   47.18,
+   2.61
+  ],
+  [
+   "ara",
+   44.12,
+   2.06,
+   46.8,
+   7.19
+  ],
+  [
+   "occ",
+   42.33,
+   -0.33,
+   45.05,
+   4.85
+  ],
+  [
+   "pac",
+   42.98,
+   4.23,
+   45.13,
+   7.72
+  ],
+  [
+   "cor",
+   41.33,
+   8.53,
+   43.03,
+   9.56
+  ]
+ ]
+}
