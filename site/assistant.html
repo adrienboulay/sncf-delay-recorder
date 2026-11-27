@@ -105,6 +105,24 @@ textarea,.field input{background:var(--surface);border-color:var(--surface3)}
 .icon.mic[aria-pressed="true"]{background:var(--lime);border-color:var(--lime);color:#121417}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgb(212 255 58/.5)}100%{box-shadow:0 0 0 14px transparent}}
 @media (prefers-reduced-motion:reduce){.live.on .lv-dot{animation:none}}
+
+/* ---- Ordinateur : Gus et les réglages à gauche, la conversation sur toute la largeur restante ---- */
+@media (min-width:1024px){
+  .wrap{max-width:1240px;display:grid;grid-template-columns:340px minmax(0,1fr);column-gap:48px;
+    grid-template-rows:auto auto auto auto 1fr auto;
+    grid-template-areas:"top top" "hero chat" "beta chat" "field chat" "chips chat" "side composer";align-items:start}
+  .top{grid-area:top}
+  .hero{grid-area:hero;flex-direction:column;align-items:flex-start;gap:14px;margin-top:10px}
+  .gus-hero{width:120px;height:120px}.gus-hero .gus{width:110px}
+  .beta{grid-area:beta}
+  .field{grid-area:field}
+  #chips{grid-area:chips;flex-direction:column;align-items:stretch}
+  #chips .chip{text-align:left}
+  .chat{grid-area:chat;min-height:calc(100vh - 230px);padding-top:16px}
+  .msg{max-width:72%}
+  .brow{max-width:78%}
+  .composer{grid-area:composer}
+}
 </style>
 </head>
 <body>

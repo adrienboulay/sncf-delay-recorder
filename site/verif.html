@@ -77,6 +77,15 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 .check i{color:#3E6B00}.check i.w,.check i.x{color:#C2410C}
 .btn{background:#FFFFFF;border:0;box-shadow:inset 0 0 0 1.5px #D6D5CF;border-radius:999px}
 a{color:#121417}
+
+/* ---- Ordinateur : page plus large, retard et détail côte à côte ---- */
+@media (min-width:1024px){
+  .banner .in, main{max-width:1000px}
+  .top{padding-left:max(16px,calc((100vw - 1000px) / 2));padding-right:max(16px,calc((100vw - 1000px) / 2))}
+  main{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  main > .intro, main > details, main > .foot, main > section:nth-of-type(3){grid-column:1 / -1}
+  main > section:only-of-type{grid-column:1 / -1}
+}
 </style>
 </head>
 <body>
