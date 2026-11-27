@@ -81,18 +81,25 @@ a{color:#121417}
 </head>
 <body>
 <header class="top"><a class="brand" href="./"><svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a><span class="code" id="code"></span></header>
-<section class="banner wait" id="banner" aria-live="polite"><div class="in"><h1 id="bTitle">Vérification…</h1><p id="bSub">Contrôle de la signature et du sceau, directement dans ce navigateur.</p></div></section>
+<section class="banner wait" id="banner" aria-live="polite"><div class="in"><h1 id="bTitle"></h1><p id="bSub"></p></div></section>
 <main id="main"></main>
 
 <script src="config.js"></script>
+<script src="lp-i18n.js"></script>
 <script src="lp-core.js"></script>
 <script>
 "use strict";
 const {fmt, esc} = LP, $ = id => document.getElementById(id);
+const {L, locale} = LPI;
+document.title = L("Vérification du justificatif · LateProof", "Certificate check · LateProof");
+$("bTitle").textContent = L("Vérification…", "Checking…");
+$("bSub").textContent = L("Contrôle de la signature et du sceau, directement dans ce navigateur.", "Checking the signature and the seal, right here in your browser.");
 const ICON_OK = `<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#D4FF3A"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#121417" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ICON_BAD = `<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#C2410C"/><path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"/></svg>`;
-const LABELS = {trains: "Trains", arrivee: "Gare d'arrivée", depart: "Gare de départ", etapes: "Détail par étape", checkin: "Heure du check-in", presence: "Présence",
-  titulaire: "Titulaire", releves: "Relevés officiels du retard", date: "Date", retard_min: "Retard", arrivee_prevue: "Arrivée prévue", arrivee_reelle: "Arrivée réelle", declare: "Heure prévue"};
+const LABELS = L({trains: "Trains", arrivee: "Gare d'arrivée", depart: "Gare de départ", etapes: "Détail par étape", checkin: "Heure du check-in", presence: "Présence",
+  titulaire: "Titulaire", releves: "Relevés officiels du retard", date: "Date", retard_min: "Retard", arrivee_prevue: "Arrivée prévue", arrivee_reelle: "Arrivée réelle", declare: "Heure prévue"},
+  {trains: "Trains", arrivee: "Arrival station", depart: "Departure station", etapes: "Leg by leg", checkin: "Check-in time", presence: "Presence",
+  titulaire: "Holder", releves: "Official delay records", date: "Date", retard_min: "Delay", arrivee_prevue: "Scheduled arrival", arrivee_reelle: "Actual arrival", declare: "Scheduled time"});
 
 function banner(kind, title, sub) {
   const b = $("banner"); b.className = "banner " + kind;
@@ -102,61 +109,64 @@ function banner(kind, title, sub) {
 
 async function main() {
   const h = new URLSearchParams(location.hash.slice(1)).get("c");
-  if (!h) { banner("wait", "Aucun justificatif", "Ouvre le lien complet reçu par message."); $("main").innerHTML = `<div class="card">Ce lien est incomplet. Demande à la personne de te renvoyer le lien de son justificatif LateProof.</div>`; return; }
+  if (!h) { banner("wait", L("Aucun justificatif", "No certificate"), L("Ouvre le lien complet reçu par message.", "Open the full link you received.")); $("main").innerHTML = `<div class="card">${L("Ce lien est incomplet. Demande à la personne de te renvoyer le lien de son justificatif LateProof.", "This link is incomplete. Ask the person to send you the link to their LateProof certificate again.")}</div>`; return; }
   let c;
-  try { c = LP.certFromHash(h); } catch (e) { banner("bad", "Lien illisible", "Le justificatif a été abîmé ou modifié."); return; }
+  try { c = LP.certFromHash(h); } catch (e) { banner("bad", L("Lien illisible", "Unreadable link"), L("Le justificatif a été abîmé ou modifié.", "The certificate was damaged or altered.")); return; }
   const chk = await LP.checkCert(c).catch(() => ({ok: false, signature: {ok: false}}));
   const code = LP.shortCode(chk.root || c.root || "00".repeat(32)); $("code").textContent = "code " + code;
   const F = Object.fromEntries(c.f.filter(f => !f.h).map(f => [f.n, f.v]));
   const hidden = c.f.filter(f => f.h).map(f => LABELS[f.n] || f.n);
   const delay = +F.retard_min || 0;
   if (!chk.ok) {
-    banner("bad", "Justificatif modifié", "Ce document ne correspond pas à celui qui a été signé. Ne vous y fiez pas.");
-    $("main").innerHTML = `<div class="card"><b>Ce qui ne va pas</b>${F.retard_min ? `<span>Retard affiché : <b>+${esc(F.retard_min)} min</b>, mais ce chiffre n'est pas celui qui a été signé.</span>` : ""}<span>${chk.signature && chk.signature.ok === false ? "Le contenu affiché ne correspond pas à la signature du titulaire : au moins une information a été changée après coup." : "La signature est illisible."}</span></div>
-      <div class="card small">Un justificatif LateProof ne peut pas être modifié sans que cela se voie. Demandez le lien d'origine à son titulaire.</div>
-      <p class="foot">Vérification faite dans votre navigateur, sans passer par nos serveurs.</p>`;
+    banner("bad", L("Justificatif modifié", "Certificate altered"), L("Ce document ne correspond pas à celui qui a été signé. Ne vous y fiez pas.", "This document does not match the one that was signed. Do not rely on it."));
+    $("main").innerHTML = `<div class="card"><b>${L("Ce qui ne va pas", "What is wrong")}</b>${F.retard_min ? `<span>${L("Retard affiché", "Delay shown")} : <b>+${esc(F.retard_min)} min</b>${L(", mais ce chiffre n'est pas celui qui a été signé.", ", but this is not the figure that was signed.")}</span>` : ""}<span>${chk.signature && chk.signature.ok === false ? L("Le contenu affiché ne correspond pas à la signature du titulaire : au moins une information a été changée après coup.", "The content shown does not match the holder's signature: at least one item was changed afterwards.") : L("La signature est illisible.", "The signature is unreadable.")}</span></div>
+      <div class="card small">${L("Un justificatif LateProof ne peut pas être modifié sans que cela se voie. Demandez le lien d'origine à son titulaire.", "A LateProof certificate cannot be changed without it showing. Ask its holder for the original link.")}</div>
+      <p class="foot">${L("Vérification faite dans votre navigateur, sans passer par nos serveurs.", "Checked in your browser, without going through our servers.")}</p>`;
     return;
   }
-  banner("ok", "Justificatif authentique", "Vérifié à l'instant, dans votre navigateur.");
-  const day = F.date ? new Date(F.date + "T12:00:00Z").toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long", year: "numeric"}) : "";
+  banner("ok", L("Justificatif authentique", "Authentic certificate"), L("Vérifié à l'instant, dans votre navigateur.", "Checked just now, in your browser."));
+  const day = F.date ? new Date(F.date + "T12:00:00Z").toLocaleDateString(locale, {weekday: "long", day: "numeric", month: "long", year: "numeric"}) : "";
   let legs = []; try { legs = JSON.parse(F.etapes || "[]"); } catch (e) {}
   const sig = chk.signature, browserKey = sig.kind === "browser";
   $("main").innerHTML = `
-    ${seenIntro() ? "" : `<div class="intro" id="intro"><b>En 15 secondes</b><span>Cette page vérifie un justificatif de retard de train. Le retard vient des données officielles SNCF et Île-de-France Mobilités. Le justificatif a été signé par le téléphone de son titulaire au moment des faits : s'il avait été modifié, cette page s'afficherait en orange.</span><button class="btn" id="gotit">Compris</button></div>`}
-    <section class="card"><span class="kicker">${esc(day)}${legs.length > 1 ? ` · trajet en ${legs.length} étapes` : ""}</span>
-      <div class="big"><b>+${delay}</b><span><b style="font:inherit;color:inherit">min</b> de retard${legs.length > 1 ? " au total" : ""}</span></div>
-      ${F.arrivee_prevue && F.arrivee_reelle ? `<span>Arrivée prévue <b>${fmt.time(+F.arrivee_prevue)}</b>${F.arrivee ? ` à ${esc(F.arrivee)}` : ""}, arrivée réelle <b>${fmt.time(+F.arrivee_reelle)}</b>.</span>` : ""}
-      ${F.declare && F.declare !== "non" ? `<span class="small muted">Heure d'arrivée prévue déclarée par le titulaire (correspondance manquée) ; les retards de chaque train sont relevés.</span>` : ""}
+    ${seenIntro() ? "" : `<div class="intro" id="intro"><b>${L("En 15 secondes", "In 15 seconds")}</b><span>${L("Cette page vérifie un justificatif de retard de train. Le retard vient des données officielles SNCF et Île-de-France Mobilités. Le justificatif a été signé par le téléphone de son titulaire au moment des faits : s'il avait été modifié, cette page s'afficherait en orange.", "This page checks a train delay certificate. The delay comes from official SNCF and Île-de-France Mobilités data. The certificate was signed by its holder's phone at the time: had it been altered, this page would turn orange.")}</span><button class="btn" id="gotit">${L("Compris", "Got it")}</button></div>`}
+    <section class="card"><span class="kicker">${esc(day)}${legs.length > 1 ? L(` · trajet en ${legs.length} étapes`, ` · ${legs.length}-leg trip`) : ""}</span>
+      <div class="big"><b>+${delay}</b><span><b style="font:inherit;color:inherit">min</b> ${L("de retard", "late")}${legs.length > 1 ? L(" au total", " in total") : ""}</span></div>
+      ${F.arrivee_prevue && F.arrivee_reelle ? `<span>${L("Arrivée prévue", "Scheduled arrival")} <b>${fmt.time(+F.arrivee_prevue)}</b>${F.arrivee ? ` ${L("à", "at")} ${esc(F.arrivee)}` : ""}, ${L("arrivée réelle", "actual arrival")} <b>${fmt.time(+F.arrivee_reelle)}</b>.</span>` : ""}
+      ${F.declare && F.declare !== "non" ? `<span class="small muted">${L("Heure d'arrivée prévue déclarée par le titulaire (correspondance manquée) ; les retards de chaque train sont relevés.", "Scheduled arrival time declared by the holder (missed connection); each train's delay is recorded.")}</span>` : ""}
     </section>
-    ${legs.length ? `<section class="card"><span class="kicker">Le détail${F.etapes ? "" : ""}</span>${legs.map(l => `<div class="leg"><span class="t">${esc(l.t)}</span>
-      <span class="r ${l.x ? "" : fmt.min(l.r) < 1 ? "okc" : ""}">${l.x ? "supprimé" : fmt.min(l.r) < 1 ? "à l'heure" : "+" + fmt.min(l.r) + " min"}</span>
-      <span class="s">${l.a ? `jusqu'à ${esc(l.a)} · ` : ""}prévu ${fmt.time(l.ap)}</span></div>`).join("")}
-      <div class="total"><span>Retard à l'arrivée</span><span style="font-family:var(--mono);color:var(--bad)">+${delay} min</span></div></section>`
+    ${legs.length ? `<section class="card"><span class="kicker">${L("Le détail", "Details")}</span>${legs.map(l => `<div class="leg"><span class="t">${esc(l.t)}</span>
+      <span class="r ${l.x ? "" : fmt.min(l.r) < 1 ? "okc" : ""}">${l.x ? L("supprimé", "cancelled") : fmt.min(l.r) < 1 ? L("à l'heure", "on time") : "+" + fmt.min(l.r) + " min"}</span>
+      <span class="s">${l.a ? `${L("jusqu'à", "to")} ${esc(l.a)} · ` : ""}${L("prévu", "scheduled")} ${fmt.time(l.ap)}</span></div>`).join("")}
+      <div class="total"><span>${L("Retard à l'arrivée", "Arrival delay")}</span><span style="font-family:var(--mono);color:var(--bad)">+${delay} min</span></div></section>`
       : F.trains ? `<section class="card"><span class="kicker">Trains</span><span>${esc(F.trains)}</span></section>` : ""}
     <section class="card">
-      <div class="check"><i aria-hidden="true">✓</i><span>${F.presence ? `<b>${esc(F.presence.split(" : ")[0])}</b> : ${esc(F.presence.split(" : ").slice(1).join(" : "))}` : "Présence non communiquée"}${F.checkin ? ` (check-in à ${fmt.time(+F.checkin)})` : ""}.</span></div>
-      <div class="check"><i aria-hidden="true" class="${browserKey ? "w" : ""}">${browserKey ? "!" : "✓"}</i><span>${browserKey ? "Signé par <b>la clé du navigateur</b> de son titulaire (sans déverrouillage par visage ou empreinte)." : `Signé par <b>le téléphone de son titulaire</b>${sig.userVerified ? ", déverrouillé par visage, empreinte ou code" : ""}.`}${F.titulaire ? ` Titulaire : <b>${esc(F.titulaire)}</b>.` : ""}</span></div>
-      <div class="check"><i aria-hidden="true">✓</i><span>Scellé le ${new Date(c.at * 1000).toLocaleString("fr-FR", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"})} : <b>impossible à modifier</b> sans que cette page passe à l'orange.</span></div>
-      <div class="check" id="cross"><i aria-hidden="true" class="w">…</i><span>Comparaison avec les relevés officiels…</span></div>
-      ${hidden.length ? `<div class="check"><i aria-hidden="true" class="w">◦</i><span class="muted">Non montré par le titulaire, mais scellé : ${esc(hidden.join(", "))}.</span></div>` : ""}
+      <div class="check"><i aria-hidden="true">✓</i><span>${F.presence ? `<b>${esc(F.presence.split(" : ")[0])}</b> : ${esc(F.presence.split(" : ").slice(1).join(" : "))}` : L("Présence non communiquée", "Presence not shared")}${F.checkin ? ` (${L("check-in à", "check-in at")} ${fmt.time(+F.checkin)})` : ""}.</span></div>
+      <div class="check"><i aria-hidden="true" class="${browserKey ? "w" : ""}">${browserKey ? "!" : "✓"}</i><span>${browserKey ? L("Signé par <b>la clé du navigateur</b> de son titulaire (sans déverrouillage par visage ou empreinte).", "Signed by <b>its holder's browser key</b> (no face or fingerprint unlock).") : `${L("Signé par <b>le téléphone de son titulaire</b>", "Signed by <b>its holder's phone</b>")}${sig.userVerified ? L(", déverrouillé par visage, empreinte ou code", ", unlocked by face, fingerprint or PIN") : ""}.`}${F.titulaire ? ` ${L("Titulaire", "Holder")} : <b>${esc(F.titulaire)}</b>.` : ""}</span></div>
+      <div class="check"><i aria-hidden="true">✓</i><span>${L("Scellé le", "Sealed on")} ${new Date(c.at * 1000).toLocaleString(locale, {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"})} : ${L("<b>impossible à modifier</b> sans que cette page passe à l'orange.", "<b>cannot be changed</b> without this page turning orange.")}</span></div>
+      <div class="check" id="cross"><i aria-hidden="true" class="w">…</i><span>${L("Comparaison avec les relevés officiels…", "Comparing with the official records…")}</span></div>
+      ${hidden.length ? `<div class="check"><i aria-hidden="true" class="w">◦</i><span class="muted">${L("Non montré par le titulaire, mais scellé", "Not shown by the holder, but sealed")} : ${esc(hidden.join(", "))}.</span></div>` : ""}
     </section>
-    <details><summary>Pourquoi c'est fiable ?</summary><div class="in">
+    <details><summary>${L("Pourquoi c'est fiable ?", "Why can I trust it?")}</summary><div class="in">${L(`
       <div><b>1. Les retards viennent des données officielles</b> de la SNCF et d'Île-de-France Mobilités, relevées en direct toutes les 2 minutes.</div>
       <div><b>2. Le justificatif est signé par le téléphone</b> de son titulaire, au moment des faits. Un autre appareil ne peut pas le produire, et la moindre modification se voit.</div>
-      <div><b>3. Les relevés de chaque jour sont scellés chaque nuit</b> dans un registre public (Solana), que personne ne peut modifier, pas même LateProof.</div>
+      <div><b>3. Les relevés de chaque jour sont scellés chaque nuit</b> dans un registre public (Solana), que personne ne peut modifier, pas même LateProof.</div>`, `
+      <div><b>1. Delays come from official data</b> from SNCF and Île-de-France Mobilités, recorded live every 2 minutes.</div>
+      <div><b>2. The certificate is signed by the holder's phone</b>, at the time. No other device can produce it, and the smallest change shows.</div>
+      <div><b>3. Each day's records are sealed every night</b> in a public ledger (Solana) that nobody can change, not even LateProof.</div>`)}
     </div></details>
-    <details><summary>Ce que ça prouve, et ce que ça ne prouve pas</summary><div class="in">
-      <div>Prouve : le retard de chaque train (données officielles), la déclaration de présence du titulaire dans le train, faite sur le moment, et que rien n'a été changé depuis.</div>
-      <div class="muted">Ne prouve pas : la raison de son heure de départ. C'est un élément de preuve, pas un document officiel de l'opérateur.</div>
+    <details><summary>${L("Ce que ça prouve, et ce que ça ne prouve pas", "What it proves, and what it does not")}</summary><div class="in">
+      <div>${L("Prouve : le retard de chaque train (données officielles), la déclaration de présence du titulaire dans le train, faite sur le moment, et que rien n'a été changé depuis.", "Proves: each train's delay (official data), the holder's statement of being on the train, made at the time, and that nothing has changed since.")}</div>
+      <div class="muted">${L("Ne prouve pas : la raison de son heure de départ. C'est un élément de preuve, pas un document officiel de l'opérateur.", "Does not prove: why they left at that time. It is a piece of evidence, not an official document from the operator.")}</div>
     </div></details>
-    <details><summary>Détails techniques</summary><div class="in small">
-      <div>Empreinte du justificatif (racine Merkle des champs) : <code>${esc(chk.root)}</code></div>
-      <div>Signature : ECDSA P-256 (${browserKey ? "clé du navigateur" : "passkey WebAuthn"}), créée sur <code>${esc(sig.origin || "")}</code>.</div>
-      <div id="anchor">Ancrage public : les relevés du ${esc(F.date || "")} sont scellés chaque nuit ; empreinte publiée sur Solana (devnet) : <a href="https://explorer.solana.com/address/8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu?cluster=devnet" target="_blank" rel="noopener">voir le programme</a>.</div>
+    <details><summary>${L("Détails techniques", "Technical details")}</summary><div class="in small">
+      <div>${L("Empreinte du justificatif (racine Merkle des champs)", "Certificate fingerprint (Merkle root of the fields)")} : <code>${esc(chk.root)}</code></div>
+      <div>Signature : ECDSA P-256 (${browserKey ? L("clé du navigateur", "browser key") : "passkey WebAuthn"}), ${L("créée sur", "created on")} <code>${esc(sig.origin || "")}</code>.</div>
+      <div id="anchor">${L(`Ancrage public : les relevés du ${esc(F.date || "")} sont scellés chaque nuit ; empreinte publiée sur Solana (devnet)`, `Public anchor: the records of ${esc(F.date || "")} are sealed every night; fingerprint published on Solana (devnet)`)} : <a href="https://explorer.solana.com/address/8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu?cluster=devnet" target="_blank" rel="noopener">${L("voir le programme", "see the program")}</a>.</div>
     </div></details>
-    <p class="foot">Vérification faite dans votre navigateur, sans compte et sans passer par nos serveurs.<br>Seul ce site fait foi. Code du justificatif : <b>${esc(code)}</b></p>`;
+    <p class="foot">${L("Vérification faite dans votre navigateur, sans compte et sans passer par nos serveurs.<br>Seul ce site fait foi. Code du justificatif", "Checked in your browser, with no account and without going through our servers.<br>Only this site is authoritative. Certificate code")} : <b>${esc(code)}</b></p>`;
   const g = $("gotit"); if (g) g.onclick = () => { LP.store.set("lpv-intro", true); $("intro").remove(); };
-  crossCheck(F).catch(() => setCross("w", "Comparaison avec les relevés indisponible pour le moment."));
+  crossCheck(F).catch(() => setCross("w", L("Comparaison avec les relevés indisponible pour le moment.", "Comparison with the records is unavailable right now.")));
 }
 const seenIntro = () => LP.store.get("lpv-intro");
 function setCross(k, html) { const el = $("cross"); if (el) el.innerHTML = `<i aria-hidden="true" class="${k}">${k === "x" ? "✕" : k === "w" ? "!" : "✓"}</i><span>${html}</span>`; }
@@ -164,8 +174,8 @@ function setCross(k, html) { const el = $("cross"); if (el) el.innerHTML = `<i a
 // Les releves du justificatif sont-ils identiques a ceux de notre base ? (gardes en detail 2 jours ; ensuite : preuve Solana)
 async function crossCheck(F) {
   let recs = []; try { recs = JSON.parse(F.releves || "[]"); } catch (e) {}
-  if (!F.releves) return setCross("w", "Relevés officiels non montrés par le titulaire.");
-  if (!recs.length) return setCross("w", "Aucun retard d'au moins une minute relevé sur les trains de ce trajet.");
+  if (!F.releves) return setCross("w", L("Relevés officiels non montrés par le titulaire.", "Official records not shown by the holder."));
+  if (!recs.length) return setCross("w", L("Aucun retard d'au moins une minute relevé sur les trains de ce trajet.", "No delay of one minute or more was recorded on the trains of this trip."));
   let same = 0, seen = 0, diff = [];
   for (const r of recs) {
     const [, net, day, num, stop] = r.split("|");
@@ -174,9 +184,9 @@ async function crossCheck(F) {
     const st = (t.stops || []).find(s => s.stop === stop);
     if (st && st.rec === r) same++; else diff.push(num);
   }
-  if (!seen) return setCross("w", "Relevés de ce jour plus en détail dans notre base : ils sont scellés dans l'empreinte de la nuit (preuve Solana bientôt).");
-  if (diff.length) return setCross("x", `Écart avec nos relevés pour le train ${esc(diff.join(", "))} : le retard a pu évoluer après la signature.`);
-  setCross("", `<b>Identique aux relevés officiels</b> enregistrés par LateProof (${same} relevé${same > 1 ? "s" : ""}).`);
+  if (!seen) return setCross("w", L("Relevés de ce jour plus en détail dans notre base : ils sont scellés dans l'empreinte de la nuit (preuve Solana bientôt).", "This day's detailed records are no longer in our database: they are sealed in that night's fingerprint (Solana proof coming soon)."));
+  if (diff.length) return setCross("x", L(`Écart avec nos relevés pour le train ${esc(diff.join(", "))} : le retard a pu évoluer après la signature.`, `Differs from our records for train ${esc(diff.join(", "))}: the delay may have changed after signing.`));
+  setCross("", L(`<b>Identique aux relevés officiels</b> enregistrés par LateProof (${same} relevé${same > 1 ? "s" : ""}).`, `<b>Matches the official records</b> kept by LateProof (${same} record${same > 1 ? "s" : ""}).`));
 }
 main();
 </script>

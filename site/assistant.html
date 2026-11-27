@@ -111,57 +111,60 @@ textarea,.field input{background:var(--surface);border-color:var(--surface3)}
 <div class="wrap">
   <header class="top">
     <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
-    <nav class="nav"><a href="app.html">Mon espace</a><a href="carte.html">Carte</a><a href="assistant.html" aria-current="page">Copilote</a></nav>
+    <nav class="nav"><a href="app.html" data-en="My space">Mon espace</a><a href="carte.html" data-en="Map">Carte</a><a href="assistant.html" aria-current="page" data-en="Copilot">Copilote</a></nav>
   </header>
 
   <div class="hero">
     <div id="gusHero" class="gus-hero"></div>
     <div>
-      <h1>Gus, ton copilote de trajet</h1>
-      <p class="sub">Demande-lui à l'écrit ou à la voix : le retard de ton train, le prochain départ, un plan B, tes droits. Il répond avec les données relevées en direct.</p>
+      <h1 data-en="Gus, your trip copilot">Gus, ton copilote de trajet</h1>
+      <p class="sub" data-en="Ask him in writing or out loud: your train's delay, the next departure, a plan B, your rights. He answers with data recorded live.">Demande-lui à l'écrit ou à la voix : le retard de ton train, le prochain départ, un plan B, tes droits. Il répond avec les données relevées en direct.</p>
       <p id="gusState" class="gus-state" aria-live="polite">Prêt à t'aider</p>
     </div>
   </div>
-  <p class="beta"><b>Version d'essai gratuite.</b> Les questions sont traitées par un fournisseur d'intelligence artificielle (Google Gemini, Groq ou Mistral AI) qui peut s'en servir pour améliorer ses modèles et les faire relire par des personnes : n'écris pas d'informations personnelles.</p>
+  <p class="beta" data-en="<b>Free trial version.</b> Unusual questions may be sent to an AI provider (Google Gemini, Groq or Mistral AI) that may use them to improve its models and have them read by people: do not write personal information."><b>Version d'essai gratuite.</b> Les questions sont traitées par un fournisseur d'intelligence artificielle (Google Gemini, Groq ou Mistral AI) qui peut s'en servir pour améliorer ses modèles et les faire relire par des personnes : n'écris pas d'informations personnelles.</p>
 
-  <label class="field">Ton trajet habituel (facultatif, reste sur ton appareil)
-    <input id="trajet" type="text" maxlength="120" placeholder="ex. Lyon Part-Dieu → Grenoble, ou RER B Gare du Nord → Massy" autocomplete="off">
+  <label class="field"><span data-en="Your usual trip (optional, stays on your device)">Ton trajet habituel (facultatif, reste sur ton appareil)</span>
+    <input id="trajet" type="text" maxlength="120" placeholder="ex. Lyon Part-Dieu → Grenoble, ou RER B Gare du Nord → Massy" data-en-placeholder="e.g. Lyon Part-Dieu → Grenoble, or RER B Gare du Nord → Massy" autocomplete="off">
   </label>
 
   <div id="chat" class="chat" aria-live="polite"></div>
-  <div id="chips" class="chips" aria-label="Exemples de questions"></div>
+  <div id="chips" class="chips" aria-label="Exemples de questions" data-en-label="Example questions"></div>
 
   <div class="composer">
     <div id="live" class="live" hidden aria-live="polite">
       <span class="lv-dot" aria-hidden="true"></span>
-      <span id="liveTxt" class="lv-txt">Je t'écoute…</span>
-      <button id="liveStop" class="lv-stop" type="button">Terminer</button>
+      <span id="liveTxt" class="lv-txt" data-en="Listening…">Je t'écoute…</span>
+      <button id="liveStop" class="lv-stop" type="button" data-en="Done">Terminer</button>
     </div>
     <form id="form" class="row" autocomplete="off">
-      <label for="q" class="sr">Ta question</label>
-      <textarea id="q" rows="1" maxlength="1000" placeholder="Pose ta question ou dis « de Lyon à Grenoble »…"></textarea>
-      <button id="mic" class="icon mic" type="button" aria-pressed="false" aria-label="Parler" title="Parler">
+      <label for="q" class="sr" data-en="Your question">Ta question</label>
+      <textarea id="q" rows="1" maxlength="1000" placeholder="Pose ta question ou dis « de Lyon à Grenoble »…" data-en-placeholder="Ask a question or say “from Lyon to Grenoble”…"></textarea>
+      <button id="mic" class="icon mic" type="button" aria-pressed="false" aria-label="Parler" title="Parler" data-en-label="Speak" data-en-title="Speak">
         <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
-      <button id="send" class="icon send" type="submit" aria-label="Envoyer" title="Envoyer">
+      <button id="send" class="icon send" type="submit" aria-label="Envoyer" title="Envoyer" data-en-label="Send" data-en-title="Send">
         <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z" fill="currentColor"/></svg>
       </button>
     </form>
     <div class="opts">
-      <label><input id="speak" type="checkbox"> Lire les réponses à voix haute</label>
-      <label><input id="handsfree" type="checkbox"> Conversation à la voix</label>
-      <button id="reset" type="button">Nouvelle conversation</button>
+      <label><input id="speak" type="checkbox"> <span data-en="Read answers aloud">Lire les réponses à voix haute</span></label>
+      <label><input id="handsfree" type="checkbox"> <span data-en="Voice conversation">Conversation à la voix</span></label>
+      <button id="reset" type="button" data-en="New conversation">Nouvelle conversation</button>
     </div>
-    <p id="micNote" class="opts" hidden>La dictée vocale n'est pas disponible dans ce navigateur : essaie Chrome, Edge ou Safari, ou écris ta question.</p>
+    <p id="micNote" class="opts" hidden data-en="Voice dictation is not available in this browser: try Chrome, Edge or Safari, or type your question.">La dictée vocale n'est pas disponible dans ce navigateur : essaie Chrome, Edge ou Safari, ou écris ta question.</p>
   </div>
 </div>
 
 <script src="config.js"></script>
+<script src="lp-i18n.js"></script>
 <script src="lp-core.js"></script>
 <script src="gus.js"></script>
 <script src="gus-local.js"></script>
 <script>
 const CFG = window.LP_CONFIG || {};
+const {L} = LPI, EN = LPI.lang === "en";
+document.title = L("Gus, ton copilote · LateProof", "Gus, your copilot · LateProof");
 const ENDPOINT = () => (CFG.url ? `${CFG.url}/functions/v1/assistant` : null);
 const $ = (id) => document.getElementById(id);
 const chat = $("chat"), q = $("q"), form = $("form"), mic = $("mic"), send = $("send"), speakBox = $("speak"), handsBox = $("handsfree"), trajetIn = $("trajet");
@@ -173,7 +176,15 @@ const store = {   // confort uniquement : tout marche si le navigateur bloque le
 // ---------------------------------------------------------------- conversation
 let history = (store.get("lp-chat") || []).slice(-20);
 let busy = false;
-const SUGGESTIONS = [
+const SUGGESTIONS = EN ? [
+  "From Lyon Part-Dieu to Grenoble",
+  "I want to go to Massy-Palaiseau",
+  "Is the RER B on time today?",
+  "Next departures at Gare de Lyon",
+  "Any strikes this week?",
+  "Is my usual trip disrupted?",
+  "My TGV is 1 hour late, what are my rights?",
+] : [
   "De Lyon Part-Dieu à Grenoble",
   "Je veux aller à Massy-Palaiseau",
   "Le RER B est-il à l'heure aujourd'hui ?",
@@ -185,7 +196,8 @@ const SUGGESTIONS = [
 
 // ---------------------------------------------------------------- Gus : humeur selon ce qui se passe
 const gus = Gus.mount($("gusHero"), {head: true, size: 84, mood: "content"});
-const STATE = {neutre: "Prêt à t'aider", content: "Prêt à t'aider", ecoute: "Je t'écoute…", reflexion: "Je regarde le trafic…", retard: "Il y a du retard", bravo: "C'est parti !"};
+const STATE = EN ? {neutre: "Ready to help", content: "Ready to help", ecoute: "Listening…", reflexion: "Checking the traffic…", retard: "There are delays", bravo: "Let's go!"}
+  : {neutre: "Prêt à t'aider", content: "Prêt à t'aider", ecoute: "Je t'écoute…", reflexion: "Je regarde le trafic…", retard: "Il y a du retard", bravo: "C'est parti !"};
 let moodTimer = null;
 function setMood(m, hold) {
   clearTimeout(moodTimer);
@@ -194,7 +206,7 @@ function setMood(m, hold) {
   if (hold) moodTimer = setTimeout(() => setMood("content"), hold);
 }
 // Une réponse qui parle de retard ou de suppression rend Gus soucieux.
-const moodFor = (text) => /\+\s?\d+\s?min|retard|supprim|annul|grève|perturb/i.test(text) && !/aucun retard|pas de retard|à l'heure/i.test(text) ? "retard" : "content";
+const moodFor = (text) => /\+\s?\d+\s?min|retard|supprim|annul|grève|perturb|delay|late|cancel|strike|disrupt/i.test(text) && !/aucun retard|pas de retard|à l'heure|no delay|on time/i.test(text) ? "retard" : "content";
 
 function bubble(role, text, opts = {}) {
   const d = document.createElement("div");
@@ -207,7 +219,7 @@ function bubble(role, text, opts = {}) {
   }
   if (role !== "user" && !opts.typing && canSpeak) {
     const b = document.createElement("button");
-    b.type = "button"; b.className = "say"; b.textContent = "▶ Écouter";
+    b.type = "button"; b.className = "say"; b.textContent = L("▶ Écouter", "▶ Listen");
     b.addEventListener("click", () => say(text));
     d.appendChild(document.createElement("br")); d.appendChild(b);
   }
@@ -225,7 +237,7 @@ function withAvatar(d, mood) {
 }
 function typing() {
   const d = document.createElement("div");
-  d.className = "msg bot"; d.setAttribute("aria-label", "Gus réfléchit");
+  d.className = "msg bot"; d.setAttribute("aria-label", L("Gus réfléchit", "Gus is thinking"));
   d.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
   const row = withAvatar(d, "reflexion");
   chat.appendChild(row); row.scrollIntoView({block: "nearest"});
@@ -233,7 +245,7 @@ function typing() {
 }
 function renderAll() {
   chat.textContent = "";
-  if (!history.length) bubble("bot", "Salut, moi c'est Gus, ton copilote de trajet ! Dis-moi où tu vas, par exemple « de Lyon à Grenoble » ou « je veux aller à Massy », et je t'ouvre l'itinéraire. Tu peux aussi me demander l'état d'une ligne, les prochains départs d'une gare, un numéro de train ou tes droits.");
+  if (!history.length) bubble("bot", EN ? "Hi, I'm Gus, your trip copilot! Tell me where you're going, for example “from Lyon to Grenoble” or “I want to go to Massy”, and I'll open the journey. You can also ask me about a line, the next departures at a station, a train number or your rights." : "Salut, moi c'est Gus, ton copilote de trajet ! Dis-moi où tu vas, par exemple « de Lyon à Grenoble » ou « je veux aller à Massy », et je t'ouvre l'itinéraire. Tu peux aussi me demander l'état d'une ligne, les prochains départs d'une gare, un numéro de train ou tes droits.");
   history.forEach((m) => bubble(m.role, m.content));
   $("chips").hidden = history.length > 0;
 }
@@ -252,7 +264,17 @@ function cleanPlace(p) {
     .replace(/\s+(?:s'il te pla[iî]t|stp|maintenant|ce soir|ce matin|demain|aujourd'hui|tout de suite)$/g, "")
     .replace(/["«»]/g, "").trim();
 }
+function parseTripEn(t) {
+  const ok = (a, b) => { a = a.replace(/^the /, "").trim(); b = b.replace(/^the /, "").replace(/\s+(?:please|now|today|tonight|by (?:train|rer|metro|tram)(?:\s+\w{1,3})?)$/g, "").trim();
+    return b.length >= 2 && a.length >= 2 && a !== b ? {from: a, to: b} : null; };
+  let m = t.match(/(?:^|\s)from\s+(.+?)\s+to\s+(.+)$/);
+  if (m) return ok(m[1], m[2]);
+  m = t.match(/\b(?:go|get|travel|going|head|take me|bring me|route|directions|journey|way)\b.*?\bto\s+(.+?)(?:\s+from\s+(.+))?$/);
+  if (m) return m[2] ? ok(m[2], m[1]) : ok("ma position", m[1]);
+  return null;
+}
 function parseTrip(raw) {
+  if (EN) return parseTripEn(raw.toLowerCase().replace(/[’]/g, "'").replace(/[?!.;]+/g, " ").replace(/\s+/g, " ").trim());
   const t = raw.toLowerCase().replace(/[’]/g, "'").replace(/[?!.;]+/g, " ").replace(/\s+/g, " ").trim();
   if (t.length > 160) return null;
   const ok = (a, b) => { a = cleanPlace(a); b = cleanPlace(b); return b.length >= 2 && a.length >= 2 && a !== b ? {from: a, to: b} : null; };
@@ -266,7 +288,8 @@ function parseTrip(raw) {
 }
 const cap = (s) => s.replace(/(^|[\s-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
 const tripUrl = (t) => `carte.html#de=${encodeURIComponent(t.from)}&vers=${encodeURIComponent(t.to)}`;
-const tripText = (t) => `Je t'ouvre l'itinéraire ${t.from === "ma position" ? "depuis ta position" : "de " + cap(t.from)} vers ${cap(t.to)}.`;
+const tripText = (t) => EN ? `Opening the journey ${t.from === "ma position" ? "from your location" : "from " + cap(t.from)} to ${cap(t.to)}.`
+  : `Je t'ouvre l'itinéraire ${t.from === "ma position" ? "depuis ta position" : "de " + cap(t.from)} vers ${cap(t.to)}.`;
 let leaving = false;
 async function goTrip(t, spoken) {
   leaving = true;
@@ -275,7 +298,7 @@ async function goTrip(t, spoken) {
   setTimeout(() => { location.href = tripUrl(t); }, spoken ? 200 : 1400);
 }
 
-const HELP = "Je n'ai pas compris. Je sais répondre à : « de Lyon à Grenoble » ou « je veux aller à Massy » (itinéraire), " +
+const HELP = EN ? "I didn't understand. I can answer: “from Lyon to Grenoble” or “I want to go to Massy” (journey), “is the RER B on time?”, “next departures at Gare de Lyon”, “train 6611”, “any strikes this week?”, “is my usual trip disrupted?” and “what are my rights?”." : "Je n'ai pas compris. Je sais répondre à : « de Lyon à Grenoble » ou « je veux aller à Massy » (itinéraire), " +
   "« le RER B est-il à l'heure ? », « prochains départs à Gare de Lyon », « train 6611 », « y a-t-il des grèves cette semaine ? », " +
   "« mon trajet habituel est-il perturbé ? » et « quels sont mes droits ? ».";
 
@@ -302,7 +325,7 @@ async function ask(text, opts = {}) {
   const trip = parseTrip(text);
   if (trip && !GusLocal.badPlace(trip.to) && (trip.from === "ma position" || !GusLocal.badPlace(trip.from))) {
     const msg = tripText(trip);
-    bubble("bot", msg, {mood: "bravo", link: {href: tripUrl(trip), label: "Voir l'itinéraire →"}});
+    bubble("bot", msg, {mood: "bravo", link: {href: tripUrl(trip), label: L("Voir l'itinéraire →", "See the journey →")}});
     history.push({role: "user", content: text}, {role: "assistant", content: msg}); store.set("lp-chat", history.slice(-20));
     busy = false; send.disabled = false;
     goTrip(trip, speakIt ? say(msg) : null);
@@ -335,12 +358,12 @@ async function ask(text, opts = {}) {
   history.pop();
   wait.remove();
   if (!answer) {
-    reply(text, {text: navigator.onLine === false ? "Je n'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie." : HELP, mood: "neutre"}, {speak: speakIt});
+    reply(text, {text: navigator.onLine === false ? L("Je n'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie.", "I can't reach the server. Check your connection and try again.") : HELP, mood: "neutre"}, {speak: speakIt});
     return;
   }
   const trip2 = action && action.type === "itineraire" && action.arrivee ? {from: action.depart || "ma position", to: action.arrivee} : null;
   history.push({role: "user", content: text});
-  bubble("bot", answer, {link: trip2 ? {href: tripUrl(trip2), label: "Voir l'itinéraire →"} : null});
+  bubble("bot", answer, {link: trip2 ? {href: tripUrl(trip2), label: L("Voir l'itinéraire →", "See the journey →")} : null});
   history.push({role: "assistant", content: answer}); store.set("lp-chat", history.slice(-20));
   busy = false; send.disabled = false;
   const spoken = speakIt ? say(answer) : null;
@@ -362,9 +385,9 @@ trajetIn.addEventListener("change", () => store.set("lp-trajet", trajetIn.value.
 const canSpeak = "speechSynthesis" in window;
 let voice = null;
 function pickVoice() {
-  const fr = speechSynthesis.getVoices().filter((v) => /^fr(-|_|$)/i.test(v.lang));
+  const fr = speechSynthesis.getVoices().filter((v) => (EN ? /^en(-|_|$)/i : /^fr(-|_|$)/i).test(v.lang));
   // Les voix « naturelles » (Edge, Chrome, Safari) d'abord, sinon la premiere voix francaise.
-  voice = fr.find((v) => /natural|online|google|amélie|amelie|audrey|thomas|denise|henri/i.test(v.name)) || fr[0] || null;
+  voice = fr.find((v) => /natural|online|google|amélie|amelie|audrey|thomas|denise|henri|samantha|daniel|sonia|ryan/i.test(v.name)) || fr[0] || null;
 }
 if (canSpeak) { pickVoice(); speechSynthesis.addEventListener?.("voiceschanged", pickVoice); }
 else speakBox.closest("label").hidden = true;
@@ -373,8 +396,8 @@ function say(text) {
   if (!canSpeak) return Promise.resolve();
   stopSpeaking();
   return new Promise((done) => {
-    const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>«»]/g, "").replace(/(\d+)h(\d\d)/g, "$1 heures $2").replace(/→/g, " vers "));
-    u.lang = "fr-FR"; if (voice) u.voice = voice; u.rate = 1.05;
+    const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>«»]/g, "").replace(/(\d+)h(\d\d)/g, EN ? "$1:$2" : "$1 heures $2").replace(/→/g, EN ? " to " : " vers "));
+    u.lang = EN ? "en-GB" : "fr-FR"; if (voice) u.voice = voice; u.rate = 1.05;
     const t = setTimeout(done, 12000);
     u.onend = u.onerror = () => { clearTimeout(t); done(); };
     speechSynthesis.speak(u);
@@ -406,7 +429,7 @@ function liveUi(on, text) {
   if (text != null) liveTxt.textContent = text;
   live.classList.toggle("on", on);
   mic.setAttribute("aria-pressed", String(on));
-  mic.setAttribute("aria-label", on ? "Arrêter d'écouter" : "Parler");
+  mic.setAttribute("aria-label", on ? L("Arrêter d'écouter", "Stop listening") : L("Parler", "Speak"));
   if (on) setMood("ecoute");
 }
 function liveDone(msg) {
@@ -416,16 +439,16 @@ function liveDone(msg) {
 }
 function heard(text) {
   text = (text || "").trim();
-  if (!text) return liveDone("Je n'ai rien entendu. Appuie sur le micro et parle juste après.");
+  if (!text) return liveDone(L("Je n'ai rien entendu. Appuie sur le micro et parle juste après.", "I didn't hear anything. Tap the mic and speak right after."));
   liveDone();
   if (canSpeak && store.get("lp-speak") !== false) { speakBox.checked = true; store.set("lp-speak", true); }
   ask(text, {voice: true});
 }
-const micBlocked = () => liveDone("Le micro est bloqué : autorise-le dans ton navigateur (icône à gauche de l'adresse), puis réessaie.");
+const micBlocked = () => liveDone(L("Le micro est bloqué : autorise-le dans ton navigateur (icône à gauche de l'adresse), puis réessaie.", "The microphone is blocked: allow it in your browser (icon left of the address), then try again."));
 
 function startBrowser() {
   const rec = new SR();
-  rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  rec.lang = EN ? "en-GB" : "fr-FR"; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
   let finalText = "", interim = "", failed = null;
   rec.onresult = (e) => {
     interim = "";
@@ -433,7 +456,7 @@ function startBrowser() {
       if (e.results[i].isFinal) finalText += e.results[i][0].transcript; else interim += e.results[i][0].transcript;
     }
     const now = (finalText + " " + interim).trim();
-    liveTxt.textContent = now || "Je t'écoute…"; q.value = now; grow();
+    liveTxt.textContent = now || L("Je t'écoute…", "Listening…"); q.value = now; grow();
   };
   rec.onerror = (e) => { failed = e.error; };
   rec.onend = () => {
@@ -442,22 +465,22 @@ function startBrowser() {
     if ((failed === "network" || failed === "service-not-allowed" || failed === "language-not-supported") && canRecord) {
       // La dictée du navigateur ne marche pas ici : on passe à l'enregistrement, et on s'en souvient.
       engine = "server"; store.set("lp-stt", "server");
-      liveUi(false, "La dictée de ce navigateur ne répond pas : je passe à l'enregistrement.");
+      liveUi(false, L("La dictée de ce navigateur ne répond pas : je passe à l'enregistrement.", "This browser's dictation is not responding: switching to recording."));
       return startServer();
     }
-    if (failed === "audio-capture") return liveDone("Aucun micro détecté sur cet appareil.");
+    if (failed === "audio-capture") return liveDone(L("Aucun micro détecté sur cet appareil.", "No microphone found on this device."));
     heard(finalText || interim);
   };
   stopNow = () => rec.stop();
-  try { rec.start(); liveUi(true, "Je t'écoute… parle maintenant."); }
-  catch (e) { stopNow = null; liveDone("Impossible de lancer la dictée, réessaie."); }
+  try { rec.start(); liveUi(true, L("Je t'écoute… parle maintenant.", "Listening… speak now.")); }
+  catch (e) { stopNow = null; liveDone(L("Impossible de lancer la dictée, réessaie.", "Could not start dictation, try again.")); }
 }
 
 async function startServer() {
-  if (!ENDPOINT()) return liveDone("La dictée n'est pas disponible hors ligne. Écris ta question.");
+  if (!ENDPOINT()) return liveDone(L("La dictée n'est pas disponible hors ligne. Écris ta question.", "Dictation is not available offline. Type your question."));
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); }
-  catch (e) { return e && e.name === "NotFoundError" ? liveDone("Aucun micro détecté sur cet appareil.") : micBlocked(); }
+  catch (e) { return e && e.name === "NotFoundError" ? liveDone(L("Aucun micro détecté sur cet appareil.", "No microphone found on this device.")) : micBlocked(); }
   const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/ogg;codecs=opus", "audio/webm"].find((t) => MediaRecorder.isTypeSupported?.(t)) || "";
   const mr = new MediaRecorder(stream, type ? {mimeType: type} : {});
   const chunks = [];
@@ -484,22 +507,22 @@ async function startServer() {
   mr.onstop = async () => {
     stopNow = null;
     stream.getTracks().forEach((t) => t.stop()); if (ac) ac.close();
-    if (!spoke || !chunks.length) return liveDone("Je n'ai rien entendu. Appuie sur le micro et parle juste après.");
-    liveUi(false, "Je transcris…"); live.hidden = false; setMood("reflexion");
+    if (!spoke || !chunks.length) return liveDone(L("Je n'ai rien entendu. Appuie sur le micro et parle juste après.", "I didn't hear anything. Tap the mic and speak right after."));
+    liveUi(false, L("Je transcris…", "Transcribing…")); live.hidden = false; setMood("reflexion");
     const blob = new Blob(chunks, {type: mr.mimeType || type || "audio/webm"});
     try {
       const r = await fetch(ENDPOINT(), {method: "POST", headers: {"Content-Type": blob.type, apikey: CFG.key}, body: blob});
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.text) return heard(j.text);
       if (r.status === 404 || r.status === 501) {
-        return liveDone(SR ? "La transcription n'est pas encore activée. Essaie Chrome ou Edge, ou écris ta question." : "La dictée n'est pas disponible dans ce navigateur pour l'instant : essaie Chrome, Edge ou Safari, ou écris ta question.");
+        return liveDone(SR ? L("La transcription n'est pas encore activée. Essaie Chrome ou Edge, ou écris ta question.", "Transcription is not switched on yet. Try Chrome or Edge, or type your question.") : L("La dictée n'est pas disponible dans ce navigateur pour l'instant : essaie Chrome, Edge ou Safari, ou écris ta question.", "Dictation is not available in this browser yet: try Chrome, Edge or Safari, or type your question."));
       }
-      liveDone(j.reply || "Je n'ai pas réussi à t'entendre, réessaie ou écris ta question.");
-    } catch (e) { liveDone("Je n'arrive pas à joindre le serveur. Vérifie ta connexion."); }
+      liveDone(j.reply || L("Je n'ai pas réussi à t'entendre, réessaie ou écris ta question.", "I couldn't hear you, try again or type your question."));
+    } catch (e) { liveDone(L("Je n'arrive pas à joindre le serveur. Vérifie ta connexion.", "I can't reach the server. Check your connection.")); }
   };
   stopNow = () => { if (mr.state === "recording") mr.stop(); };
   mr.start(250);
-  liveUi(true, "Je t'écoute… parle maintenant, je m'arrête quand tu te tais.");
+  liveUi(true, L("Je t'écoute… parle maintenant, je m'arrête quand tu te tais.", "Listening… speak now, I'll stop when you go quiet."));
   setTimeout(tick, 200);
 }
 

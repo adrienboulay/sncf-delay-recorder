@@ -152,9 +152,11 @@
   // ---------------------------------------------------------------- dates et heures (Paris)
   const TZ = "Europe/Paris";
   const fmt = {
-    time: t => t ? new Date(t * 1000).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit", timeZone: TZ}).replace(":", "h") : "",
-    day: t => new Date(t * 1000).toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long", timeZone: TZ}),
-    dayShort: t => new Date(t * 1000).toLocaleDateString("fr-FR", {day: "2-digit", month: "2-digit", timeZone: TZ}),
+    // Langue de la page (lp-i18n.js) : « 12h40 » en français, « 12:40 » en anglais.
+    time: t => { if (!t) return ""; const en = window.LPI && LPI.lang === "en";
+      const s = new Date(t * 1000).toLocaleTimeString(en ? "en-GB" : "fr-FR", {hour: "2-digit", minute: "2-digit", timeZone: TZ}); return en ? s : s.replace(":", "h"); },
+    day: t => new Date(t * 1000).toLocaleDateString(window.LPI ? LPI.locale : "fr-FR", {weekday: "long", day: "numeric", month: "long", timeZone: TZ}),
+    dayShort: t => new Date(t * 1000).toLocaleDateString(window.LPI ? LPI.locale : "fr-FR", {day: "2-digit", month: "2-digit", timeZone: TZ}),
     ymd: t => new Date(t * 1000).toLocaleDateString("fr-CA", {timeZone: TZ}).replace(/-/g, ""),
     min: s => Math.round((s || 0) / 60),
   };
