@@ -1,9 +1,10 @@
-# Publie la page sur GitHub Pages. La configuration Supabase (adresse + cle PUBLIQUE "publishable")
+# Publie le site (dossier site/) sur GitHub Pages : https://adrienboulay.github.io/lateproof/ La configuration Supabase (adresse + cle PUBLIQUE "publishable")
 # est injectee depuis les secrets du depot, pour ne pas l'ecrire dans le code.
-name: deploy
+name: site
 on:
   push:
     branches: [main]
+    paths: ["site/**", ".github/workflows/site.yml"]
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -20,6 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Generer config.js
+        working-directory: site
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
@@ -34,7 +36,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: public
+          path: site/public
   deploy:
     needs: build
     runs-on: ubuntu-latest
