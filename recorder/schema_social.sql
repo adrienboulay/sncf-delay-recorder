@@ -100,6 +100,9 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
     'national_pct15', (SELECT round(100.0 * SUM(late15) / NULLIF(SUM(n), 0), 1) FROM ranked),
     'worst', (SELECT COALESCE(json_agg(x ORDER BY x.pct15 DESC, x.n DESC), '[]'::json) FROM (
        SELECT net, line_id AS id, name, long, mode, days, n, late15, cancelled, pct15, pct5, pctx, avg_min FROM ranked ORDER BY pct15 DESC, n DESC LIMIT 15) x),
+    'metro', (SELECT COALESCE(json_agg(x ORDER BY x.pct15 DESC, x.pct5 DESC, x.pctx DESC), '[]'::json) FROM (
+       SELECT net, line_id AS id, name, long, mode, days, n, late15, cancelled, pct15, pct5, pctx, avg_min FROM ranked
+        WHERE net = 'idf' AND upper(mode) IN ('METRO', 'TRAM') ORDER BY pct15 DESC, pct5 DESC, pctx DESC LIMIT 8) x),
     'best', (SELECT COALESCE(json_agg(x ORDER BY x.pct15, x.n DESC), '[]'::json) FROM (
        SELECT net, line_id AS id, name, long, mode, days, n, late15, cancelled, pct15, pct5, pctx, avg_min FROM ranked WHERE n >= 150 ORDER BY pct15, n DESC LIMIT 5) x)) $$;
 
