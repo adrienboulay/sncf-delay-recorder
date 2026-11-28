@@ -3,15 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Vérification du justificatif · LateProof</title>
-<meta name="description" content="Justificatif de retard de train vérifiable : authentique, signé par le téléphone de son titulaire, impossible à modifier.">
-<meta property="og:title" content="Justificatif de retard vérifiable · LateProof">
-<meta property="og:description" content="Ouvre le lien pour vérifier le retard en 3 secondes, sans rien installer.">
+<title>Vérifier un justificatif de retard de train | LateProof</title>
+<meta name="description" content="Vérifiez en 3 secondes un justificatif de retard LateProof : signature, comparaison avec les relevés officiels SNCF et IDFM, sceau sur Solana.">
+<link rel="canonical" href="https://adrienboulay.github.io/lateproof/verif.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LateProof">
+<meta property="og:title" content="Vérifier un justificatif de retard de train | LateProof">
+<meta property="og:description" content="Vérifiez en 3 secondes un justificatif de retard LateProof : signature, comparaison avec les relevés officiels SNCF et IDFM, sceau sur Solana.">
+<meta property="og:url" content="https://adrienboulay.github.io/lateproof/verif.html">
+<meta property="og:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LateProof : le train déraille, pas ta journée. Justificatif de retard vérifiable.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Vérifier un justificatif de retard de train | LateProof">
+<meta name="twitter:description" content="Vérifiez en 3 secondes un justificatif de retard LateProof : signature, comparaison avec les relevés officiels SNCF et IDFM, sceau sur Solana.">
+<meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Vérifier un justificatif de retard de train", "item": "https://adrienboulay.github.io/lateproof/verif.html"}]}</script>
 <meta name="theme-color" content="#F2F1EC">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{--bg:#F2F1EC;--surface:#FFFFFF;--surface2:#F2F1EC;--surface3:#E6E5DF;--fg:#121417;--muted:#5C6068;--line:#E6E5DF;--lime:#D4FF3A;--orange:#C2410C;--blue:#121417;--on-blue:#FFFFFF;--soft:#FFFFFF;--ok:#3E6B00;--okfg:#3E6B00;--bad:#C2410C;--warn:#C2410C;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}[hidden]{display:none!important}
@@ -100,7 +115,7 @@ a{color:#121417}
 "use strict";
 const {fmt, esc} = LP, $ = id => document.getElementById(id);
 const {L, locale} = LPI;
-document.title = L("Vérification du justificatif · LateProof", "Certificate check · LateProof");
+document.title = L("Vérifier un justificatif de retard de train | LateProof", "Check a train delay certificate | LateProof");
 $("bTitle").textContent = L("Vérification…", "Checking…");
 $("bSub").textContent = L("Contrôle de la signature et du sceau, directement dans ce navigateur.", "Checking the signature and the seal, right here in your browser.");
 const ICON_OK = `<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#D4FF3A"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#121417" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -243,7 +258,7 @@ async function sealCheck(F) {
   // 1. L'empreinte telle qu'elle est écrite sur Solana
   let onChain = null;
   if (d.pda) {
-    const r = await fetch(SOL_RPC, {method: "POST", headers: {"Content-Type": "application/json"},
+    const r = await fetch(SOL_RPC, {signal: AbortSignal.timeout(15000), method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({jsonrpc: "2.0", id: 1, method: "getAccountInfo", params: [d.pda, {encoding: "base64", commitment: "finalized"}]})}).then(x => x.json()).catch(() => null);
     const b64 = r && r.result && r.result.value && r.result.value.data && r.result.value.data[0];
     // Compte Anchor : 8 octets d'en-tête, jour (4), racine (32), nombre (4), date (8)
@@ -254,7 +269,7 @@ async function sealCheck(F) {
   // 2. La liste publique exacte, recalculée ici
   const nf = new Intl.NumberFormat(locale);
   setChain("w", L(`Recalcul de l'empreinte du ${dayTxt} à partir de ses ${nf.format(d.n)} relevés publics…`, `Recomputing the fingerprint of ${dayTxt} from its ${nf.format(d.n)} public records…`));
-  const res = await fetch(`${LP.CFG.url}/storage/v1/object/public/${d.list}`);
+  const res = await fetch(`${LP.CFG.url}/storage/v1/object/public/${d.list}`, {signal: AbortSignal.timeout(30000)});
   if (!res.ok) return setChain(onChain ? "" : "w", L(`Les relevés du ${dayTxt} sont scellés sur Solana. ${txLink}`, `The records of ${dayTxt} are sealed on Solana. ${txLink}`));
   const text = await new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).text();
   const lines = text.split("\n").filter(Boolean), set = new Set(lines);
@@ -270,6 +285,7 @@ async function sealCheck(F) {
     `<b>Sealed on Solana</b>: this delay is one of the ${nf.format(lines.length)} records of ${dayTxt}, whose fingerprint is written on the blockchain${posted ? ` since ${posted}` : ""}${onChain ? "" : " (direct blockchain read unavailable: fingerprint from our registry)"}. Fingerprint recomputed in your browser in ${new Intl.NumberFormat(locale, {minimumFractionDigits: 1, maximumFractionDigits: 1}).format(Math.max(.1, (performance.now() - t0) / 1000))} s: identical. ${txLink}`));
 }
 
+if (navigator.doNotTrack !== "1" && !/localhost/.test(location.hostname)) LP.rpc("public_hit", {p_path: "verif.html"}).catch(() => {});   // audience sans cookie
 main();
 </script>
 </body>

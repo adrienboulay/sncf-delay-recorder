@@ -3,12 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>API pour agents · LateProof</title>
-<meta name="description" content="L'API LateProof payée à l'appel avec x402 : 0,01 USDC sur Solana, sans compte ni clé.">
+<title>API retards de trains payée à l'appel avec x402 | LateProof</title>
+<meta name="description" content="API pour agents IA : conseil de trajet et état du réseau ferré français en direct, payés à l'appel en USDC sur Solana avec x402, sans compte ni clé.">
+<link rel="canonical" href="https://adrienboulay.github.io/lateproof/api.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LateProof">
+<meta property="og:title" content="API retards de trains payée à l'appel avec x402 | LateProof">
+<meta property="og:description" content="API pour agents IA : conseil de trajet et état du réseau ferré français en direct, payés à l'appel en USDC sur Solana avec x402, sans compte ni clé.">
+<meta property="og:url" content="https://adrienboulay.github.io/lateproof/api.html">
+<meta property="og:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LateProof : le train déraille, pas ta journée. Justificatif de retard vérifiable.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="API retards de trains payée à l'appel avec x402 | LateProof">
+<meta name="twitter:description" content="API pour agents IA : conseil de trajet et état du réseau ferré français en direct, payés à l'appel en USDC sur Solana avec x402, sans compte ni clé.">
+<meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "API retards de trains payée à l'appel avec x402", "item": "https://adrienboulay.github.io/lateproof/api.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebAPI", "name": "LateProof API (x402)", "url": "https://adrienboulay.github.io/lateproof/api.html", "description": "API pour agents IA : conseil de trajet et état du réseau ferré français en direct, payés à l'appel en USDC sur Solana avec x402, sans compte ni clé.", "provider": {"@type": "Organization", "name": "LateProof"}, "documentation": "https://adrienboulay.github.io/lateproof/api.html"}</script>
 <meta name="theme-color" content="#121417">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
   --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:ui-monospace,"Cascadia Code",Consolas,monospace;color-scheme:dark}
@@ -132,8 +150,8 @@ console.log((await r.json()).conseil);</pre>
   </main>
 
   <footer>
-    <span data-en="LateProof, a project in progress.">LateProof, projet en construction.</span>
-    <span data-en="Data: SNCF open data, Île-de-France Mobilités.">Données : SNCF open data, Île-de-France Mobilités.</span>
+    <span>© 2026 LateProof · <span data-en="a project in progress.">projet en construction.</span></span>
+    <span><a href="confidentialite.html" data-en="Privacy">Confidentialité</a> · <a href="conditions.html#paiements" data-en="Terms, payments and refunds">Conditions, paiements et remboursements</a> · <span data-en="Data: SNCF open data, Île-de-France Mobilités.">Données : SNCF open data, Île-de-France Mobilités.</span></span>
   </footer>
 </div>
 
@@ -150,7 +168,7 @@ document.querySelectorAll("[data-try]").forEach(b => b.addEventListener("click",
   const st = $("st"), out = $("out"); st.hidden = false; out.hidden = false; st.textContent = "…"; out.textContent = "";
   st.scrollIntoView({block: "nearest", behavior: "smooth"});
   try {
-    const r = await fetch(`${base}/functions/v1/${b.dataset.try}`);
+    const r = await fetch(`${base}/functions/v1/${b.dataset.try}`, {signal: AbortSignal.timeout(15000)});
     st.textContent = `HTTP ${r.status} ${r.status === 402 ? "Payment Required" : ""}`;
     const h = r.headers.get("PAYMENT-REQUIRED");
     out.textContent = h ? `PAYMENT-REQUIRED (base64, ${L("décodé", "decoded")}) :\n` + JSON.stringify(JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(h), c => c.charCodeAt(0)))), null, 2) : await r.text();

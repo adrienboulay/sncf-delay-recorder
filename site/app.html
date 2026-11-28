@@ -3,12 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mon espace · LateProof</title>
-<meta name="description" content="Tes trajets, le retard en direct, ton justificatif de retard infalsifiable et tes droits, au même endroit.">
+<title>Mon espace : trajets, check-in et justificatifs | LateProof</title>
+<meta name="description" content="Ton espace LateProof : check-in dans le train, suivi du retard, justificatifs signés par ton téléphone et aide pour réclamer ta compensation.">
+<link rel="canonical" href="https://adrienboulay.github.io/lateproof/app.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LateProof">
+<meta property="og:title" content="Mon espace : trajets, check-in et justificatifs | LateProof">
+<meta property="og:description" content="Ton espace LateProof : check-in dans le train, suivi du retard, justificatifs signés par ton téléphone et aide pour réclamer ta compensation.">
+<meta property="og:url" content="https://adrienboulay.github.io/lateproof/app.html">
+<meta property="og:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LateProof : le train déraille, pas ta journée. Justificatif de retard vérifiable.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mon espace : trajets, check-in et justificatifs | LateProof">
+<meta name="twitter:description" content="Ton espace LateProof : check-in dans le train, suivi du retard, justificatifs signés par ton téléphone et aide pour réclamer ta compensation.">
+<meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Mon espace : trajets, check-in et justificatifs", "item": "https://adrienboulay.github.io/lateproof/app.html"}]}</script>
 <meta name="theme-color" content="#121417">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;--blue:#D4FF3A;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#D4FF3A;--red:#FF8A5C;--gold:#D4FF3A;--dot-ok:#D4FF3A;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#D4FF3A;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#D4FF3A;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -198,7 +215,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 "use strict";
 const {rpc, store, fmt, esc, passkey} = LP;
 const {L, locale} = LPI;
-document.title = L("Mon espace · LateProof", "My space · LateProof");
+document.title = L("Mon espace : trajets, check-in et justificatifs | LateProof", "My space: trips, check-in and certificates | LateProof");
 const $ = id => document.getElementById(id);
 const view = $("view");
 const now = () => Math.floor(Date.now() / 1000);
@@ -555,7 +572,7 @@ const CLAIM_URL = {
 };
 // Base des règles par opérateur et par région (sources et date de vérification dans le fichier)
 let COMP = null;
-const compReady = fetch("data/compensations.json").then(r => r.json()).then(j => { COMP = j; }).catch(() => {});
+const compReady = fetch("data/compensations.json", {signal: AbortSignal.timeout(10000)}).then(r => r.json()).then(j => { COMP = j; }).catch(() => {});
 function regionAt(lat, lon) {
   if (!COMP || lat == null) return null;
   const hit = COMP.region_boxes.filter(([, a, b, c, d]) => lat >= a && lat <= c && lon >= b && lon <= d)
@@ -799,6 +816,8 @@ route(/^\/profil$/, async () => {
         <button class="btn" id="resetKey">${L("Remplacer la clé", "Replace the key")}</button>` : `<p style="margin:0">${L("Pas encore de clé sur ce téléphone.", "No key on this phone yet.")}</p><button class="btn primary" id="mkKey">${L("Créer ma clé", "Create my key")}</button>`}
       <p class="muted small" style="margin:0">${L("Elle signe tes justificatifs. Elle ne quitte jamais ce téléphone. Les justificatifs déjà envoyés restent valables si tu la remplaces.", "It signs your certificates. It never leaves this phone. Certificates already sent stay valid if you replace it.")}</p></section>
     <section class="card"><h2>${L("Alertes du matin", "Morning alerts")}</h2><p class="muted small" style="margin:0">${L("Bientôt : une notification quand ton trajet habituel est perturbé, avec le plan B.", "Coming soon: a notification when your usual trip is disrupted, with the plan B.")}</p></section>
+    <section class="card"><h2>${L("Confidentialité et conditions", "Privacy and terms")}</h2><p class="muted small" style="margin:0">${L("Aucun cookie. Tes trajets et justificatifs restent sur ce téléphone.", "No cookies. Your trips and certificates stay on this phone.")}</p>
+      <div class="row"><a class="btn" href="confidentialite.html">${L("Confidentialité", "Privacy")}</a><a class="btn" href="conditions.html">${L("Conditions et mentions légales", "Terms and legal notice")}</a></div></section>
     <section class="card"><h2>${L("Mes données", "My data")}</h2><p class="muted small" style="margin:0">${L("Tout est gardé sur ce téléphone :", "Everything is kept on this phone:")} ${db.voyages().length} ${L("voyage(s)", "trip(s)")}, ${db.certs().length} ${L("justificatif(s)", "certificate(s)")}, ${favs.length} ${L("favori(s)", "favourite(s)")}.</p>
       <div class="row"><button class="btn" id="exp">${L("Exporter (fichier)", "Export (file)")}</button><button class="btn danger" id="wipe">${L("Tout effacer", "Erase everything")}</button></div></section>`;
   function saveHome() { if (tmp.a && tmp.b) { store.set("lpa-home", {a: tmp.a, b: tmp.b}); store.set("lp-trajet", `${tmp.a.name} → ${tmp.b.name}`); toast(L("Trajet habituel enregistré", "Usual trip saved")); } }

@@ -7,8 +7,8 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#121417">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
   --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:ui-monospace,"Cascadia Code",Consolas,monospace;color-scheme:dark}
@@ -88,6 +88,9 @@ details summary{cursor:pointer;color:var(--muted);font-size:.8rem}
     <div class="grid">
       <section class="card"><div class="hd"><h2>Inscriptions aux nouveautés · 14 jours</h2></div><div id="cWait"></div></section>
       <section class="card"><div class="hd"><h2>Questions à Gus · par jour</h2></div><div id="cGus"></div></section>
+      <section class="card"><div class="hd"><h2>Visites (pages vues, sans cookie) · 14 jours</h2></div><div id="cViews"></div></section>
+      <section class="card"><div class="hd"><h2>Pages les plus vues · 7 jours</h2></div><div id="top"></div></section>
+      <section class="card full"><div class="hd"><h2>Erreurs du site</h2><span class="muted small" id="errN"></span></div><div id="errs"></div></section>
       <section class="card"><div class="hd"><h2>Enregistreur</h2></div><div id="rec"></div></section>
       <section class="card"><div class="hd"><h2>Sceaux Solana (empreintes de la nuit)</h2></div><div id="sol"></div></section>
       <section class="card full"><div class="hd"><h2>Avis à modérer</h2><span class="muted small" id="revN"></span></div><div id="revs" style="display:grid;gap:8px"></div></section>
@@ -105,10 +108,12 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "
 const nf = new Intl.NumberFormat("fr-FR"), when = t => t ? new Date(t * 1000).toLocaleString("fr-FR", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"}) : "—";
 const ago = s => s == null ? "—" : s < 120 ? `il y a ${Math.round(s)} s` : s < 7200 ? `il y a ${Math.round(s / 60)} min` : `il y a ${Math.round(s / 3600)} h`;
 // Mot de passe gardé seulement le temps de l'onglet (sessionStorage), jamais dans le code ni sur un serveur tiers
-const tok = {get() { try { return sessionStorage.getItem("lp-admin") || ""; } catch (e) { return ""; } },
-             set(v) { try { v ? sessionStorage.setItem("lp-admin", v) : sessionStorage.removeItem("lp-admin"); } catch (e) {} }};
+// La session expire après 2 h : il faut alors ressaisir le mot de passe.
+const TTL = 2 * 3600 * 1000;
+const tok = {get() { try { const o = JSON.parse(sessionStorage.getItem("lp-admin") || "null"); if (!o || Date.now() > o.exp) { sessionStorage.removeItem("lp-admin"); return ""; } return o.t; } catch (e) { return ""; } },
+             set(v) { try { v ? sessionStorage.setItem("lp-admin", JSON.stringify({t: v, exp: Date.now() + TTL})) : sessionStorage.removeItem("lp-admin"); } catch (e) {} }};
 async function call(what, body) {
-  const r = await fetch(body ? API : `${API}?do=${what}`, {method: body ? "POST" : "GET", headers: {"x-admin-token": tok.get(), ...(body ? {"Content-Type": "application/json"} : {})}, body: body ? JSON.stringify(body) : undefined});
+  const r = await fetch(body ? API : `${API}?do=${what}`, {signal: AbortSignal.timeout(20000), method: body ? "POST" : "GET", headers: {"x-admin-token": tok.get(), ...(body ? {"Content-Type": "application/json"} : {})}, body: body ? JSON.stringify(body) : undefined});
   const j = await r.json().catch(() => ({}));
   if (r.status === 401) { tok.set(""); show(false); $("err").textContent = j.error || "Mot de passe incorrect"; throw new Error("401"); }
   if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
@@ -131,7 +136,7 @@ const tile = (k, v, s, warn) => `<div class="tile${warn ? " warn" : ""}"><span c
 const dayLbl = d => { const s = String(d).replace(/-/g, ""); return `${s.slice(6, 8)}/${s.slice(4, 6)}`; };
 
 async function load() {
-  const [s, revs] = await Promise.all([call("stats"), call("reviews")]);
+  const [s, revs, site] = await Promise.all([call("stats"), call("reviews"), call("site").catch(() => ({}))]);
   const t = s.today || {}, w = s.waitlist || {}, g = s.gus || {}, x = s.x402 || {}, rc = s.recorder || {}, now = s.now;
   const sncfAge = rc.sncf_last ? now - rc.sncf_last : null, idfAge = rc.idf_last ? now - rc.idf_last : null;
   $("upd").textContent = `· ${when(now)}`;
@@ -149,6 +154,10 @@ async function load() {
   bars($("cWait"), days, "Inscriptions");
   bars($("cGus"), (g.by_day || []).map(r => ({label: dayLbl(r.day), n: +r.n, extra: `${r.users} pers.`})), "Questions");
 
+  bars($("cViews"), [...(site.views_by_day || [])].reverse().map(r => ({label: dayLbl(r.day), n: +r.n})), "Pages vues");
+  $("top").innerHTML = (site.top_pages || []).length ? `<table><thead><tr><th>Page</th><th class="num">Vues</th></tr></thead><tbody>${site.top_pages.map(r => `<tr><td class="mono">${esc(r.path)}</td><td class="num">${nf.format(r.n)}</td></tr>`).join("")}</tbody></table>` : `<p class="muted small">Pas encore de visite comptée.</p>`;
+  $("errN").textContent = `${nf.format(site.errors_24h || 0)} sur 24 h`;
+  $("errs").innerHTML = (site.errors || []).length ? `<table><thead><tr><th>Quand</th><th>Page</th><th>Message</th></tr></thead><tbody>${site.errors.map(e => `<tr><td>${when(e.at)}</td><td class="mono">${esc(e.page)}</td><td class="mono">${esc(e.msg)}</td></tr>`).join("")}</tbody></table>` : `<p class="muted small">Aucune erreur signalée.</p>`;
   $("rec").innerHTML = `<table><tbody>
     <tr><td>SNCF</td><td><span class="pill ${sncfAge != null && sncfAge < 600 ? "ok" : "bad"}">${ago(sncfAge)}</span></td><td class="num">${nf.format(rc.sncf_hour || 0)} relevés / h${rc.sncf_errors_hour ? ` · <span class="bad">${rc.sncf_errors_hour} erreur(s)</span>` : ""}</td></tr>
     <tr><td>Île-de-France</td><td><span class="pill ${idfAge != null && idfAge < 600 ? "ok" : "bad"}">${ago(idfAge)}</span></td><td class="num">${nf.format(rc.idf_hour || 0)} relevés / h</td></tr></tbody></table>

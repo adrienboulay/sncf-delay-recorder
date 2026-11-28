@@ -1,0 +1,37 @@
+# Surveillance : toutes les 30 min, vérifie que le site, la base, les API et l'enregistreur répondent.
+# Un échec fait échouer le workflow : GitHub prévient le propriétaire du dépôt par e-mail (réglages de notification Actions).
+name: uptime
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Site, base de données, API x402, tableau de bord, enregistreur
+        run: |
+          set -u
+          SITE=https://adrienboulay.github.io/lateproof
+          fail=0
+          code() { curl -s -o /dev/null -m 20 -w "%{http_code}" "$@"; }
+          for p in "" carte.html app.html assistant.html verif.html api.html confidentialite.html fonts/fonts.css data/compensations.json; do
+            c=$(code "$SITE/$p"); echo "$c  /$p"; [ "$c" = 200 ] || fail=1
+          done
+          CFG=$(curl -s -m 20 "$SITE/config.js")
+          URL=$(printf '%s' "$CFG" | sed -nE 's/.*url: "([^"]+)".*/\1/p'); KEY=$(printf '%s' "$CFG" | sed -nE 's/.*key: "([^"]+)".*/\1/p')
+          [ -n "$URL" ] || { echo "::error::config.js sans adresse Supabase"; exit 1; }
+          STATS=$(curl -s -m 20 "$URL/rest/v1/rpc/public_today_stats" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}')
+          echo "base : $(printf '%s' "$STATS" | head -c 160)"
+          UPD=$(printf '%s' "$STATS" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("updated_at") or 0)' 2>/dev/null || echo 0)
+          AGE=$(( $(date +%s) - ${UPD%.*} ))
+          echo "dernier relevé il y a ${AGE} s"
+          [ "$AGE" -lt 1200 ] || { echo "::error::Enregistreur à l'arrêt : dernier relevé il y a ${AGE} s"; fail=1; }
+          c=$(code "$URL/functions/v1/advice?de=Paris&vers=Lyon"); echo "$c  API advice (402 attendu)"; [ "$c" = 402 ] || fail=1
+          c=$(code "$URL/functions/v1/reseau"); echo "$c  API reseau (402 attendu)"; [ "$c" = 402 ] || fail=1
+          c=$(code "$URL/functions/v1/admin"); echo "$c  admin sans mot de passe (401 attendu)"; [ "$c" = 401 ] || fail=1
+          [ "$fail" = 0 ] || { echo "::error::Au moins un contrôle a échoué"; exit 1; }
+          echo "tout répond"

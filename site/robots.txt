@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /lateproof/admin.html
+Disallow: /lateproof/merci.html
+
+Sitemap: https://adrienboulay.github.io/lateproof/sitemap.xml

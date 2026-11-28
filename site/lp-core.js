@@ -11,6 +11,7 @@
     if (!CFG.url) throw new Error("hors ligne");
     const r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
       method: "POST", body: JSON.stringify(body), headers: {apikey: CFG.key, "Content-Type": "application/json"},
+      signal: AbortSignal.timeout(20000),   // une base lente ne bloque jamais l'écran
     });
     if (!r.ok) throw new Error(`${fn} ${r.status}`);
     return r.json();

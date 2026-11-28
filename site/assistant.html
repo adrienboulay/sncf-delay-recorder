@@ -3,12 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gus, ton copilote · LateProof</title>
-<meta name="description" content="Pose ta question à l'écrit ou à la voix : retards en direct, prochains trains, plan B et tes droits en cas de retard.">
+<title>Gus, assistant de trajet en train et retards | LateProof</title>
+<meta name="description" content="Gus répond à l'écrit ou à la voix : retard de ton train, prochains départs, plan B, grèves et tes droits au remboursement, avec les données en direct.">
+<link rel="canonical" href="https://adrienboulay.github.io/lateproof/assistant.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LateProof">
+<meta property="og:title" content="Gus, assistant de trajet en train et retards | LateProof">
+<meta property="og:description" content="Gus répond à l'écrit ou à la voix : retard de ton train, prochains départs, plan B, grèves et tes droits au remboursement, avec les données en direct.">
+<meta property="og:url" content="https://adrienboulay.github.io/lateproof/assistant.html">
+<meta property="og:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LateProof : le train déraille, pas ta journée. Justificatif de retard vérifiable.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gus, assistant de trajet en train et retards | LateProof">
+<meta name="twitter:description" content="Gus répond à l'écrit ou à la voix : retard de ton train, prochains départs, plan B, grèves et tes droits au remboursement, avec les données en direct.">
+<meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Gus, assistant de trajet en train et retards", "item": "https://adrienboulay.github.io/lateproof/assistant.html"}]}</script>
 <meta name="theme-color" content="#121417">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;--blue:#D4FF3A;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#D4FF3A;--red:#FF8A5C;--gold:#D4FF3A;--dot-ok:#D4FF3A;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#D4FF3A;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#D4FF3A;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -184,7 +201,7 @@ textarea,.field input{background:var(--surface);border-color:var(--surface3)}
 <script>
 const CFG = window.LP_CONFIG || {};
 const {L} = LPI, EN = LPI.lang === "en";
-document.title = L("Gus, ton copilote · LateProof", "Gus, your copilot · LateProof");
+document.title = L("Gus, assistant de trajet en train et retards | LateProof", "Gus, your train trip and delay assistant | LateProof");
 const ENDPOINT = () => (CFG.url ? `${CFG.url}/functions/v1/assistant` : null);
 const $ = (id) => document.getElementById(id);
 const chat = $("chat"), q = $("q"), form = $("form"), mic = $("mic"), send = $("send"), speakBox = $("speak"), handsBox = $("handsfree"), trajetIn = $("trajet");
@@ -366,6 +383,7 @@ async function ask(text, opts = {}) {
   try {
     if (ENDPOINT()) {
       const r = await fetch(ENDPOINT(), {
+        signal: AbortSignal.timeout(45000),
         method: "POST",
         headers: {"Content-Type": "application/json", apikey: CFG.key},
         body: JSON.stringify({messages: history.slice(-12), trajet: trajetIn.value.trim()}),
@@ -531,7 +549,7 @@ async function startServer() {
     liveUi(false, L("Je transcris…", "Transcribing…")); live.hidden = false; setMood("reflexion");
     const blob = new Blob(chunks, {type: mr.mimeType || type || "audio/webm"});
     try {
-      const r = await fetch(ENDPOINT(), {method: "POST", headers: {"Content-Type": blob.type, apikey: CFG.key}, body: blob});
+      const r = await fetch(ENDPOINT(), {method: "POST", headers: {"Content-Type": blob.type, apikey: CFG.key}, body: blob, signal: AbortSignal.timeout(45000)});
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.text) return heard(j.text);
       if (r.status === 404 || r.status === 501) {

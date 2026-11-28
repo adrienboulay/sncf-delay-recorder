@@ -3,13 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Carte des retards · LateProof</title>
-<meta name="description" content="Ponctualité des gares en direct, ta région, ta ligne, ton trajet : grèves annoncées et travaux à venir, en France.">
+<title>Carte des retards de trains en direct en France | LateProof</title>
+<meta name="description" content="Carte en direct des retards et suppressions de trains SNCF, TER, RER et Transilien, grèves et travaux annoncés, itinéraires train, métro et tram.">
+<link rel="canonical" href="https://adrienboulay.github.io/lateproof/carte.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LateProof">
+<meta property="og:title" content="Carte des retards de trains en direct en France | LateProof">
+<meta property="og:description" content="Carte en direct des retards et suppressions de trains SNCF, TER, RER et Transilien, grèves et travaux annoncés, itinéraires train, métro et tram.">
+<meta property="og:url" content="https://adrienboulay.github.io/lateproof/carte.html">
+<meta property="og:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LateProof : le train déraille, pas ta journée. Justificatif de retard vérifiable.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Carte des retards de trains en direct en France | LateProof">
+<meta name="twitter:description" content="Carte en direct des retards et suppressions de trains SNCF, TER, RER et Transilien, grèves et travaux annoncés, itinéraires train, métro et tram.">
+<meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Carte des retards de trains en direct en France", "item": "https://adrienboulay.github.io/lateproof/carte.html"}]}</script>
 <meta name="theme-color" content="#121417">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Meme identite que la page d'accueil. Mise en page : barre de recherche, carte a gauche, panneau a droite. */
 :root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;--blue:#D4FF3A;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#D4FF3A;--red:#FF8A5C;--gold:#D4FF3A;--dot-ok:#D4FF3A;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#D4FF3A;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#D4FF3A;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
@@ -968,13 +985,13 @@ combo(document.getElementById("q"), document.getElementById("qList"), null, o =>
 // ================================================================= Adresses et points : Base Adresse Nationale (gratuite, sans cle) + gares les plus proches
 async function geocode(q) {
   try {
-    const r = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q.slice(0, 200))}&limit=4&autocomplete=1`).then(x => x.json());
+    const r = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q.slice(0, 200))}&limit=4&autocomplete=1`, {signal: AbortSignal.timeout(8000)}).then(x => x.json());
     return (r.features || []).map(f => ({type: "address", label: f.properties.label, sub: f.properties.context || "", lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0]}));
   } catch (e) { return []; }
 }
 async function reverseGeocode(lat, lon) {
   try {
-    const r = await fetch(`https://api-adresse.data.gouv.fr/reverse/?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}&limit=1`).then(x => x.json());
+    const r = await fetch(`https://api-adresse.data.gouv.fr/reverse/?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}&limit=1`, {signal: AbortSignal.timeout(8000)}).then(x => x.json());
     return r.features && r.features[0] ? r.features[0].properties.label : null;
   } catch (e) { return null; }
 }
@@ -1993,7 +2010,7 @@ async function share() {
 
 // ================================================================= Donnees (Supabase, fonctions publiques d'agregats)
 const CFG = window.LP_CONFIG || {};
-const rpc = (fn, body = {}) => fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {method: "POST", body: JSON.stringify(body),
+const rpc = (fn, body = {}) => fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(20000),
   headers: {apikey: CFG.key, "Content-Type": "application/json"}}).then(r => r.ok ? r.json() : Promise.reject(r.status));
 let booted = false;
 

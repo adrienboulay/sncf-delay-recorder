@@ -3,14 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>LateProof · Le retard, prouvé</title>
-<meta name="description" content="Ton copilote quand le train déraille : retards en direct, plan B, et un justificatif de retard que ton manager vérifie en 3 secondes, sans appli.">
-<meta property="og:title" content="LateProof · Le retard, prouvé">
-<meta property="og:description" content="Retards en direct, plan B, et un justificatif vérifiable en 3 secondes.">
+<title>Justificatif de retard de train vérifiable | LateProof</title>
+<meta name="description" content="Justificatif de retard de train vérifiable en 3 secondes, retards SNCF et RER en direct, plan B et aide au remboursement. Gratuit, sans compte, scellé sur Solana.">
+<link rel="canonical" href="https://adrienboulay.github.io/lateproof/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LateProof">
+<meta property="og:title" content="Justificatif de retard de train vérifiable | LateProof">
+<meta property="og:description" content="Justificatif de retard de train vérifiable en 3 secondes, retards SNCF et RER en direct, plan B et aide au remboursement. Gratuit, sans compte, scellé sur Solana.">
+<meta property="og:url" content="https://adrienboulay.github.io/lateproof/">
+<meta property="og:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LateProof : le train déraille, pas ta journée. Justificatif de retard vérifiable.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Justificatif de retard de train vérifiable | LateProof">
+<meta name="twitter:description" content="Justificatif de retard de train vérifiable en 3 secondes, retards SNCF et RER en direct, plan B et aide au remboursement. Gratuit, sans compte, scellé sur Solana.">
+<meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Combien ça coûte ?", "acceptedAnswer": {"@type": "Answer", "text": "L'essentiel est gratuit : retards en direct, check-in et justificatifs. Une formule Pro (prix indicatif : 5,99 € par mois ou 49 € par an) ajoutera le copilote complet, les alertes du matin et la voix. Pour les entreprises, une offre par salarié."}}, {"@type": "Question", "name": "Le justificatif, c'est vraiment fiable ?", "acceptedAnswer": {"@type": "Answer", "text": "Il est signé par ton téléphone au moment du trajet, comparé aux relevés officiels SNCF et Île-de-France Mobilités, et la moindre retouche se voit. Et chaque nuit, l'empreinte de tous les relevés de la veille est publiée sur Solana (réseau de test pendant le hackathon) : personne, pas même nous, ne peut les modifier après coup sans que ça se voie."}}, {"@type": "Question", "name": "Et ma localisation ?", "acceptedAnswer": {"@type": "Answer", "text": "Elle sert uniquement, sur ton téléphone, à reconnaître ta gare au moment du check-in. Tes trajets et justificatifs restent sur ton appareil."}}, {"@type": "Question", "name": "Quels trains ?", "acceptedAnswer": {"@type": "Answer", "text": "Tous les trains SNCF en France (TGV, Intercités, TER), et en Île-de-France les RER et Transilien. Pour le métro et le tram, on suit la régularité, mais pas encore de justificatif : ils ne publient pas d'horaires."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "LateProof", "url": "https://adrienboulay.github.io/lateproof/", "logo": "https://adrienboulay.github.io/lateproof/img/og.jpg", "founder": {"@type": "Person", "name": "Adrien Boulay"}, "sameAs": ["https://github.com/adrienboulay/lateproof"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "LateProof", "url": "https://adrienboulay.github.io/lateproof/", "applicationCategory": "TravelApplication", "operatingSystem": "Web", "inLanguage": ["fr", "en"], "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "description": "Justificatif de retard de train vérifiable en 3 secondes, retards SNCF et RER en direct, plan B et aide au remboursement. Gratuit, sans compte, scellé sur Solana.", "author": {"@type": "Person", "name": "Adrien Boulay"}}</script>
 <meta name="theme-color" content="#121417">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
   --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
@@ -423,6 +440,7 @@ body{position:relative}
             <label for="rBody"><span data-i18n="revBody">Ton avis</span><textarea id="rBody" name="body" required minlength="10" maxlength="400"></textarea></label>
             <span class="cnt" id="rCnt">0 / 400</span>
             <input class="hp" type="text" id="rSite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <label class="check" for="rAge"><input id="rAge" name="age" type="checkbox" required><span data-i18n="age15b">J'ai 15 ans ou plus, ou l'accord d'un de mes parents.</span></label>
             <label class="check" for="rConsent"><input id="rConsent" name="consent" type="checkbox" required><span data-i18n="revConsent">J'accepte que mon prénom, mon trajet et mon avis soient publiés sur cette page après relecture. Je peux demander leur retrait à tout moment.</span></label>
             <button class="btn lime" id="rSubmit" type="submit" data-i18n="revSend">Envoyer mon avis</button>
             <p class="msg" id="rMsg" role="status" aria-live="polite"></p>
@@ -457,6 +475,7 @@ body{position:relative}
             <label for="line"><span data-i18n="line">Ton trajet (facultatif)</span><input id="line" name="line" type="text" maxlength="80" placeholder="Lyon → Grenoble"></label>
           </div>
           <input class="hp" type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="check" for="age"><input id="age" name="age" type="checkbox" required><span data-i18n="age15">J'ai 15 ans ou plus, ou l'accord d'un de mes parents.</span></label>
           <label class="check" for="consent"><input id="consent" name="consent" type="checkbox" required><span data-i18n="consent">J'accepte que LateProof garde mon e-mail uniquement pour m'écrire au sujet du service. Je peux demander sa suppression à tout moment.</span></label>
           <button class="btn lime" id="submit" type="submit" data-i18n="cta">M'inscrire</button>
           <p class="msg" id="msg" role="status" aria-live="polite"></p>
@@ -486,8 +505,8 @@ body{position:relative}
   </main>
 
   <footer>
-    <span data-i18n="legal">LateProof, projet en construction. Ton e-mail n'est jamais partagé.</span>
-    <span><a href="api.html" data-i18n="apiFoot">API pour agents</a> · <span data-i18n="data">Données : SNCF open data, Île-de-France Mobilités.</span></span>
+    <span>© 2026 LateProof · <span data-i18n="legal">LateProof, projet en construction. Ton e-mail n'est jamais partagé.</span></span>
+    <span><a href="api.html" data-i18n="apiFoot">API pour agents</a> · <a href="confidentialite.html" data-i18n="fPriv">Confidentialité</a> · <a href="conditions.html" data-i18n="fTerms">Conditions et mentions légales</a> · <span data-i18n="data">Données : SNCF open data, Île-de-France Mobilités.</span></span>
   </footer>
 </div>
 
@@ -524,7 +543,7 @@ const I18N = {
     q2:"Is the certificate really reliable?", a2:"It's signed by your phone during the trip, checked against official SNCF and Île-de-France Mobilités records, and any edit shows. And every night, a fingerprint of all the previous day's records is published on Solana (test network during the hackathon): nobody, not even us, can change them afterwards without it showing.",
     q3:"What about my location?", a3:"It's only used, on your phone, to recognise your station at check-in. Your trips and certificates stay on your device.",
     q4:"Which trains?", a4:"All SNCF trains in France (TGV, Intercités, regional), plus RER and Transilien in Île-de-France. For metro and tram we track regularity, but no certificate yet: they publish no timetable.",
-    flipA:"With LateProof, you get", apiKick:"API · x402 · Solana", apiT:"For developers and AI agents", apiP:"Trip advice and live network status, paid per call in USDC on Solana, with no account and no API key.", apiAdv:"trip advice", apiNet:"network status", apiCta:"See the API", apiFoot:"API for agents", seeMap:"See the live map →", ctaMap:"See the map",
+    flipA:"With LateProof, you get", fPriv:"Privacy", fTerms:"Terms & legal notice", age15:"I'm 15 or older, or I have a parent's agreement.", age15b:"I'm 15 or older, or I have a parent's agreement.", noAge:"Please confirm you're 15 or older, or have a parent's agreement.", apiKick:"API · x402 · Solana", apiT:"For developers and AI agents", apiP:"Trip advice and live network status, paid per call in USDC on Solana, with no account and no API key.", apiAdv:"trip advice", apiNet:"network status", apiCta:"See the API", apiFoot:"API for agents", seeMap:"See the live map →", ctaMap:"See the map",
     revT:"What travellers say.", revP:"Every review is read before it is published, with the first name its author chose. None is made up.", revPick:"Pick a review",
     revFormT:"Your turn.", revFormP:"You've used LateProof on a trip? Tell us in a few lines what worked, or what didn't.", revName:"First name or nickname",
     revTrip:"Your route (optional)", revBody:"Your review", revConsent:"I agree that my first name, route and review are published on this page after being read. I can ask for removal at any time.",
@@ -544,7 +563,7 @@ Object.assign(I18N.fr, {ok:"C'est noté ! On t'écrit quand une grosse nouveaut�
   bad:"Vérifie ton adresse e-mail.", noConsent:"Coche la case pour qu'on ait le droit de t'écrire.",
   fail:"L'inscription n'est pas passée. Réessaie dans une minute.", sending:"Envoi…", restart:"Recommencer ↺", updated:"mis à jour",
   shotsAlt:"Captures d'écran de LateProof : carte, copilote, espace personnel, vérification",
-  revPick:"Choisir un avis",
+  revPick:"Choisir un avis", noAge:"Confirme que tu as 15 ans ou plus, ou l'accord d'un de tes parents.",
   altGus:"Gus, le copilote, répond à une question avec les départs en direct", altApp:"L'appli LateProof sur un téléphone", altVerif:"La page de vérification d'un justificatif"});
 const FLIP = {fr: ["les retards en direct", "le plan B avant tout le monde", "un justificatif vérifiable en 3 s", "Gus, ton copilote à la voix"],
   en: ["live delays", "a plan B before anyone else", "a certificate checked in 3 s", "Gus, your voice copilot"]};
@@ -561,7 +580,7 @@ function setLang(l) {
   document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
   try { localStorage.setItem("lp-lang", l); } catch (e) {}
   splitTitle(); flipReset(); if (typeof drawReviews === "function" && document.getElementById("stack")) drawReviews();
-  document.title = l === "en" ? "LateProof · Delays, proven" : "LateProof · Le retard, prouvé";
+  document.title = l === "en" ? "Verifiable train delay certificate | LateProof" : "Justificatif de retard de train vérifiable | LateProof";
   if (window.Gus && Gus.setLang) Gus.setLang(l);
   if (lastStats) showStats(lastStats);
 }
@@ -569,7 +588,7 @@ document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click
 
 // ------------------------------------------------------------------ Donnees publiques (cle publique, droits limites par la base)
 const CFG = window.LP_CONFIG || {};
-const api = (path, opts = {}) => fetch(`${CFG.url}/rest/v1/${path}`, {...opts, headers: {apikey: CFG.key, "Content-Type": "application/json", ...(opts.headers || {})}});
+const api = (path, opts = {}) => fetch(`${CFG.url}/rest/v1/${path}`, {signal: AbortSignal.timeout(15000), ...opts, headers: {apikey: CFG.key, "Content-Type": "application/json", ...(opts.headers || {})}});
 const rpc = fn => api(`rpc/${fn}`, {method: "POST", body: "{}"}).then(r => r.ok ? r.json() : Promise.reject(r.status));
 const nf = () => new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-GB");
 let lastStats = null;
@@ -594,6 +613,7 @@ form.addEventListener("submit", async e => {
   if (form.website.value) return;                                  // piege a robots
   const email = form.email.value.trim();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { say("bad", "err"); form.email.focus(); return; }
+  if (!form.age.checked) { say("noAge", "err"); form.age.focus(); return; }
   if (!form.consent.checked) { say("noConsent", "err"); form.consent.focus(); return; }
   btn.disabled = true; say("sending");
   const params = new URLSearchParams(location.search);
@@ -601,7 +621,7 @@ form.addEventListener("submit", async e => {
   try {
     const r = await api("waitlist", {method: "POST", headers: {Prefer: "return=minimal"},
       body: JSON.stringify({email, lang, profile: form.profile.value, line: form.line.value.trim() || null, consent: true, source: (params.get("src") || "site").slice(0, 40)})});
-    if (r.ok) { say("ok", "ok"); form.reset(); loadCount(); }
+    if (r.ok) { say("ok", "ok"); form.reset(); location.href = "merci.html"; return; }
     else if (r.status === 409) say("dup", "ok");
     else say("fail", "err");
   } catch (err) { say("fail", "err"); }
@@ -761,10 +781,10 @@ if (flipBox) {
 // ------------------------------------------------------------------ Avis : seuls les avis validés à la main sont publiés
 const RV = {
   fr: {empty: "Pas encore d'avis publié. Le tien peut être le premier : il apparaîtra ici après relecture.", one: "avis publié", many: "avis publiés", rev: "Avis",
-    noName: "Indique un prénom ou un pseudo.", short: "Ton avis doit faire au moins 10 caractères.", consent: "Coche la case pour qu'on puisse publier ton avis.",
+    noName: "Indique un prénom ou un pseudo.", age: "Confirme que tu as 15 ans ou plus, ou l'accord d'un de tes parents.", short: "Ton avis doit faire au moins 10 caractères.", consent: "Coche la case pour qu'on puisse publier ton avis.",
     off: "L'envoi n'est pas disponible pour le moment.", sending: "Envoi…", ok: "Merci ! Ton avis sera publié ici après relecture.", fail: "L'envoi n'est pas passé. Réessaie dans un moment."},
   en: {empty: "No review published yet. Yours can be the first: it will show here once read.", one: "review published", many: "reviews published", rev: "Review",
-    noName: "Please enter a first name or nickname.", short: "Your review needs at least 10 characters.", consent: "Please tick the box so we can publish your review.",
+    noName: "Please enter a first name or nickname.", age: "Please confirm you're 15 or older, or have a parent's agreement.", short: "Your review needs at least 10 characters.", consent: "Please tick the box so we can publish your review.",
     off: "Sending isn't available right now.", sending: "Sending…", ok: "Thank you! Your review will show here once it's been read.", fail: "Sending didn't go through. Please try again later."}};
 let reviews = [], rvFront = 0, rvTimer = null;
 const rvStill = false;
@@ -803,6 +823,7 @@ function loadReviews() { if (!CFG.url) return; rpc("public_reviews").then(j => {
     const name = f.name.value.trim(), body = f.body.value.trim(), trip = f.trip.value.trim();
     if (!name) { say("noName", "err"); f.name.focus(); return; }
     if (body.length < 10) { say("short", "err"); f.body.focus(); return; }
+    if (!f.age.checked) { say("age", "err"); f.age.focus(); return; }
     if (!f.consent.checked) { say("consent", "err"); f.consent.focus(); return; }
     if (!CFG.url) { say("off", "err"); return; }
     btn.disabled = true; say("sending");

@@ -1,0 +1,11 @@
+# Mises à jour de sécurité automatiques (propositions de mise à jour quand une faille est connue)
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/x402"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

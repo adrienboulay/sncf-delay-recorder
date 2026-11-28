@@ -1,0 +1,29 @@
+# LateProof
+
+> LateProof is a free web app for train travellers in France: live delays and cancellations for every SNCF train (TGV, Intercités, TER) and, in the Paris region, RER and Transilien; a trip copilot (Gus) that answers by text or voice; live trip guidance with automatic plan B; delay certificates signed by the traveller's phone, checked against official records and sealed every night on Solana; help to claim delay compensation; and a pay-per-call API for AI agents (x402, USDC on Solana).
+
+Data comes from SNCF open data and Île-de-France Mobilités, recorded every 2 minutes. Trips and certificates stay on the user's phone. The project was built for the Dev3pack Solana hackathon (November 2026) by Adrien Boulay. Interface in French and English.
+
+## Main pages
+
+- [Home](https://adrienboulay.github.io/lateproof/): what LateProof does, today's figures, reviews, FAQ
+- [Live map](https://adrienboulay.github.io/lateproof/carte.html): delays by station and line, strikes and engineering works, journeys by train, metro and tram, "Start my trip" guidance
+- [Gus, the copilot](https://adrienboulay.github.io/lateproof/assistant.html): questions about a train, a line, a station, rights; voice dictation
+- [My space](https://adrienboulay.github.io/lateproof/app.html): check-in, trips, certificates, compensation claim assistant, settings
+- [Certificate check](https://adrienboulay.github.io/lateproof/verif.html): verifies a certificate's signature, official records and Solana seal in the browser
+
+## API for agents (x402)
+
+- [API documentation](https://adrienboulay.github.io/lateproof/api.html)
+- `GET https://tqyteozexakkuhqhckkp.supabase.co/functions/v1/advice?de=<station>&vers=<station>`: live trip advice, 0.01 USDC per call
+- `GET https://tqyteozexakkuhqhckkp.supabase.co/functions/v1/reseau?ligne=<line>|gare=<station>`: network status (delays, strikes, works), 0.005 USDC per call
+- Without payment the API answers HTTP 402 with a `PAYMENT-REQUIRED` header (x402 v2, exact scheme, Solana devnet). Pay with any x402 client, e.g. `@x402/fetch` + `@x402/svm`.
+
+## Policies
+
+- [Privacy and cookies](https://adrienboulay.github.io/lateproof/confidentialite.html): no cookies, trips stay on the phone
+- [Terms and legal notice](https://adrienboulay.github.io/lateproof/conditions.html)
+
+## Source
+
+- [GitHub repository](https://github.com/adrienboulay/lateproof): Solana program (Anchor), recorder, server functions, site

@@ -52,7 +52,8 @@ Deno.serve(async (req) => {
       if (what === "stats") return json(200, await rpc("admin_stats"));
       if (what === "reviews") return json(200, await rpc("admin_reviews"));
       if (what === "waitlist") return json(200, await rpc("admin_waitlist"));
-      return json(400, { error: "do = stats, reviews ou waitlist" });
+      if (what === "site") return json(200, await rpc("admin_site"));
+      return json(400, { error: "do = stats, reviews, waitlist ou site" });
     }
     if (req.method === "POST") {
       const b = await req.json().catch(() => ({}));

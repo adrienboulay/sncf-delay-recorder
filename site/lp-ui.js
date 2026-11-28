@@ -150,7 +150,21 @@
     els.forEach((e) => io.observe(e));
   }
 
-  const ready = () => { mountNav(); mountTabs(); mountBanner(); mountReveal(); };
+  // Mesure d'audience sans cookie : +1 au compteur du jour de cette page (aucun identifiant, aucune adresse IP gardée).
+  // Respecte « Ne pas me pister » du navigateur. Les erreurs JavaScript sont signalées (page + message), 5 au plus par page.
+  const CFG = window.LP_CONFIG || {};
+  const post = (fn, body) => { if (!CFG.url) return; try { fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {method: "POST", keepalive: true, body: JSON.stringify(body),
+    headers: {apikey: CFG.key, "Content-Type": "application/json"}}).catch(() => {}); } catch (e) { /* hors ligne */ } };
+  function countView() {
+    if (navigator.doNotTrack === "1" || window.doNotTrack === "1" || /localhost|127\.0\.0\.1/.test(location.hostname)) return;
+    post("public_hit", {p_path: here});
+  }
+  let errs = 0; const seenErr = new Set();
+  const report = (msg) => { const m = String(msg || "").slice(0, 300); if (!m || seenErr.has(m) || errs >= 5 || /localhost|127\.0\.0\.1/.test(location.hostname)) return; seenErr.add(m); errs++; post("public_log_error", {p_page: here, p_msg: m}); };
+  addEventListener("error", (e) => report(`${e.message || "erreur"}${e.filename ? ` (${e.filename.split("/").pop()}:${e.lineno})` : ""}`));
+  addEventListener("unhandledrejection", (e) => report(`promesse : ${e.reason && (e.reason.message || e.reason)}`));
+
+  const ready = () => { mountNav(); mountTabs(); mountBanner(); mountReveal(); countView(); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ready); else ready();
   window.LPNav = {relabel};
 })();
