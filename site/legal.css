@@ -1,5 +1,5 @@
 /* Pages simples (confidentialité, conditions, merci, 404) : mêmes jetons que l'accueil */
-:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#FFBE98;--orange:#FF8A5C;
   --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}

@@ -24,11 +24,11 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Classement des lignes les plus en retard", "item": "https://adrienboulay.github.io/lateproof/classement.html"}]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Dataset", "name": "Ponctualité des lignes de train en France (LateProof)", "description": "Part des trains arrivés avec 15 minutes de retard ou plus, par ligne, sur les 7 derniers jours, d'après les flux temps réel SNCF et Île-de-France Mobilités.", "url": "https://adrienboulay.github.io/lateproof/classement.html", "creator": {"@type": "Organization", "name": "LateProof"}, "license": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/", "isAccessibleForFree": true}</script>
 <meta name="theme-color" content="#121417">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFBE98'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
-:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#FFBE98;--orange:#FF8A5C;
   --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -99,7 +99,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
 <div class="wrap">
   <header class="top">
     <a class="brand" href="./" aria-label="LateProof">
-      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#FFBE98"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
       lateproof
     </a>
     <nav class="nav"></nav>
@@ -236,7 +236,7 @@ $("story").onclick = async () => {
   try {
     const blob = await LPStory.draw({kicker: L("Classement de la semaine", "This week's ranking"), title: L("Les lignes les plus en retard", "The most delayed train lines"),
       rankColors: true, valueW: 190,
-      rows: [...await Promise.all(R.worst.slice(0, 5).map(async (x, i) => ({value: pct(Math.round(x.pct15)), label: lineName(x), sub: lineSub(x), color: i < 3 ? "#FF8A5C" : "#D4FF3A", badge: await LPLines.forStory(x)}))),
+      rows: [...await Promise.all(R.worst.slice(0, 5).map(async (x, i) => ({value: pct(Math.round(x.pct15)), label: lineName(x), sub: lineSub(x), color: i < 3 ? "#FF8A5C" : "#FFBE98", badge: await LPLines.forStory(x)}))),
         ...((R.metro || []).length ? [{section: L("Métro et tram", "Metro and tram")}, ...await Promise.all(R.metro.slice(0, 2).map(async x => ({value: pct(Math.round(x.pct15)), label: lineName(x), sub: L("rames à +15 min", "trains at +15 min"), color: "#FF8A5C", badge: await LPLines.forStory(x)})))] : [])],
       note: L(`Part des trains à +15 min, du ${dmy(R.since)} au ${dmy(R.until)}. Basé sur ${SPAN.days} jours de relevés seulement : indicatif.`, `Share of trains at +15 min, ${dmy(R.since)} to ${dmy(R.until)}. Based on only ${SPAN.days} days of records: indicative.`)});
     $("story").hidden = true; $("storyShare").hidden = false;

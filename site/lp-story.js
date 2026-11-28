@@ -3,7 +3,7 @@
 // LPStory.share(blob, nom, texte) : partage natif si le téléphone sait partager un fichier, sinon téléchargement.
 (function () {
   "use strict";
-  const W = 1080, H = 1920, LIME = "#D4FF3A", ORANGE = "#FF8A5C", BG = "#121417", FG = "#E6E6E0", MUTED = "#9DA2AA", SURF = "#1A1D21";
+  const W = 1080, H = 1920, LIME = "#FFBE98", ORANGE = "#FF8A5C", BG = "#121417", FG = "#E6E6E0", MUTED = "#9DA2AA", SURF = "#1A1D21";
   const HEAD = '"Bricolage Grotesque", "Manrope", sans-serif', BODY = '"Manrope", "Segoe UI", sans-serif';
 
   function wrap(ctx, text, maxW) {
@@ -34,7 +34,7 @@
     const c = document.createElement("canvas"); c.width = W; c.height = H; const ctx = c.getContext("2d");
     ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
     // halos (l'« aurore » du site)
-    [[160, 260, 620, "rgba(212,255,58,.16)"], [980, 900, 700, "rgba(255,138,92,.10)"], [200, 1700, 560, "rgba(212,255,58,.08)"]].forEach(([x, y, r, col]) => {
+    [[160, 260, 620, "rgba(255,190,152,.16)"], [980, 900, 700, "rgba(255,138,92,.10)"], [200, 1700, 560, "rgba(255,190,152,.08)"]].forEach(([x, y, r, col]) => {
       const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(18,20,23,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     });
     // rails

@@ -2,7 +2,7 @@
    clignement des yeux et bouton assistant flottant. Aucune dépendance. */
 (function () {
   "use strict";
-  const L = "#D4FF3A", INK = "#121417", OR = "#FF8A5C", TXT = "#E6E6E0";
+  const L = "#FFBE98", INK = "#121417", OR = "#FF8A5C", TXT = "#E6E6E0";
   const CAP = "#2B3036", CAPTOP = "#363C43", HEAD = "#4C535C", JACKET = "#3A4048", SLEEVE = "#454B54", GLOVE = "#D5D8DC", SHOE = "#0D0F11";
   const MOODS = ["neutre", "content", "retard", "ecoute", "reflexion", "bravo", "veille"];
   const FCX = 120, FCY = 106;

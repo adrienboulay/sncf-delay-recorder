@@ -6,11 +6,11 @@
 <title>Tableau de bord · LateProof</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#121417">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFBE98'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
-:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#FFBE98;--orange:#FF8A5C;
   --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:ui-monospace,"Cascadia Code",Consolas,monospace;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -22,7 +22,7 @@ h1,h2{font-family:var(--head);font-weight:700;letter-spacing:-.015em;margin:0}
 h1{font-size:1.7rem}h2{font-size:1.05rem}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:700 1.15rem var(--head)}
-.brand small{font:700 .72rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--lime);background:rgb(212 255 58/.12);padding:4px 8px;border-radius:999px}
+.brand small{font:700 .72rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--lime);background:rgb(255 190 152/.12);padding:4px 8px;border-radius:999px}
 .btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:0;border-radius:999px;background:var(--surface2);color:var(--fg);font:700 .88rem var(--display);cursor:pointer;text-decoration:none}
 .btn:hover{background:var(--surface3)}
 .btn.lime{background:var(--lime);color:#121417}
@@ -69,7 +69,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:.8rem}
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>lateproof <small>Gestion</small></a>
+    <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#FFBE98"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>lateproof <small>Gestion</small></a>
     <div id="bar" hidden><button class="btn" id="refresh" type="button">↻ Actualiser</button> <button class="btn" id="logout" type="button">Se déconnecter</button></div>
   </header>
 

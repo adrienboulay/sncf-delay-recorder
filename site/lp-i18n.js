@@ -26,7 +26,7 @@
       const st = document.createElement("style"); st.id = "lp-lang-css";
       st.textContent = ".lp-lang{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface2,#22262B);flex:none}" +
         ".lp-lang button{border:0;border-radius:999px;background:none;color:var(--muted,#9DA2AA);font:700 .78rem/1 var(--display,system-ui);padding:7px 10px;min-height:32px;cursor:pointer}" +
-        ".lp-lang button[aria-pressed=true]{background:var(--lime,#D4FF3A);color:#121417}";
+        ".lp-lang button[aria-pressed=true]{background:var(--lime,#FFBE98);color:#121417}";
       document.head.appendChild(st);
     }
   }

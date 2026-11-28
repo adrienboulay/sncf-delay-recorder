@@ -7,9 +7,9 @@
   font:700 .92rem var(--display,system-ui);text-decoration:none;white-space:nowrap;transition:color .2s,background-color .2s}
 .lpn-links a:hover{color:var(--fg,#E6E6E0);background:var(--surface2,#22262B)}
 .lpn-links a[aria-current="page"]{color:var(--fg,#E6E6E0);background:var(--surface2,#22262B)}
-.lpn-links a.lpn-cta{background:var(--lime,#D4FF3A);color:#121417;margin-left:6px}
-.lpn-links a.lpn-cta:hover{background:#E2FF73}
-.lpn-links a.lpn-cta[aria-current="page"]{background:var(--surface3,#2B3036);color:var(--lime,#D4FF3A)}
+.lpn-links a.lpn-cta{background:var(--lime,#FFBE98);color:#121417;margin-left:6px}
+.lpn-links a.lpn-cta:hover{background:#FFD3B8}
+.lpn-links a.lpn-cta[aria-current="page"]{background:var(--surface3,#2B3036);color:var(--lime,#FFBE98)}
 .lpn-menu{display:none;flex:none;width:42px;height:42px;border:0;border-radius:50%;background:var(--surface2,#22262B);color:var(--fg,#E6E6E0);
   box-shadow:inset 0 1px 0 rgb(255 255 255/.07);cursor:pointer;place-items:center}
 .lpn-menu svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
@@ -21,7 +21,7 @@
   font:700 1.05rem var(--display,system-ui);text-decoration:none}
 .lpn-panel a::after{content:"→";color:var(--muted,#9DA2AA)}
 .lpn-panel a[aria-current="page"]{background:var(--surface2,#22262B)}
-.lpn-panel a.lpn-cta{margin-top:6px;background:var(--lime,#D4FF3A);color:#121417;justify-content:center}
+.lpn-panel a.lpn-cta{margin-top:6px;background:var(--lime,#FFBE98);color:#121417;justify-content:center}
 .lpn-panel a.lpn-cta::after{content:none}
 @keyframes lpn-in{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
 .top.lpn-host{position:relative}
@@ -42,9 +42,9 @@
 .lpb{position:relative;z-index:1250;background:var(--surface2,#22262B);box-shadow:inset 0 -1px 0 rgb(255 255 255/.05)}
 .lpb .in{display:flex;align-items:center;justify-content:center;gap:12px;min-height:44px;padding:8px 52px 8px max(16px,env(safe-area-inset-left,0px));
   max-width:1160px;margin:0 auto;font:600 .9rem/1.4 var(--display,system-ui);color:var(--fg,#E6E6E0);text-align:center}
-.lpb .new{flex:none;display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;background:rgb(212 255 58/.14);color:var(--lime,#D4FF3A);
+.lpb .new{flex:none;display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;background:rgb(255 190 152/.14);color:var(--lime,#FFBE98);
   font:800 .7rem var(--display,system-ui);letter-spacing:.1em;text-transform:uppercase}
-.lpb a{color:var(--lime,#D4FF3A);font-weight:800;text-decoration:none;white-space:nowrap}
+.lpb a{color:var(--lime,#FFBE98);font-weight:800;text-decoration:none;white-space:nowrap}
 .lpb a:hover{text-decoration:underline;text-underline-offset:3px}
 .lpb .close{position:absolute;right:max(8px,env(safe-area-inset-right,0px));top:50%;translate:0 -50%;width:36px;height:36px;border:0;border-radius:50%;
   background:none;color:var(--muted,#9DA2AA);cursor:pointer;display:grid;place-items:center}
@@ -55,9 +55,9 @@
 .lp-aurora{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
   -webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent);mask-image:linear-gradient(to bottom,#000 55%,transparent)}
 .lp-aurora::before,.lp-aurora::after{content:"";position:absolute;width:70vmax;height:42vmax;border-radius:50%;will-change:transform}
-.lp-aurora::before{left:-12vmax;top:-22vmax;background:radial-gradient(closest-side,rgb(212 255 58/.16),rgb(212 255 58/.05) 55%,transparent);
+.lp-aurora::before{left:-12vmax;top:-22vmax;background:radial-gradient(closest-side,rgb(255 190 152/.16),rgb(255 190 152/.05) 55%,transparent);
   animation:lp-au1 22s ease-in-out infinite alternate}
-.lp-aurora::after{right:-18vmax;top:-14vmax;background:radial-gradient(closest-side,rgb(167 196 255/.07),rgb(212 255 58/.04) 50%,transparent);
+.lp-aurora::after{right:-18vmax;top:-14vmax;background:radial-gradient(closest-side,rgb(167 196 255/.07),rgb(255 190 152/.04) 50%,transparent);
   animation:lp-au2 28s ease-in-out infinite alternate}
 @keyframes lp-au1{to{transform:translate(14vmax,6vmax) rotate(12deg) scale(1.08)}}
 @keyframes lp-au2{to{transform:translate(-12vmax,8vmax) rotate(-10deg) scale(1.12)}}
@@ -82,7 +82,7 @@
 .lpt a span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .lpt a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .lpt a:hover{color:var(--fg,#E6E6E0)}
-.lpt a[aria-current="page"]{background:var(--surface3,#2B3036);color:var(--lime,#D4FF3A)}
+.lpt a[aria-current="page"]{background:var(--surface3,#2B3036);color:var(--lime,#FFBE98)}
 .lpt a.desk,.lpt .home{display:none}
 body[data-app] .top .lpn-links,body[data-app] .top .lpn-menu{display:none}
 @media (max-width:1023px){
@@ -111,11 +111,11 @@ section[id]{scroll-margin-top:90px}
 
 /* ================================================================ Révision G : matière
    Profondeur physique et codes ferroviaires, par-dessus les styles de chaque page (ce fichier est chargé en dernier).
-   Équilibre des couleurs : ~65 % neutres (fonds, surfaces), ~25 % --acid (logo, appel à l'action, tout ce qui touche au
+   Équilibre des couleurs : ~65 % neutres (fonds, surfaces), ~25 % --acid pêche #FFBE98 (logo, appel à l'action, tout ce qui touche au
    trajet), ~10 % --orange #FF8A5C, l'orange-ocre d'origine (les retards et les suppressions). */
 :root{
   --bg:#0F1114;--surface:#171A1E;--surface2:#1E2227;--surface3:#282D34;--line:#262B31;
-  --acid:#D4FF3A;--acid-ink:#121417;--orange:#FF8A5C;--alert:var(--orange);
+  --acid:#FFBE98;--acid-ink:#121417;--orange:#FF8A5C;--ok:#3DD68C;--alert:var(--orange);
   --lime:var(--acid);--amber:var(--orange);
   --edge-hi:rgb(255 255 255/.12);--edge-lo:rgb(255 255 255/.02);
   --mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
@@ -165,11 +165,11 @@ body{background-image:var(--grain)}
 .kicker,.demo-tag,.kick,.pill3 .tag,.gd .now .k{letter-spacing:.06em!important}
 .big-num b{letter-spacing:-.05em!important;font-weight:700}
 
-/* ---- Statuts : « à l'heure » en vert, retard et suppression en orange-ocre (code couleur d'origine) */
-.d-ok{background:rgb(212 255 58/.12);color:var(--lime)}
+/* ---- Statuts : « à l'heure » en vert, retard et suppression en orange-ocre. Accent de marque : pêche #FFBE98 */
+.d-ok{background:rgb(61 214 140/.13);color:var(--ok)}
 .d-mid,.d-bad{background:color-mix(in srgb,var(--orange) 15%,transparent);color:var(--orange)}
 .d-x{background:color-mix(in srgb,var(--alert) 16%,transparent)!important;color:var(--alert)!important}
-.big-num b{color:var(--orange)}.big-num b.ok,#phDelay.ph-ok{color:var(--lime)}
+.big-num b{color:var(--orange)}.big-num b.ok,#phDelay.ph-ok{color:var(--ok)}
 .chip.o{background:color-mix(in srgb,var(--orange) 15%,transparent);color:var(--orange)}
 
 /* ---- Billet de train : perforation pointillée avec encoches latérales */

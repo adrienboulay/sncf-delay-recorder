@@ -23,11 +23,11 @@
 <meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Mon espace : trajets, check-in et justificatifs", "item": "https://adrienboulay.github.io/lateproof/app.html"}]}</script>
 <meta name="theme-color" content="#121417">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFBE98'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
-:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;--blue:#D4FF3A;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#D4FF3A;--red:#FF8A5C;--gold:#D4FF3A;--dot-ok:#D4FF3A;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#D4FF3A;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#D4FF3A;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#FFBE98;--orange:#FF8A5C;--blue:#FFBE98;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#3DD68C;--red:#FF8A5C;--gold:#FFBE98;--dot-ok:#3DD68C;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#3DD68C;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#3DD68C;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--display);padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
@@ -140,7 +140,7 @@ body{font-variant-numeric:tabular-nums}
 /* ---- Revision E : calme et relief. Gros titres gras et aplats lime seulement par touches. ---- */
 h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 .wm{font:700 1.15rem var(--head);letter-spacing:-.02em;color:var(--fg)}
-.d-ok{background:rgb(212 255 58/.12);color:var(--lime)}.d-mid,.d-bad{background:rgb(255 138 92/.14);color:var(--orange)}
+.d-ok{background:rgb(255 190 152/.12);color:var(--lime)}.d-mid,.d-bad{background:rgb(255 138 92/.14);color:var(--orange)}
 .card{border-color:transparent;box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
 .card.hero{background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.08),0 10px 24px rgb(0 0 0/.35)}
 .item{border-color:transparent;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.05)}.item:hover{background:var(--surface2);border-color:transparent}
@@ -217,7 +217,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 .lrow b{min-width:0;overflow-wrap:anywhere}
 .lrow .s{grid-column:2;font-size:.8rem;color:var(--muted)}
 .lrow .v{grid-row:1/3;grid-column:3;text-align:right;font:700 1.15rem var(--head);color:var(--orange)}
-.lrow .v.ok{color:var(--lime)}
+.lrow .v.ok{color:var(--ok)}
 .lrow .v small{display:block;font:600 .68rem var(--display);color:var(--muted)}
 
 /* Aide à la réclamation */
@@ -241,7 +241,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 <body data-app="app">
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="#/"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
+    <a class="brand" href="#/"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#FFBE98"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
     <nav class="nav"><a href="carte.html" data-en="Map">Carte</a><a href="assistant.html" data-en="Copilot">Copilote</a></nav>
   </header>
   <main id="view" class="stack" aria-live="polite"></main>
@@ -1043,7 +1043,7 @@ route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
     const b = $("mkStory"); b.disabled = true;
     try {
       const blob = await LPStory.draw({kicker: L(`Mon mois de ${mName}`, `My ${mName}`), title: L(`${S.n} trains, ${S.late} en retard`, `${S.n} trains, ${S.late} late`),
-        hero: {value: hm(S.minutes), label: L("perdues sur les rails ce mois-ci", "lost on the tracks this month"), color: "#D4FF3A"}, valueW: 230,
+        hero: {value: hm(S.minutes), label: L("perdues sur les rails ce mois-ci", "lost on the tracks this month"), color: "#FFBE98"}, valueW: 230,
         rows: [{value: `+${S.worst}`, label: L("min : mon pire retard", "min: my worst delay"), sub: worstLbl, color: "#FF8A5C"},
           money ? {value: money, label: L("à récupérer", "to claim back"), sub: L("compensations des opérateurs", "operator compensation")} : {value: String(S.claims), label: L("trajet(s) à faire rembourser", "trip(s) to get refunded"), sub: L("garanties G30, OUIGO, TER…", "G30, OUIGO, TER guarantees…")},
           {value: String(S.certs), label: L("justificatif(s) vérifiable(s)", "verifiable certificate(s)"), sub: L("scellés sur Solana", "sealed on Solana")}],
@@ -1105,7 +1105,7 @@ async function drawMyLines(ym, mName) {
     const b = $("mkLines"); b.disabled = true;
     try {
       const rows = [{section: L("Mes lignes", "My lines")}];
-      for (const m of mine.slice(0, 3)) rows.push({value: `${m.late}/${m.n}`, label: title(m), sub: L(`en retard · +${Math.round(m.min / m.n)} min en moyenne`, `late · +${Math.round(m.min / m.n)} min on average`), color: m.late ? "#FF8A5C" : "#D4FF3A", badge: await LPLines.forStory(m.l)});
+      for (const m of mine.slice(0, 3)) rows.push({value: `${m.late}/${m.n}`, label: title(m), sub: L(`en retard · +${Math.round(m.min / m.n)} min en moyenne`, `late · +${Math.round(m.min / m.n)} min on average`), color: m.late ? "#FF8A5C" : "#3DD68C", badge: await LPLines.forStory(m.l)});
       const tops = [...W.worst.slice(0, 2), ...(W.metro || []).slice(0, 1)];
       if (tops.length) { rows.push({section: L("Les pires de la semaine en France", "France's worst this week")});
         for (const x of tops) rows.push({value: `${Math.round(x.pct15)} %`, label: x.net === "sncf" ? (x.long || "").replace(/\s+-\s+/g, " – ") : LPLines.info(x).label, sub: L("des trains à +15 min", "of trains at +15 min"), color: "#FF8A5C", badge: await LPLines.forStory(x)}); }

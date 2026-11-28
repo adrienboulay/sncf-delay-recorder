@@ -25,11 +25,11 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "LateProof", "url": "https://adrienboulay.github.io/lateproof/", "logo": "https://adrienboulay.github.io/lateproof/img/og.jpg", "founder": {"@type": "Person", "name": "Adrien Boulay"}, "sameAs": ["https://github.com/adrienboulay/lateproof"]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "LateProof", "url": "https://adrienboulay.github.io/lateproof/", "applicationCategory": "TravelApplication", "operatingSystem": "Web", "inLanguage": ["fr", "en"], "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "description": "Justificatif de retard de train vérifiable en 3 secondes, retards SNCF et RER en direct, plan B et aide au remboursement. Gratuit, sans compte, scellé sur Solana.", "author": {"@type": "Person", "name": "Adrien Boulay"}}</script>
 <meta name="theme-color" content="#121417">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFBE98'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
-:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#FFBE98;--orange:#FF8A5C;
   --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -62,7 +62,7 @@ h1,h2,h3{font-family:var(--head);letter-spacing:-.04em;line-height:1.05;margin:0
 .today b{color:var(--fg);font:700 1.15rem var(--head);letter-spacing:-.01em}
 .today .o b{color:var(--orange)}
 .today .tt b{font-size:1rem}
-.today .live{display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--lime);vertical-align:1px}
+.today .live{display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--ok,#3DD68C);vertical-align:1px}
 .today .m{font-size:.85rem}
 .today .go{margin-left:auto;color:var(--lime);font-weight:800;text-decoration:none;white-space:nowrap}
 .today .go:hover{text-decoration:underline;text-underline-offset:3px}
@@ -94,7 +94,7 @@ section{margin-bottom:80px}
 .card .t{font-size:.8rem;color:var(--muted);font-weight:700}
 .card b{font-size:1.02rem}
 .card .chip{align-self:flex-start;display:inline-flex;height:30px;align-items:center;padding:0 12px;border-radius:999px;font:800 .86rem var(--display)}
-.card.lime{background:var(--lime);color:#0B0C0F}.card.lime .t{color:#2B3300}
+.card.lime{background:var(--lime);color:#0B0C0F}.card.lime .t{color:#5A2E17}
 .chip.o{background:var(--orange);color:#0B0C0F}.chip.k{background:#0B0C0F;color:var(--lime)}
 .steps{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:10px}
 .steps li{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start;padding:14px 16px;border-radius:20px;color:var(--muted);transition:background .25s,color .25s}
@@ -150,14 +150,14 @@ h1,h2,h3{font-weight:700;letter-spacing:-.015em}
 .ph-fill{right:auto;width:0;background:var(--fg)}
 .ph-stop{position:absolute;top:15px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--bg);border:3px solid #4A5058;box-sizing:border-box}
 .ph-stop.on{border-color:var(--fg)}
-.ph-train{position:absolute;top:11px;left:0;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 6px rgb(212 255 58/.14)}
+.ph-train{position:absolute;top:11px;left:0;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 6px rgb(255 190 152/.14)}
 .ph-names{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
 .ph-card{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:18px;background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.08);font-size:.85rem;color:var(--muted);transition:opacity .4s,transform .4s}
 .ph-card b{color:var(--fg);font-size:.9rem}
 .ph-btn{display:grid;place-items:center;min-height:38px;margin-top:4px;border-radius:19px;background:var(--lime);color:#121417;font-weight:800}
 .ph-proof{display:flex;align-items:center;gap:10px;margin-top:auto;padding:12px 14px;border-radius:18px;background:var(--surface);font-size:.8rem;color:var(--muted);transition:opacity .4s}
 .ph-proof b{color:var(--fg);font-size:.88rem}
-.ph-ok-dot{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%;background:var(--lime)}
+.ph-ok-dot{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%;background:var(--ok,#3DD68C)}
 .lbl,.stat,.pill3,details,.signup{box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
 .stat b{font-weight:700;letter-spacing:-.025em}
 .pill3 h3{font-size:1.3rem}
@@ -168,7 +168,7 @@ h1,h2,h3{font-weight:700;letter-spacing:-.015em}
 .c3h{display:flex;align-items:center;gap:8px}
 .c3gus{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface3);overflow:hidden}
 .c3gus .gus{width:28px;height:auto}
-.chip.o{background:rgb(255 138 92/.14);color:var(--orange)}.chip.k{background:rgb(212 255 58/.12);color:var(--lime)}
+.chip.o{background:rgb(255 138 92/.14);color:var(--orange)}.chip.k{background:rgb(255 190 152/.12);color:var(--lime)}
 .biz{background:var(--surface2);color:var(--fg);box-shadow:inset 0 1px 0 rgb(255 255 255/.08)}
 .biz p{color:#C5C8CD}
 .biz .btn{background:var(--lime);color:#121417}
@@ -183,7 +183,7 @@ input,select{background:var(--bg);border-color:var(--surface3)}
 .rv .body{margin:0;font-size:1.06rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
 .rv .who{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.rv .who b{font:700 1rem var(--head)}.rv .who span{color:var(--muted);font-size:.9rem}
 .rv.empty .body{color:#C9CCD3}.rv.ghost{background:var(--surface)}
-.hl{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;background:rgb(212 255 58/.12);color:var(--lime)!important;font-weight:800;font-size:.85rem}
+.hl{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;background:rgb(255 190 152/.12);color:var(--lime)!important;font-weight:800;font-size:.85rem}
 .dots{display:flex;gap:6px;justify-content:center}
 .dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:var(--surface3);cursor:pointer}
 .dots button[aria-current="true"]{background:var(--lime);width:22px;border-radius:4px}
@@ -220,7 +220,7 @@ textarea:focus{border-color:var(--lime);outline:none}
 /* ---- Démonstration automatique : un « doigt » touche l'écran ---- */
 .tap{position:absolute;z-index:5;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;pointer-events:none;
   background:radial-gradient(circle,rgb(230 230 224/.28) 0 38%,transparent 40%);animation:lp-tap .9s ease-out forwards}
-.tap::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgb(212 255 58/.7);animation:lp-ring .9s ease-out forwards}
+.tap::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgb(255 190 152/.7);animation:lp-ring .9s ease-out forwards}
 @keyframes lp-tap{0%{transform:scale(.6);opacity:0}15%{opacity:1}100%{transform:scale(1);opacity:0}}
 @keyframes lp-ring{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.4);opacity:0}}
 .card.press{transform:scale(.97)}
@@ -308,7 +308,7 @@ body{position:relative}
 <div class="wrap">
   <header class="top">
     <a class="brand" href="./" aria-label="LateProof">
-      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#FFBE98"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
       lateproof
     </a>
     <nav class="nav" aria-label="Navigation">
@@ -399,7 +399,7 @@ body{position:relative}
       <div class="demo">
         <div class="phone" aria-hidden="true"><div class="screen" id="screen">
           <div class="sbar" aria-hidden="true"><span class="clk">09:41</span><span class="isl"></span><span class="ics"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.2c2.2 0 4.2.8 5.7 2.2l1.2-1.3A10 10 0 0 0 7.5.4 10 10 0 0 0 .6 3.1l1.2 1.3A8.3 8.3 0 0 1 7.5 2.2zm0 3.4c1.3 0 2.4.5 3.3 1.3l1.2-1.3a6.6 6.6 0 0 0-9 0l1.2 1.3c.9-.8 2-1.3 3.3-1.3zm0 3.3c-.5 0-.9.2-1.2.5l1.2 1.3 1.2-1.3c-.3-.3-.7-.5-1.2-.5z"/></svg><span class="bat"><i></i></span></span></div>
-          <div class="hd"><svg width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="6" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/></svg>lateproof</div>
+          <div class="hd"><svg width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#FFBE98"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="6" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/></svg>lateproof</div>
           <div class="card" id="c1"><span class="t">07:59 · Lyon Part-Dieu</span><b data-i18n="c1">À bord : TER 8h12 vers Grenoble</b></div>
           <div class="card hide" id="c2"><span class="t">08:20</span><b data-i18n="c2">Ton train prend du retard</b><span class="chip o">+27 min</span></div>
           <div class="card lime hide" id="c3"><span class="t c3h"><span class="c3gus" id="c3gus"></span><span data-i18n="c3t">GUS, TON COPILOTE</span></span><b data-i18n="c3">Ta correspondance est perdue. Prends le 9h04, voie B.</b></div>

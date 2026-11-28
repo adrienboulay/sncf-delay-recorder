@@ -23,11 +23,11 @@
 <meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Gus, assistant de trajet en train et retards", "item": "https://adrienboulay.github.io/lateproof/assistant.html"}]}</script>
 <meta name="theme-color" content="#121417">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFBE98'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
-:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;--blue:#D4FF3A;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#D4FF3A;--red:#FF8A5C;--gold:#D4FF3A;--dot-ok:#D4FF3A;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#D4FF3A;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#D4FF3A;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#FFBE98;--orange:#FF8A5C;--blue:#FFBE98;--on-blue:#121417;--amber:#FF8A5C;--amber-bg:#2A1C15;--mint:#3DD68C;--red:#FF8A5C;--gold:#FFBE98;--dot-ok:#3DD68C;--dot-mid:#FFB547;--dot-bad:#FF8A5C;--soft:#22262B;--ok:#3DD68C;--bad:#FF8A5C;--warn:#FF8A5C;--okfg:#3DD68C;--display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;--mono:"Manrope","Segoe UI",system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--display)}
@@ -90,7 +90,7 @@ body{font-variant-numeric:tabular-nums}
 /* ---- Revision E : calme et relief. Gros titres gras et aplats lime seulement par touches. ---- */
 h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 .wm{font:700 1.15rem var(--head);letter-spacing:-.02em;color:var(--fg)}
-.d-ok{background:rgb(212 255 58/.12);color:var(--lime)}.d-mid,.d-bad{background:rgb(255 138 92/.14);color:var(--orange)}
+.d-ok{background:rgb(255 190 152/.12);color:var(--lime)}.d-mid,.d-bad{background:rgb(255 138 92/.14);color:var(--orange)}
 .msg.user{background:var(--surface3);color:var(--fg)}
 .msg.bot{background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
 .chip{background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06)}
@@ -112,7 +112,7 @@ textarea,.field input{background:var(--surface);border-color:var(--surface3)}
 
 /* ---- Dictée en direct ---- */
 .live{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 12px 10px 14px;border-radius:16px;background:var(--surface2);box-shadow:inset 0 1px 0 rgb(255 255 255/.08)}
-.lv-dot{flex:none;width:12px;height:12px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 calc(var(--lv,0) * 9px) rgb(212 255 58/.22);transition:box-shadow .08s}
+.lv-dot{flex:none;width:12px;height:12px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 calc(var(--lv,0) * 9px) rgb(255 190 152/.22);transition:box-shadow .08s}
 .live.on .lv-dot{background:var(--lime);animation:lvp 1.4s ease-in-out infinite}
 .lv-txt{flex:1;min-width:0;font-size:1rem;line-height:1.4;overflow-wrap:anywhere}
 .lv-stop{flex:none;border:0;border-radius:999px;background:var(--surface3);color:var(--fg);font:700 .85rem var(--display);padding:8px 14px;cursor:pointer}
@@ -120,7 +120,7 @@ textarea,.field input{background:var(--surface);border-color:var(--surface3)}
 @keyframes lvp{0%,100%{opacity:1}50%{opacity:.55}}
 .msg .go{display:inline-block;margin-top:8px;padding:8px 14px;border-radius:999px;background:var(--lime);color:#121417;font-weight:800;text-decoration:none}
 .icon.mic[aria-pressed="true"]{background:var(--lime);border-color:var(--lime);color:#121417}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgb(212 255 58/.5)}100%{box-shadow:0 0 0 14px transparent}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgb(255 190 152/.5)}100%{box-shadow:0 0 0 14px transparent}}
 @media (prefers-reduced-motion:reduce){.live.on .lv-dot{animation:none}}
 
 /* ---- Ordinateur : Gus et les réglages à gauche, la conversation sur toute la largeur restante ---- */
@@ -146,7 +146,7 @@ textarea,.field input{background:var(--surface);border-color:var(--surface3)}
 <body data-app="gus">
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
+    <a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#FFBE98"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg><span class="wm">lateproof</span></a>
     <nav class="nav"><a href="app.html" data-en="My space">Mon espace</a><a href="carte.html" data-en="Map">Carte</a><a href="assistant.html" aria-current="page" data-en="Copilot">Copilote</a></nav>
   </header>
 
