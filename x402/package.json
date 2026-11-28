@@ -1,4 +1,5 @@
 {
+  "license": "MIT",
   "name": "lateproof-x402-agent",
   "private": true,
   "type": "module",

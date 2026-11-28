@@ -64,3 +64,6 @@ The hackathon allows existing code; here is the honest split, which matches the 
 - **Program:** open the repository in GitHub Codespaces (`.devcontainer/` installs Rust, Solana CLI and Anchor), then `cd program && anchor build && cargo test`.
 - **Recorder and copilot:** see [`recorder/README.md`](recorder/README.md) and the workflows. Secrets live only in GitHub Actions secrets, never in the code.
 - **Site:** static files in `site/`. Any static server works; `config.js` (Supabase URL and *publishable* key) is generated at deploy time.
+
+## License
+Code released under the [MIT License](LICENSE). The LateProof name, logo and the Gus mascot are not covered by the licence. Data comes from SNCF open data and Île-de-France Mobilités under their own open licences.
