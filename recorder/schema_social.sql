@@ -3,13 +3,52 @@
 -- gardé pour toujours) + le détail encore en base (trains, idfm_trains : les 2 derniers jours) pour les jours que
 -- l'historique ne contient pas encore. Aucune donnée individuelle.
 
+-- Métro et tram RATP : pas d'horaire en temps réel. On calcule leur retard précisément, heure par heure :
+--  * l'intervalle PRÉVU entre deux rames vient des horaires théoriques (idfm_planned_frequency : courses par heure, 2 sens) ;
+--  * l'intervalle RÉEL vient des passages reconstitués arrêt par arrêt et sens par sens (idfm_metro_hourly) ;
+--  * retard d'une rame ≈ ce qu'elle arrive en plus de l'intervalle prévu (moyenne des arrêts, jamais négative) ;
+--  * rames manquantes (moins de 80 % des passages prévus) = suppressions ;
+--  * ralentissements et interruptions ANNONCÉS (messages info trafic) : comptés s'ils se recoupent avec la mesure.
+-- Une heure entière est classée « +5 min » ou « +15 min » : toutes les rames prévues de cette heure comptent.
+CREATE OR REPLACE FUNCTION public.lp_metro_days(p_since TEXT) RETURNS TABLE (
+  day TEXT, net TEXT, line_id TEXT, mode TEXT, n BIGINT, late5 BIGINT, late15 BIGINT, cancelled BIGINT, sum_delay BIGINT)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  WITH r AS (
+    SELECT m.*, to_char(to_timestamp(m.hour_ts) AT TIME ZONE 'Europe/Paris', 'YYYYMMDD') AS d,
+           EXTRACT(HOUR FROM to_timestamp(m.hour_ts) AT TIME ZONE 'Europe/Paris')::int AS hr
+      FROM idfm_metro_hourly m
+     WHERE m.hour_ts >= EXTRACT(EPOCH FROM (to_date(p_since, 'YYYYMMDD')::timestamp AT TIME ZONE 'Europe/Paris'))
+       AND m.hour_ts + 3600 <= EXTRACT(EPOCH FROM now())),                       -- heures terminées seulement
+  j AS (SELECT r.*, p.n_trips, 7200.0 / p.n_trips AS iv FROM r
+          JOIN idfm_planned_frequency p ON p.line_id = r.line_id AND p.service_date = r.d AND p.hour = r.hr WHERE p.n_trips >= 2),
+  h AS (SELECT j.line_id, j.d, j.hour_ts, MAX(j.n_trips) AS n_plan, COUNT(*) AS n_sd,
+               2 * AVG(j.n_passages) AS n_obs,
+               COALESCE(SUM(GREATEST(0, j.sum_gap_s::numeric / NULLIF(j.n_gaps, 0) - j.iv) * j.n_gaps) / NULLIF(SUM(j.n_gaps), 0), 0) AS ex
+          FROM j GROUP BY j.line_id, j.d, j.hour_ts HAVING COUNT(*) >= 3),
+  a AS (SELECT h.line_id, h.hour_ts, bool_or(x.category = 'interruption') AS cut, bool_or(x.category = 'incident') AS slow
+          FROM h JOIN idfm_disruption_lines dl ON dl.line_id = h.line_id
+          JOIN idfm_disruptions x ON x.disruption_id = dl.disruption_id
+          JOIN idfm_disruption_periods pp ON pp.disruption_id = dl.disruption_id
+           AND LEAST(pp.end_ts, h.hour_ts + 3600) - GREATEST(pp.begin_ts, h.hour_ts) >= 1200
+         GROUP BY h.line_id, h.hour_ts),
+  c AS (SELECT h.*, COALESCE(a.cut, FALSE) AS cut, COALESCE(a.slow, FALSE) AS slow,
+               (h.ex >= 900 OR (COALESCE(a.cut, FALSE) AND (h.n_obs < 0.6 * h.n_plan OR h.ex >= 300))) AS l15,
+               GREATEST(0, CASE WHEN h.n_obs < 0.8 * h.n_plan THEN h.n_plan - h.n_obs ELSE 0 END) AS miss
+          FROM h LEFT JOIN a ON a.line_id = h.line_id AND a.hour_ts = h.hour_ts)
+  SELECT c.d, 'idf', c.line_id, upper(COALESCE(l.mode, 'METRO')), SUM(c.n_plan)::bigint,
+         SUM(c.n_plan) FILTER (WHERE c.l15 OR c.ex >= 300 OR ((c.slow OR c.cut) AND c.ex >= 120))::bigint,
+         SUM(c.n_plan) FILTER (WHERE c.l15)::bigint, round(SUM(c.miss))::bigint, round(SUM(c.ex * c.n_plan))::bigint
+    FROM c JOIN idfm_ref_lines l ON l.line_id = c.line_id
+   GROUP BY c.d, c.line_id, l.mode $$;
+
 -- Une ligne par jour et par ligne, sans double compte (le détail ne sert que pour les jours absents de l'historique).
 CREATE OR REPLACE FUNCTION public.lp_line_days(p_since TEXT) RETURNS TABLE (
   day TEXT, net TEXT, line_id TEXT, mode TEXT, n BIGINT, late5 BIGINT, late15 BIGINT, cancelled BIGINT, sum_delay BIGINT)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT s.service_date, CASE s.source WHEN 'idfm' THEN 'idf' ELSE 'sncf' END, s.line_id, s.mode, s.n_trains::bigint,
+  SELECT s.service_date, CASE WHEN s.source LIKE 'idfm%' THEN 'idf' ELSE 'sncf' END, s.line_id, s.mode, s.n_trains::bigint,
          s.n_late5::bigint, s.n_late15::bigint, s.n_cancelled::bigint, s.sum_delay_s
     FROM daily_line_stats s WHERE s.service_date >= p_since AND s.line_id <> '?'
+     AND NOT (s.source = 'idfm' AND EXISTS (SELECT 1 FROM idfm_ref_lines l WHERE l.line_id = s.line_id AND upper(l.mode) IN ('METRO', 'TRAM')))
   UNION ALL
   SELECT t.service_date, 'sncf', t.route_id, MAX(t.mode), COUNT(*), COUNT(*) FILTER (WHERE COALESCE(t.arrival_delay_s, 0) >= 300),
          COUNT(*) FILTER (WHERE COALESCE(t.arrival_delay_s, 0) >= 900), COUNT(*) FILTER (WHERE t.status IN ('CANCELED', 'CANCELLED')),
@@ -25,7 +64,11 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
     FROM idfm_trains t
    WHERE t.service_date >= p_since AND t.line_id IS NOT NULL
      AND NOT EXISTS (SELECT 1 FROM daily_line_stats s WHERE s.service_date = t.service_date AND s.source = 'idfm')
-   GROUP BY t.service_date, t.line_id $$;
+     AND NOT EXISTS (SELECT 1 FROM idfm_ref_lines l WHERE l.line_id = t.line_id AND upper(l.mode) IN ('METRO', 'TRAM'))
+   GROUP BY t.service_date, t.line_id
+  UNION ALL   -- métro et tram : calcul par l'intervalle entre rames (ci-dessus), pour les jours pas encore résumés
+  SELECT x.* FROM lp_metro_days(p_since) x
+   WHERE NOT EXISTS (SELECT 1 FROM daily_line_stats s WHERE s.service_date = x.day AND s.source = 'idfm_metro') $$;
 
 -- Depuis quand on enregistre (pour dire honnêtement sur combien de jours reposent les chiffres)
 CREATE OR REPLACE FUNCTION public.public_data_span() RETURNS JSON
@@ -47,7 +90,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
      WHERE a.net = 'sncf' AND COALESCE(r.route_type, 2) <> 3
     UNION ALL
     SELECT a.*, l.short_name, l.long_name FROM a JOIN idfm_ref_lines l ON l.line_id = a.line_id
-     WHERE a.net = 'idf' AND upper(COALESCE(l.mode, a.mode, '')) NOT IN ('METRO', 'TRAM', 'BUS', 'FUNICULAR', 'CABLEWAY')),
+     WHERE a.net = 'idf' AND upper(COALESCE(l.mode, a.mode, '')) NOT IN ('BUS', 'FUNICULAR', 'CABLEWAY')),
   ranked AS (SELECT *, round(100.0 * late15 / NULLIF(n, 0), 1) AS pct15, round(100.0 * late5 / NULLIF(n, 0), 1) AS pct5,
                     round(100.0 * cancelled / NULLIF(n, 0), 1) AS pctx, round(sum_delay / 60.0 / NULLIF(n, 0), 1) AS avg_min
                FROM named WHERE n >= 50)
@@ -112,5 +155,6 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
      ORDER BY 1 LIMIT 6) x $$;
 
 REVOKE ALL ON FUNCTION public.lp_line_days(TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.lp_metro_days(TEXT) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.public_data_span(), public.public_worst_lines(INTEGER), public.public_line_risk(TEXT, TEXT[]), public.public_demo_trips() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.public_data_span(), public.public_worst_lines(INTEGER), public.public_line_risk(TEXT, TEXT[]), public.public_demo_trips() TO anon, service_role;

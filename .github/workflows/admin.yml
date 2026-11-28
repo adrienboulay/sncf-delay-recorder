@@ -35,6 +35,11 @@ jobs:
           w = json.loads(c.execute("SELECT public_worst_lines(7)::text").fetchone()[0])
           ids = [x["id"] for x in w["worst"] if x["net"] == "sncf"][:2]
           t = time.time(); r = c.execute("SELECT public_line_risk('sncf', %s)::text", (ids,)).fetchone()[0]; print(f"risk ({time.time()-t:.2f} s) : {r[:700]}")
+          t = time.time(); rows = c.execute("SELECT x.day, l.short_name, x.mode, x.n, x.late5, x.late15, x.cancelled, round(x.sum_delay / 60.0 / NULLIF(x.n, 0), 1) FROM lp_metro_days(to_char(now() - interval '3 days', 'YYYYMMDD')) x JOIN idfm_ref_lines l USING (line_id) ORDER BY x.late15::numeric / NULLIF(x.n, 0) DESC NULLS LAST, x.late5 DESC LIMIT 12").fetchall()
+          print(f"métro ({time.time()-t:.2f} s) : jour, ligne, mode, rames prévues, +5, +15, supprimées, retard moyen (min)")
+          for r in rows: print("  ", r)
+          w = json.loads(c.execute("SELECT public_worst_lines(7)::text").fetchone()[0])
+          print("classement :", [(x["name"], x["mode"], x["pct15"]) for x in w["worst"]][:15])
           c.close()
           EOF
       - uses: supabase/setup-cli@v1

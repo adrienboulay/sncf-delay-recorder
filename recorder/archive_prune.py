@@ -66,6 +66,11 @@ FROM idfm_trains WHERE service_date = %(d)s GROUP BY service_date, line_id
 ON CONFLICT (service_date, source, line_id) DO UPDATE SET n_trains = EXCLUDED.n_trains, n_cancelled = EXCLUDED.n_cancelled,
   n_late5 = EXCLUDED.n_late5, n_late15 = EXCLUDED.n_late15, n_late30 = EXCLUDED.n_late30, n_late60 = EXCLUDED.n_late60,
   sum_delay_s = EXCLUDED.sum_delay_s, max_delay_s = EXCLUDED.max_delay_s;
+INSERT INTO daily_line_stats
+SELECT day, 'idfm_metro', line_id, mode, n, cancelled, late5, late15, 0, 0, sum_delay, NULL
+FROM lp_metro_days(%(d)s) WHERE day = %(d)s
+ON CONFLICT (service_date, source, line_id) DO UPDATE SET n_trains = EXCLUDED.n_trains, n_cancelled = EXCLUDED.n_cancelled,
+  n_late5 = EXCLUDED.n_late5, n_late15 = EXCLUDED.n_late15, sum_delay_s = EXCLUDED.sum_delay_s;
 """
 
 
