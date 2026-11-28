@@ -36,8 +36,8 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
                GREATEST(0, CASE WHEN h.n_obs < 0.8 * h.n_plan THEN h.n_plan - h.n_obs ELSE 0 END) AS miss
           FROM h LEFT JOIN a ON a.line_id = h.line_id AND a.hour_ts = h.hour_ts)
   SELECT c.d, 'idf', c.line_id, upper(COALESCE(l.mode, 'METRO')), SUM(c.n_plan)::bigint,
-         SUM(c.n_plan) FILTER (WHERE c.l15 OR c.ex >= 300 OR ((c.slow OR c.cut) AND c.ex >= 120))::bigint,
-         SUM(c.n_plan) FILTER (WHERE c.l15)::bigint, round(SUM(c.miss))::bigint, round(SUM(c.ex * c.n_plan))::bigint
+         COALESCE(SUM(c.n_plan) FILTER (WHERE c.l15 OR c.ex >= 300 OR ((c.slow OR c.cut) AND c.ex >= 120)), 0)::bigint,
+         COALESCE(SUM(c.n_plan) FILTER (WHERE c.l15), 0)::bigint, COALESCE(round(SUM(c.miss)), 0)::bigint, COALESCE(round(SUM(c.ex * c.n_plan)), 0)::bigint
     FROM c JOIN idfm_ref_lines l ON l.line_id = c.line_id
    GROUP BY c.d, c.line_id, l.mode $$;
 
