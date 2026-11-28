@@ -527,7 +527,7 @@ route(/^\/checkin$/, () => {
 
 // Niveau de presence, dit honnetement
 function presenceLevel(v) {
-  if (v.demo) return {k: "bronze", name: L("Démo", "Demo"), txt: L("démonstration : un vrai train, mais personne n'y a fait de check-in", "demo: a real train, but nobody checked in on it")};
+  if (v.demo) return {k: "bronze", name: L("Démo", "Demo"), txt: L("un vrai train, mais personne n'y a fait de check-in", "a real train, but nobody checked in on it")};
   if (v.geo && v.geo.dist != null && v.geo.dist <= 500 && Math.abs(v.geo.at - v.checkin) < 900) return {k: "argent", name: "Argent", txt: L(`position du téléphone à ${v.geo.dist} m de la gare au check-in`, `phone was ${v.geo.dist} m from the station at check-in`)};
   return {k: "bronze", name: "Bronze", txt: L("check-in déclaré dans le train", "check-in declared on the train")};
 }
