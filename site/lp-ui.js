@@ -105,7 +105,7 @@
     if (app === "carte") return "carte";
     if (app === "gus") return "gus";
     const h = location.hash;
-    return /^#\/(voyages?|nouveau)/.test(h) ? "voyages" : /^#\/justificatif/.test(h) ? "certs" : /^#\/profil/.test(h) ? "profil" : "home";
+    return /^#\/(voyages?|nouveau|mois|demo)/.test(h) ? "voyages" : /^#\/justificatif/.test(h) ? "certs" : /^#\/profil/.test(h) ? "profil" : "home";
   }
   function mountTabs() {
     if (document.body.dataset.app === undefined || document.querySelector(".lpt")) return;

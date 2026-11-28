@@ -214,3 +214,6 @@ body{background-image:var(--grain)}
 .phonehero .ph-card{rotate:-1.2deg;box-shadow:var(--elev-2)}
 .bento .pill3:first-child{translate:0 -8px;box-shadow:var(--elev-2)}
 @media (prefers-reduced-motion:reduce){.phonehero .ph-card{rotate:none}}
+/* Téléphone : le bas du contenu peut remonter au-dessus du bouton rond de Gus */
+@media (max-width:1023px){body[data-app="app"] main{padding-bottom:84px}}
+@media (max-width:1023px){body:has(.gus-fab) footer{padding-bottom:96px}}
