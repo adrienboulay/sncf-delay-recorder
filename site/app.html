@@ -270,7 +270,7 @@ const MODES = {OUI: "TGV INOUI", OGO: "OUIGO", IC: "Intercités", ICN: L("Interc
 const modeName = (m, line) => { const n = MODES[m] || m || "Train"; return line && !/^\d{3}[A-Z]$/.test(line) && n !== line ? `${n} ${line}` : n; };
 function toast(t) { const el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 2600); }
 function badge(delay, cancelled) {
-  if (cancelled) return `<span class="d d-bad">${L("supprimé", "cancelled")}</span>`;
+  if (cancelled) return `<span class="d d-bad d-x">${L("supprimé", "cancelled")}</span>`;
   const m = fmt.min(delay);
   if (m < 1) return `<span class="d d-ok">${L("à l'heure", "on time")}</span>`;
   return `<span class="d ${m >= 15 ? "d-bad" : m >= 5 ? "d-mid" : "d-ok"}">+${m} min</span>`;
@@ -445,7 +445,7 @@ route(/^\/demo$/, async () => {
 function demoGuide(v, trip) {
   const cert = db.certs().find(c => c.voyage === v.id);
   const P = claimPlan([v], trip);
-  return `<section class="card demo-card"><span class="demo-tag">${L("Démo · 30 secondes", "Demo · 30 seconds")}</span>
+  return `<section class="card demo-card lp-lift"><span class="demo-tag">${L("Démo · 30 secondes", "Demo · 30 seconds")}</span>
     <p style="margin:0">${L(`Un <b>vrai train d'hier</b>, d'après les relevés officiels SNCF : <b>+${fmt.min(trip.delay)} min</b> à l'arrivée${v.sealed ? ", et ce jour est déjà <b>scellé sur Solana</b>" : ""}. Personne n'était à bord : le justificatif le dira.`,
       `A <b>real train from yesterday</b>, from official SNCF records: <b>+${fmt.min(trip.delay)} min</b> on arrival${v.sealed ? ", and that day is already <b>sealed on Solana</b>" : ""}. Nobody was on board: the certificate will say so.`)}</p>
     <ol class="dsteps">
@@ -486,18 +486,19 @@ route(/^\/$/, async () => {
   const running = db.voyages().filter(v => v.day === today && now() - v.checkin < 5 * 3600).slice(-1)[0];
   const tile = (href, ico, t, sub) => `<a class="tile" href="${href}">${ico}<b>${t}</b><span>${sub}</span></a>`;
   view.innerHTML = `<h1>${esc(cap(fmt.day(now())))}</h1>
-    ${running ? `<a class="card hero" href="#/voyage/${running.id}" style="text-decoration:none;color:inherit"><span class="kicker">${L("En cours", "Now")}</span>
+    ${running ? `<a class="card hero lp-lift" href="#/voyage/${running.id}" style="text-decoration:none;color:inherit"><span class="kicker">${L("En cours", "Now")}</span>
       <div class="between"><b>${esc(modeName(running.mode, running.line))} · ${esc(running.num)}</b><span id="runSt">${spinnerInline()}</span></div>
       <span class="muted small">${L("Depuis", "From")} ${esc(running.from.name)}${running.dest ? ` ${L("vers", "to")} ${esc(running.dest)}` : ""}</span></a>` : ""}
     <a class="btn primary big" href="#/checkin">${L("Je suis à bord", "I'm on board")}</a>
     ${store.get("lpa-demo") ? `<div class="row"><span class="demo-tag">${L("Démo active", "Demo on")}</span><a class="btn" href="#/voyages">${L("Voir les voyages de démo", "See the demo trips")}</a><button class="btn ghost" id="quitDemo">${L("Quitter la démo", "Leave the demo")}</button></div>` : ""}
-    <section class="card" aria-labelledby="hT"><div class="between"><h2 id="hT">${list.length > 1 ? L("Mes trajets", "My trips") : L("Mon trajet", "My trip")}</h2><a class="small" href="#/profil/trajets">${list.length ? L("Gérer", "Manage") : ""}</a></div>
+    <section class="card lp-ticket" aria-labelledby="hT"><div class="between"><h2 id="hT">${list.length > 1 ? L("Mes trajets", "My trips") : L("Mon trajet", "My trip")}</h2><a class="small" href="#/profil/trajets">${list.length ? L("Gérer", "Manage") : ""}</a></div>
       ${home ? `${list.length > 1 ? `<div class="tchips" role="group" aria-label="${L("Mes trajets favoris", "My favourite trips")}">${list.map((t, i) => `<button class="tchip" data-ti="${i}" aria-pressed="${i === selTrip}">${i === 0 ? "★ " : ""}${esc(tripName(t))}</button>`).join("")}</div>` : `<p class="muted small" style="margin:0">${esc(tripName(home))}</p>`}
         <div class="row"><a class="btn primary" href="${tripHash(home, true)}">${ICO.go} ${L("Lancer avec le meilleur trajet", "Start with the best route")}</a><a class="btn" href="${tripHash(home)}">${L("Voir les options", "See the options")}</a></div>
+        <span class="lp-perf" aria-hidden="true"></span>
         <div id="opts">${spinner(L("Prochains départs…", "Next departures…"))}</div>`
         : `<p class="muted" style="margin:0">${L("Ajoute ton trajet favori pour voir son état chaque matin et le lancer en un geste. Tu peux aussi toucher ☆ sur un trajet de la carte.", "Add your favourite trip to see its status every morning and start it in one tap. You can also tap ☆ on a trip on the map.")}</p><a class="btn primary" href="#/profil/trajets">${L("Ajouter un trajet", "Add a trip")}</a>`}
     </section>
-    <section class="card" aria-labelledby="pT" id="disrCard" hidden><h2 id="pT">${L("Perturbations sur mon trajet", "Disruptions on my trip")}</h2><div id="disr"></div></section>
+    <section class="card lp-alert" aria-labelledby="pT" id="disrCard" hidden><h2 id="pT">${L("Perturbations sur mon trajet", "Disruptions on my trip")}</h2><div id="disr"></div></section>
     <div class="tiles">
       ${tile("#/mois", ICO.month, L("Mon mois", "My month"), L("Bilan, story et résumé vocal", "Summary, story and voice"))}
       ${tile("classement.html", ICO.rank, L("Classement", "Ranking"), L("Les lignes les plus en retard", "The most delayed lines"))}
@@ -666,7 +667,8 @@ route(/^\/voyage\/(\w+)$/, async id => {
   const trip = tripTotal(legs);
   await compReady;
   $("vbody").innerHTML = `${v.demo ? demoGuide(v, trip) : ""}
-    <section class="card hero"><span class="kicker">${legs.length > 1 ? L(`Trajet en ${legs.length} étapes`, `${legs.length}-leg trip`) : L("Arrivée à ", "Arriving at ") + esc(to ? to.name : "?")}</span>
+    <section class="card hero lp-ticket"><div class="lp-stub"><span>${legs.length > 1 ? L(`Trajet en ${legs.length} étapes`, `${legs.length}-leg trip`) : L("Arrivée à ", "Arriving at ") + esc(to ? to.name : "?")}</span><b>${esc(legs.map(l => modeName(l.mode, l.line) + " " + l.num).join(" › "))}</b></div>
+      <span class="lp-perf" aria-hidden="true"></span>
       <div class="big-num"><b class="${trip.delay < 60 && !trip.cancelled ? "ok" : ""}">${trip.cancelled ? L("Supprimé", "Cancelled") : trip.delay < 60 ? L("À l'heure", "On time") : "+" + fmt.min(trip.delay)}</b>${trip.delay >= 60 && !trip.cancelled ? `<span>min ${legs.length > 1 ? L("au total", "in total") : L("de retard", "late")}</span>` : ""}</div>
       ${trip.planned ? `<span>${L("Arrivée prévue", "Scheduled arrival")} <b>${fmt.time(trip.planned)}</b>${trip.real ? `, ${L("réelle", "actual")} <b>${fmt.time(trip.real)}</b>` : ""}${trip.declared ? ` <span class="muted small">${L("(heure prévue déclarée)", "(declared scheduled time)")}</span>` : ""}</span>` : ""}
       <span>${presenceHtml(v)}</span>
@@ -674,7 +676,7 @@ route(/^\/voyage\/(\w+)$/, async id => {
     ${legs.length > 1 ? `<section class="card"><h2>${L("Étape par étape", "Leg by leg")}</h2>${trip.rows.map(r => `<div class="between small"><span>${r.label}</span><span>${r.badge}</span></div>`).join("")}
       <label class="field">${L("Heure d'arrivée prévue de ton trajet complet (si tu as raté une correspondance)", "Scheduled arrival of your whole trip (if you missed a connection)")}<input type="time" id="planned" value="${trip.plannedInput || ""}"></label></section>` : ""}
     <section class="card"><h2>${L("Où descends-tu ?", "Where do you get off?")}</h2><p class="muted small" style="margin:0">${L("Touche ta gare d'arrivée.", "Tap your arrival station.")}</p>
-      <ol class="tl">${after.map((s, i) => `<li class="${i === 0 ? "me" : ""}${s.skipped ? " skip" : ""}${toStop && s.stop === toStop.stop ? " dest" : ""}">
+      <ol class="tl">${after.map((s, i) => `<li class="${i === 0 ? "me" : ""}${s.skipped ? " skip" : ""}${i > 0 && ((s.arr_delay ?? 0) >= 60 || s.skipped) ? " late" : ""}${toStop && s.stop === toStop.stop ? " dest" : ""}">
         <span class="tm">${fmt.time(s.sched_dep || s.sched_arr)}</span><span class="rail"></span>
         ${i === 0 ? `<span class="nm">${esc(s.name || "?")}</span>` : `<button data-to="${esc(s.stop)}"><span class="nm">${esc(s.name || "?")}</span></button>`}
         <span>${i === 0 ? badge(s.dep_delay, s.skipped) : (s.arr_delay ?? 0) >= 60 || s.skipped ? badge(s.arr_delay, s.skipped) : ""}</span></li>`).join("")}</ol></section>
@@ -889,7 +891,9 @@ route(/^\/nouveau\/(\w+)$/, id => {
   const optional = ["trains", "arrivee", "depart", "etapes", "checkin", "presence", ...(email ? ["titulaire"] : []), "releves"];
   view.innerHTML = `<button class="btn ghost" onclick="history.back()">${L("← Retour", "← Back")}</button>
     <h1>${L("Mon justificatif", "My certificate")}</h1><p class="sub">${L("Choisis ce que tu montres. Ce que tu caches reste scellé : personne ne peut le lire, mais le justificatif reste vérifiable.", "Choose what you show. What you hide stays sealed: nobody can read it, but the certificate can still be checked.")}</p>
-    <section class="card hero"><div class="big-num"><b>+${fmt.min(trip.delay)}</b><span>min${legs.length > 1 ? L(" au total", " in total") : ""}</span></div>
+    <section class="card hero lp-ticket"><div class="lp-stub"><span>${L("Justificatif de retard", "Delay certificate")}</span><b>${first.day.slice(6, 8)}/${first.day.slice(4, 6)}/${first.day.slice(0, 4)}</b></div>
+      <span class="lp-perf" aria-hidden="true"></span>
+      <div class="big-num"><b>+${fmt.min(trip.delay)}</b><span>min${legs.length > 1 ? L(" au total", " in total") : ""}</span></div>
       <span class="muted small">${esc(dayLabel(first.day))} · ${esc(fields[4].v)}</span></section>
     <section class="card"><h2>${L("Ce que verra ton employeur ou ton prof", "What your employer or teacher will see")}</h2>
       ${optional.map(n => `<div class="toggle"><span class="lbl">${esc(FIELD_INFO[n][0])}<small>${esc(FIELD_INFO[n][1])}</small></span>
@@ -929,8 +933,10 @@ route(/^\/justificatif\/(\w+)$/, id => {
   const text = L(`Bonjour, mon trajet du ${c.day.slice(6, 8)}/${c.day.slice(4, 6)} a eu ${fmt.min(c.delay)} min de retard (${c.label}). Justificatif vérifiable : ${c.url}`, `Hello, my trip on ${c.day.slice(6, 8)}/${c.day.slice(4, 6)} was ${fmt.min(c.delay)} min late (${c.label}). Verifiable certificate: ${c.url}`);
   view.innerHTML = `<button class="btn ghost" onclick="location.hash='#/justificatifs'">${L("← Mes justificatifs", "← My certificates")}</button>
     <h1>${L("Justificatif prêt", "Certificate ready")}</h1>
-    <section class="card hero"><div class="big-num"><b>+${fmt.min(c.delay)}</b><span>${L("min de retard", "min late")}</span></div>
-      <span class="muted small">${esc(dayLabel(c.day))} · ${esc(c.label)} · ${L("code", "code")} <b>${esc(c.code)}</b></span></section>
+    <section class="card hero lp-ticket lp-lift"><div class="lp-stub"><span>${L("Justificatif vérifiable", "Verifiable certificate")}</span><b>${esc(c.code)}</b></div>
+      <span class="lp-perf" aria-hidden="true"></span>
+      <div class="big-num"><b>+${fmt.min(c.delay)}</b><span>${L("min de retard", "min late")}</span></div>
+      <span class="muted small">${esc(dayLabel(c.day))} · ${esc(c.label)}</span></section>
     <section class="card"><h2>${L("Le message à envoyer", "The message to send")}</h2><div class="msg">${esc(text)}</div>
       <div class="row"><button class="btn primary" id="share">${L("Envoyer", "Send")}</button><button class="btn" id="copy">${L("Copier le message", "Copy the message")}</button><button class="btn" id="copyUrl">${L("Copier le lien", "Copy the link")}</button></div></section>
     <a class="btn big" href="${esc(c.url)}" target="_blank" rel="noopener">${L("Voir ce que verra la personne", "See what they will see")}</a>

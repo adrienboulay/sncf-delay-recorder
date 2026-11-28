@@ -108,3 +108,109 @@ body[data-app] .top .lpn-links,body[data-app] .top .lpn-menu{display:none}
   .lpt .lang,.lpt .lp-lang{margin-top:auto;flex-direction:column;border-radius:16px}
 }
 section[id]{scroll-margin-top:90px}
+
+/* ================================================================ Révision G : matière
+   Profondeur physique et codes ferroviaires, par-dessus les styles de chaque page (ce fichier est chargé en dernier).
+   Équilibre des couleurs : ~65 % neutres (fonds, surfaces), ~25 % --acid (logo, appel à l'action, tout ce qui touche au
+   trajet), ~10 % --chartreuse (les retards). --alert (orange) reste réservé aux trains supprimés et aux interruptions. */
+:root{
+  --bg:#0F1114;--surface:#171A1E;--surface2:#1E2227;--surface3:#282D34;--line:#262B31;
+  --acid:#D4FF3A;--acid-ink:#121417;--chartreuse:#8DF03B;--alert:#FF7A4D;
+  --lime:var(--acid);--orange:var(--chartreuse);--amber:var(--chartreuse);
+  --edge-hi:rgb(255 255 255/.12);--edge-lo:rgb(255 255 255/.02);
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
+  /* Arêtes directionnelles (1 px lumineux en haut, presque invisible en bas) + élévation */
+  --elev-0:inset 0 1px 0 var(--edge-hi),inset 0 -1px 0 var(--edge-lo),inset 0 0 0 1px rgb(255 255 255/.025);
+  --elev-1:var(--elev-0),0 1px 2px rgb(0 0 0/.35),0 14px 30px -16px rgb(0 0 0/.7);
+  --elev-2:var(--elev-0),0 2px 4px rgb(0 0 0/.4),0 26px 50px -18px rgb(0 0 0/.85);
+  --btn-relief:inset 0 1px 0 rgb(255 255 255/.55),inset 0 -2px 0 rgb(40 60 0/.3),0 1px 2px rgb(0 0 0/.5),0 10px 22px -10px rgb(212 255 58/.5);
+  --btn-press:inset 0 2px 4px rgb(40 60 0/.35),0 1px 1px rgb(0 0 0/.4);
+  /* Grain (bruit fractal, ~2,5 %) pour casser les aplats */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+}
+body{background-image:var(--grain)}
+
+/* ---- Surfaces : relief + grain (appli, vitrine, API, classement, carte) */
+.card,.item,.tile,.stat,.board .lbl,.pill3,.signup,.formcard,.apiband,.sheet,.legendcard,.lpn-panel{
+  background-image:var(--grain);box-shadow:var(--elev-1)}
+.card.hero{box-shadow:var(--elev-2)}
+.searchbar,.mbtn{box-shadow:var(--elev-1)}
+.item:hover,.tile:hover{box-shadow:var(--elev-2)}
+
+/* ---- Boutons verts : relief tactile (reflet en haut, ombre douce, enfoncement au clic) */
+.btn.primary,.btn.lime,.lpn-links a.lpn-cta,.lpn-panel a.lpn-cta,.biz .btn,body:has(.lp-aurora.page) main .btn:not(.line):not(.back){
+  background-image:linear-gradient(180deg,rgb(255 255 255/.24),rgb(255 255 255/0) 50%,rgb(0 0 0/.05));box-shadow:var(--btn-relief);
+  transition:transform .12s,box-shadow .12s,filter .2s}
+.btn.primary:hover,.btn.lime:hover,body:has(.lp-aurora.page) main .btn:not(.line):not(.back):hover{filter:brightness(1.04)}
+.btn.primary:active,.btn.lime:active,.lpn-links a.lpn-cta:active,.biz .btn:active,body:has(.lp-aurora.page) main .btn:not(.line):not(.back):active{transform:translateY(1px);box-shadow:var(--btn-press)}
+.btn:not(.primary):not(.lime):not(.ghost):not(.danger){box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 -1px 0 rgb(0 0 0/.25)}
+
+/* ---- Zones fixes : le contenu défile visuellement dessous */
+.lpt nav,.top.lpn-sticky.lpn-on{background:rgb(23 26 30/.72);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%)}
+.composer{background:rgb(15 17 20/.78);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%)}
+@media (max-width:1023px){
+  body[data-app="app"] .lpt,body[data-app="gus"] .lpt{background:linear-gradient(to bottom,transparent,rgb(15 17 20/.55) 60%)}
+}
+@media (min-width:1024px){
+  .lpt{background:rgb(23 26 30/.78);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset -1px 0 0 var(--edge-hi)}
+  .lpt nav{background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+.lpt a[aria-current="page"]{box-shadow:inset 0 1px 0 rgb(255 255 255/.1)}
+
+/* ---- Codes ferroviaires : police à chasse fixe (heures, retards, codes de train, dates, badges) */
+.d,.tl .tm,.item .t,.kicker,.demo-tag,.big-num b,.lrow .v,.crow>span:nth-child(2),.mgrid b,
+.jtop .t,.jtop .dur,.gd .now .k,.lbadge,.pill .late b,.stats b,
+.pill3 .tag,.kick,.sbar .clk,#phDelay,.card .chip,.today b,
+.rank .pc,.figs b,.risk b,.price,.status{font-family:var(--mono)!important;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kicker,.demo-tag,.kick,.pill3 .tag,.gd .now .k{letter-spacing:.06em!important}
+.big-num b{letter-spacing:-.05em!important;font-weight:700}
+
+/* ---- Statuts : « à l'heure » neutre, retard en chartreuse, suppression en orange */
+.d-ok{background:rgb(255 255 255/.07);color:var(--fg)}
+.d-mid,.d-bad{background:color-mix(in srgb,var(--chartreuse) 15%,transparent);color:var(--chartreuse)}
+.d-x{background:color-mix(in srgb,var(--alert) 16%,transparent)!important;color:var(--alert)!important}
+.big-num b{color:var(--chartreuse)}.big-num b.ok,#phDelay.ph-ok{color:var(--fg)}
+.chip.o{background:color-mix(in srgb,var(--chartreuse) 15%,transparent);color:var(--chartreuse)}
+
+/* ---- Billet de train : perforation pointillée avec encoches latérales */
+.lp-ticket{position:relative}
+.lp-perf{display:block;position:relative;height:0;margin:6px -16px;border:0;border-top:2px dashed rgb(255 255 255/.11)}
+.lp-perf::before,.lp-perf::after{content:"";position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;background:var(--bg);
+  box-shadow:inset 0 -1px 0 rgb(255 255 255/.06)}
+.lp-perf::before{left:-10px}.lp-perf::after{right:-10px}
+.lp-stub{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font:700 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lp-stub b{color:var(--acid);font-weight:700}
+
+/* ---- Superposition : éléments clés décalés et plus élevés (propriétés rotate/translate : n'écrasent pas les animations) */
+.lp-lift{position:relative;z-index:2;box-shadow:var(--elev-2)!important;rotate:-.6deg}
+.lp-alert{margin-top:-30px!important;margin-inline:14px;rotate:.8deg;box-shadow:inset 3px 0 0 var(--chartreuse),var(--elev-2)!important}
+@media (prefers-reduced-motion:reduce){.lp-lift,.lp-alert{rotate:none}}
+
+/* ---- Ligne de trajet (appli : arrêts d'un train) : rail épais, gares lisibles, tronçon en retard en chartreuse */
+.tl li{grid-template-columns:58px 18px minmax(0,1fr) auto}
+.tl .rail::before{left:6px;width:4px;border-radius:2px;background:#3B4149}
+.tl .rail::after{left:1px;top:4px;width:14px;height:14px;border:3px solid #59606A;background:var(--bg)}
+.tl li:last-child .rail::before{bottom:auto;height:10px}
+.tl li.late .rail::before,.tl li:has(+ li.late) .rail::before{background:var(--chartreuse);box-shadow:0 0 12px rgb(141 240 59/.35)}
+.tl li.late .rail::after{border-color:var(--chartreuse)}
+.tl li.me .rail::after{border-color:var(--acid);background:var(--acid);box-shadow:0 0 0 5px rgb(212 255 58/.16)}
+.tl li.dest .rail::after{border-color:var(--acid)}
+.tl .nm{font-size:.95rem;font-weight:600}
+.tl li.skip .rail::after{border-style:dashed}
+/* (carte : guidage « En route ») */
+.gd .trk{height:40px}
+.gd .trk .rl,.gd .trk .fl{top:16px;height:6px;border-radius:3px}
+.gd .trk .fl{background:var(--acid);box-shadow:0 0 12px rgb(212 255 58/.3)}
+.gd .trk .lt{position:absolute;top:16px;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--chartreuse) 0 10px,color-mix(in srgb,var(--chartreuse) 45%,transparent) 10px 14px);box-shadow:0 0 12px rgb(141 240 59/.35)}
+.gd .trk .st{top:11px;width:16px;height:16px;margin-left:-8px;border-color:#59606A}
+.gd .trk .st.on{border-color:var(--acid)}
+.gd .names{font:600 .74rem var(--display);color:var(--fg)}
+.gd .now{box-shadow:var(--elev-1)!important;background-image:var(--grain)}
+.gd .now .k{color:var(--acid)}
+.gd .names{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
+.gd .names span{max-width:none;text-align:center}
+.gd .names span:first-child{text-align:left}.gd .names span:last-child{text-align:right}
+/* Vitrine : l'aperçu d'alerte du téléphone et la première tuile ressortent */
+.phonehero .ph-card{rotate:-1.2deg;box-shadow:var(--elev-2)}
+.bento .pill3:first-child{translate:0 -8px;box-shadow:var(--elev-2)}
+@media (prefers-reduced-motion:reduce){.phonehero .ph-card{rotate:none}}

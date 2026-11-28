@@ -109,7 +109,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
        SELECT net, line_id AS id, name, long, mode, days, n, late15, cancelled, pct15, pct5, pctx, avg_min FROM ranked
         WHERE net = 'idf' AND upper(mode) IN ('METRO', 'TRAM') ORDER BY pct15 DESC, pct5 DESC, pctx DESC LIMIT 8) x),
     'best', (SELECT COALESCE(json_agg(x ORDER BY x.pct15, x.n DESC), '[]'::json) FROM (
-       SELECT net, line_id AS id, name, long, mode, days, n, late15, cancelled, pct15, pct5, pctx, avg_min FROM ranked WHERE n >= 150 ORDER BY pct15, n DESC LIMIT 5) x)) $$;
+       SELECT net, line_id AS id, name, long, mode, days, n, late15, cancelled, pct15, pct5, pctx, avg_min FROM ranked WHERE n >= 150 AND NOT (net = 'idf' AND upper(mode) IN ('METRO', 'TRAM')) ORDER BY pct15, n DESC LIMIT 5) x)) $$;
 
 -- Risque de retard d'une ou plusieurs lignes : part des trains à +5 et +15 min et des suppressions, sur tout notre historique,
 -- le même jour de la semaine compté double. Lissé vers la moyenne du réseau (comme 30 trains « moyens » en plus), pour qu'un

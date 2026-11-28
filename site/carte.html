@@ -1099,7 +1099,7 @@ const stat = (n, lbl, cls = "") => `<span class="${cls}"><b>${nf().format(n)}</b
 const hhmm = t => new Date(t * 1000).toLocaleTimeString(loc(), {hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"});
 function badge(delay, cancelled) {
   const T = L_();
-  if (cancelled) return `<span class="d d-bad">${T.cancelled}</span>`;
+  if (cancelled) return `<span class="d d-bad d-x">${T.cancelled}</span>`;
   const m = Math.round((delay || 0) / 60);
   if (m < 1) return `<span class="d d-ok">${T.onTime}</span>`;
   return `<span class="d ${m >= 15 ? "d-bad" : m >= 5 ? "d-mid" : "d-ok"}">+${m} ${T.min}</span>`;
@@ -1775,8 +1775,9 @@ function guideHtml() {
     prog = (k + f) / n; }
   const pct = x => (x * 100).toFixed(1) + "%";
   const trk = `<div class="trk" aria-hidden="true"><span class="rl"></span><span class="fl" style="width:${pct(prog)}"></span>` +
+    j.legs.map((l, i) => (legDelay(g, i, "arr") || 0) >= 300 ? `<span class="lt" style="left:${pct(i / n)};width:${pct(1 / n)}"></span>` : "").join("") +
     stops.map((_, i) => `<span class="st${i / n <= prog + 1e-6 ? " on" : ""}" style="left:${pct(i / n)}"></span>`).join("") + `<span class="me" style="left:${pct(prog)}"></span></div>` +
-    `<div class="names"><span>${esc(stops[0][0])}</span>${n > 1 ? `<span>${esc(stops[1][0])}</span>` : ""}<span>${esc(stops[n][0])}</span></div>`;
+    `<div class="names">${(n <= 3 ? stops : [stops[0], stops[1], stops[n]]).map(s => `<span>${esc(s[0])}</span>`).join("")}</div>`;
   // L'étape en cours, en grand
   let now1 = "";
   if (k < 0) {
