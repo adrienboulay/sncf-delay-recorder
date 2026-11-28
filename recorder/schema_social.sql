@@ -46,7 +46,8 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
     SELECT a.*, r.short_name AS name, r.long_name AS long FROM a JOIN ref_routes r ON r.route_id = a.line_id
      WHERE a.net = 'sncf' AND COALESCE(r.route_type, 2) <> 3
     UNION ALL
-    SELECT a.*, l.short_name, l.long_name FROM a JOIN idfm_ref_lines l ON l.line_id = a.line_id WHERE a.net = 'idf'),
+    SELECT a.*, l.short_name, l.long_name FROM a JOIN idfm_ref_lines l ON l.line_id = a.line_id
+     WHERE a.net = 'idf' AND upper(COALESCE(l.mode, a.mode, '')) NOT IN ('METRO', 'TRAM', 'BUS', 'FUNICULAR', 'CABLEWAY')),
   ranked AS (SELECT *, round(100.0 * late15 / NULLIF(n, 0), 1) AS pct15, round(100.0 * late5 / NULLIF(n, 0), 1) AS pct5,
                     round(100.0 * cancelled / NULLIF(n, 0), 1) AS pctx, round(sum_delay / 60.0 / NULLIF(n, 0), 1) AS avg_min
                FROM named WHERE n >= 50)
@@ -77,7 +78,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   td AS (SELECT x.line_id, SUM(x.n) AS n, SUM(x.late15) AS late15 FROM p, lp_line_days(p.today) x
           WHERE x.net = p_net AND x.day = p.today AND x.line_id = ANY (p_ids[1:10]) GROUP BY x.line_id),
   st AS (SELECT COALESCE(json_agg(json_build_object('title', title, 'start', start_date, 'end', end_date) ORDER BY start_date), '[]'::json) AS j
-           FROM p, strike_forecasts s WHERE COALESCE(s.transport, TRUE) AND s.start_date <= p.tomorrow AND COALESCE(s.end_date, s.start_date) >= p.today)
+           FROM p, strike_forecasts s WHERE COALESCE(s.transport, TRUE) AND s.title ~* '\m(sncf|ratp|cheminots?|ter|rer|transilien|trains?|ferroviaires?|tgv|ouigo|intercit[eé]s)\M' AND s.start_date <= p.tomorrow AND COALESCE(s.end_date, s.start_date) >= p.today)
   SELECT json_build_object(
     'span', (SELECT public_data_span()),
     'strikes', (SELECT j FROM st),

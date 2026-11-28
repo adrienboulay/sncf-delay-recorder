@@ -28,6 +28,8 @@ jobs:
           deno-version: v2.x
       - run: deno check supabase/functions/assistant/index.ts
       - run: deno test supabase/functions/assistant/
+      - run: deno check supabase/functions/voice/index.ts
+      - run: deno test supabase/functions/voice/
       - name: Outils sur les vraies donnees (lecture seule, informatif, une base lente ne bloque pas le deploiement)
         if: env.SUPABASE_URL != ''
         continue-on-error: true
@@ -79,7 +81,16 @@ jobs:
           rm -f /tmp/fn.env
       - name: Deployer la fonction
         if: steps.ok.outputs.go == '1'
-        run: supabase functions deploy assistant --project-ref "${{ steps.ok.outputs.ref }}" --no-verify-jwt --use-api --yes
+        run: |
+          supabase functions deploy assistant --project-ref "${{ steps.ok.outputs.ref }}" --no-verify-jwt --use-api --yes
+          supabase functions deploy voice --project-ref "${{ steps.ok.outputs.ref }}" --no-verify-jwt --use-api --yes
+      - name: Voix ElevenLabs (un seul appel court, la clé n'est jamais affichée)
+        if: steps.ok.outputs.go == '1'
+        run: |
+          sleep 5
+          BASE=$(printf '%s' "$SUPABASE_URL" | sed -nE 's#^(https://[a-z0-9-]+[.]supabase[.]co).*#\1#p')
+          curl -sS -m 40 -X POST "$BASE/functions/v1/voice" -H "Content-Type: application/json" -H "Origin: https://adrienboulay.github.io" -d '{"lang":"fr","month":11,"trips":3,"late":1,"minutes":42,"worst":31,"claims":1,"demo":true}' -o /tmp/v.bin -D /tmp/v.h -w 'HTTP %{http_code}\n'
+          grep -i '^content-type' /tmp/v.h || true; echo "taille : $(wc -c < /tmp/v.bin) octets"; grep -qi 'audio/mpeg' /tmp/v.h || { head -c 400 /tmp/v.bin; echo; }
       - name: Question de test
         if: steps.ok.outputs.go == '1' && github.event_name == 'workflow_dispatch' && inputs.question != ''
         env:

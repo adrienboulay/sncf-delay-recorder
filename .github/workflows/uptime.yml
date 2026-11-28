@@ -18,7 +18,7 @@ jobs:
           SITE=https://adrienboulay.github.io/lateproof
           fail=0
           code() { curl -s -o /dev/null -m 20 -w "%{http_code}" "$@"; }
-          for p in "" carte.html app.html assistant.html verif.html api.html confidentialite.html fonts/fonts.css data/compensations.json; do
+          for p in "" carte.html app.html assistant.html verif.html api.html classement.html confidentialite.html fonts/fonts.css data/compensations.json; do
             c=$(code "$SITE/$p"); echo "$c  /$p"; [ "$c" = 200 ] || fail=1
           done
           CFG=$(curl -s -m 20 "$SITE/config.js")
@@ -32,6 +32,7 @@ jobs:
           [ "$AGE" -lt 1200 ] || { echo "::error::Enregistreur à l'arrêt : dernier relevé il y a ${AGE} s"; fail=1; }
           c=$(code "$URL/functions/v1/advice?de=Paris&vers=Lyon"); echo "$c  API advice (402 attendu)"; [ "$c" = 402 ] || fail=1
           c=$(code "$URL/functions/v1/reseau"); echo "$c  API reseau (402 attendu)"; [ "$c" = 402 ] || fail=1
+          c=$(code -X OPTIONS "$URL/functions/v1/voice"); echo "$c  voix (204 attendu, sans appeler ElevenLabs)"; [ "$c" = 204 ] || fail=1
           c=$(code "$URL/functions/v1/admin"); echo "$c  admin sans mot de passe (401 attendu)"; [ "$c" = 401 ] || fail=1
           [ "$fail" = 0 ] || { echo "::error::Au moins un contrôle a échoué"; exit 1; }
           echo "tout répond"

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Classement des lignes de train les plus en retard | LateProof</title>
+<meta name="description" content="Les lignes de train et de RER les moins ponctuelles de la semaine en France, d'après nos relevés en temps réel. Chiffres ouverts pour la presse, méthode et fichier CSV.">
+<link rel="canonical" href="https://adrienboulay.github.io/lateproof/classement.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LateProof">
+<meta property="og:title" content="Classement des lignes de train les plus en retard | LateProof">
+<meta property="og:description" content="Les lignes de train et de RER les moins ponctuelles de la semaine en France, d'après nos relevés en temps réel. Chiffres ouverts pour la presse, méthode et fichier CSV.">
+<meta property="og:url" content="https://adrienboulay.github.io/lateproof/classement.html">
+<meta property="og:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LateProof : le train déraille, pas ta journée. Justificatif de retard vérifiable.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Classement des lignes de train les plus en retard | LateProof">
+<meta name="twitter:description" content="Les lignes de train et de RER les moins ponctuelles de la semaine en France, d'après nos relevés en temps réel. Chiffres ouverts pour la presse, méthode et fichier CSV.">
+<meta name="twitter:image" content="https://adrienboulay.github.io/lateproof/img/og.jpg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "LateProof", "item": "https://adrienboulay.github.io/lateproof/"}, {"@type": "ListItem", "position": 2, "name": "Classement des lignes les plus en retard", "item": "https://adrienboulay.github.io/lateproof/classement.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Dataset", "name": "Ponctualité des lignes de train en France (LateProof)", "description": "Part des trains arrivés avec 15 minutes de retard ou plus, par ligne, sur les 7 derniers jours, d'après les flux temps réel SNCF et Île-de-France Mobilités.", "url": "https://adrienboulay.github.io/lateproof/classement.html", "creator": {"@type": "Organization", "name": "LateProof"}, "license": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/", "isAccessibleForFree": true}</script>
+<meta name="theme-color" content="#121417">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23D4FF3A'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%230B0C0F' stroke-width='10' stroke-linecap='round' pathLength='360' stroke-dasharray='120 360' transform='rotate(-90 32 32)'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%230B0C0F'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{--bg:#121417;--surface:#1A1D21;--surface2:#22262B;--surface3:#2B3036;--fg:#E6E6E0;--muted:#9DA2AA;--line:#2B3036;--lime:#D4FF3A;--orange:#FF8A5C;
+  --display:"Manrope","Segoe UI",system-ui,sans-serif;--head:"Bricolage Grotesque","Manrope",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{position:relative;margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 var(--display);font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--lime);outline-offset:3px;border-radius:8px}
+a{color:var(--lime)}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em;line-height:1.08;margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:16px;padding-inline:4px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:700 1.25rem var(--head);letter-spacing:-.02em}
+.nav{display:flex;align-items:center;gap:18px}
+.lp-aurora.page{height:min(800px,100vh);bottom:auto}
+.intro{max-width:48rem;padding-block:40px 24px}
+.kick{font:800 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+.intro h1{margin-top:12px;font-size:clamp(2rem,5vw,3.4rem)}
+.intro p{margin:16px 0 0;font-size:1.1rem;color:#C9CCD3}
+.warn{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:16px 18px;border-radius:20px;background:rgb(255 138 92/.10);color:#F1D9CE;font-size:.95rem;margin-bottom:18px;max-width:52rem}
+.warn b{color:var(--orange)}
+.warn svg{width:22px;height:22px;color:var(--orange);margin-top:2px}
+.figs{display:flex;flex-wrap:wrap;gap:8px 28px;margin:4px 0 22px;color:var(--muted)}
+.figs b{font:700 1.5rem var(--head);color:var(--fg);margin-right:6px}
+.card{padding:24px;border-radius:28px;background:var(--surface);box-shadow:inset 0 1px 0 rgb(255 255 255/.06);display:grid;gap:14px;align-content:start;min-width:0;margin-bottom:16px}
+.card h2{font-size:1.35rem}
+.card p{margin:0;color:#C9CCD3}
+.rank{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:r}
+.rank li{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:4px 14px;align-items:center;padding:12px 16px;border-radius:18px;background:var(--surface2)}
+.rank li::before{counter-increment:r;content:counter(r);display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--surface3);color:var(--lime);font:800 .95rem var(--head);grid-row:1/3}
+.rank li:nth-child(-n+3)::before{background:var(--orange);color:#121417}
+.rank .nm{font-weight:800;min-width:0;overflow-wrap:anywhere}
+.rank .sub{grid-column:2;font-size:.84rem;color:var(--muted)}
+.rank .pc{grid-row:1/3;grid-column:3;text-align:right;font:700 1.45rem var(--head);color:var(--orange)}
+.rank .pc small{display:block;font:600 .72rem var(--display);color:var(--muted)}
+.rank.best li::before{background:var(--lime);color:#121417}
+.rank.best .pc{color:var(--lime)}
+.bar{grid-column:2/4;height:5px;border-radius:5px;background:var(--surface3);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--orange);border-radius:5px}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;border-radius:999px;font:800 .95rem var(--display);text-decoration:none;border:0;cursor:pointer;background:var(--lime);color:#0B0C0F}
+.btn.line{background:var(--surface2);color:var(--fg)}
+.btn:disabled{opacity:.55;cursor:default}
+.grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+.field{display:grid;gap:6px;font-size:.86rem;font-weight:700;color:var(--muted)}
+.field input{font:600 1rem var(--display);color:var(--fg);background:var(--surface2);border:1px solid var(--surface3);border-radius:14px;padding:12px 14px;width:100%}
+.opts{display:grid;gap:6px;max-height:260px;overflow:auto}
+.opts button{display:flex;justify-content:space-between;gap:10px;text-align:left;border:0;border-radius:12px;background:var(--surface2);color:var(--fg);font:600 .92rem var(--display);padding:10px 12px;cursor:pointer}
+.opts button:hover{background:var(--surface3)}
+.opts .x{color:var(--muted);font-size:.8rem}
+.risk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.risk div{padding:14px;border-radius:16px;background:var(--surface2);display:grid;gap:2px}
+.risk b{font:700 1.8rem var(--head);color:var(--orange)}
+.risk span{font-size:.82rem;color:var(--muted)}
+.grid>*{min-width:0}
+.cite{overflow-wrap:anywhere;padding:12px 14px;border-radius:14px;background:#0D0F12;font-size:.88rem;color:#D6D8DC}
+.muted{color:var(--muted)}.small{font-size:.86rem}
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:700;font-size:.88rem;z-index:100}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--surface3);border-top-color:var(--lime);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+@media (max-width:520px){.risk{grid-template-columns:1fr}.rank li{grid-template-columns:36px minmax(0,1fr) auto;padding:10px 12px}.rank .pc{font-size:1.2rem}}
+</style>
+<link rel="stylesheet" href="lp-ui.css">
+</head>
+<body data-lpn-sticky>
+<div class="lp-aurora page" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./" aria-label="LateProof">
+      <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#D4FF3A"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-opacity=".18" stroke-width="5"/><circle cx="32" cy="32" r="19" fill="none" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round" pathLength="360" stroke-dasharray="120 360" transform="rotate(-90 32 32)"/><path d="M32 32L41.5 37.5" stroke="#0B0C0F" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0B0C0F"/></svg>
+      lateproof
+    </a>
+    <nav class="nav"></nav>
+  </header>
+
+  <main>
+    <div class="intro">
+      <span class="kick" data-en="Press ranking · open data">Classement presse · données ouvertes</span>
+      <h1 data-en="The least punctual train lines this week.">Les lignes de train les moins ponctuelles de la semaine.</h1>
+      <p data-en="Every few minutes, LateProof records the real-time feeds of SNCF and Île-de-France Mobilités. Here is the share of trains that arrived 15 minutes late or more, line by line, over the last 7 days.">Toutes les quelques minutes, LateProof enregistre les flux en temps réel de la SNCF et d'Île-de-France Mobilités. Voici la part des trains arrivés avec 15 minutes de retard ou plus, ligne par ligne, sur les 7 derniers jours.</p>
+    </div>
+
+    <div class="warn" role="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <span id="warn"><b data-en="Experimental.">Expérimental.</b> <span data-en="These figures rest on only a few days of records. They are indicative, not an official statistic.">Ces chiffres reposent sur quelques jours de relevés seulement. Ils sont indicatifs, pas une statistique officielle.</span></span></div>
+
+    <div class="figs" id="figs" aria-live="polite"><span class="spin" aria-hidden="true"></span></div>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="tW">
+        <h2 id="tW" data-en="Top 15 late lines">Les 15 lignes les plus en retard</h2>
+        <ol class="rank" id="worst"></ol>
+        <div class="btns">
+          <button class="btn" id="story" type="button" data-en="Story image (1080×1920)">Image story (1080×1920)</button>
+          <button class="btn line" id="csv" type="button" data-en="Download CSV">Télécharger le CSV</button>
+        </div>
+      </section>
+      <div>
+        <section class="card" aria-labelledby="tB">
+          <h2 id="tB" data-en="The most punctual">Les plus ponctuelles</h2>
+          <p class="small" data-en="Lines with at least 150 trains over the period.">Lignes d'au moins 150 trains sur la période.</p>
+          <ol class="rank best" id="best"></ol>
+        </section>
+        <section class="card" aria-labelledby="tC">
+          <h2 id="tC" data-en="Quote these figures">Citer ces chiffres</h2>
+          <div class="cite" id="cite"></div>
+          <button class="btn line" id="copyCite" type="button" data-en="Copy the source">Copier la source</button>
+        </section>
+      </div>
+    </div>
+
+    <section class="card" aria-labelledby="tR" id="risk">
+      <span class="kick" data-en="Forecast · experimental">Prévision · expérimental</span>
+      <h2 id="tR" data-en="What is the risk of a delay on my line today?">Quel risque de retard sur ma ligne aujourd'hui ?</h2>
+      <p class="small" id="riskWarn"></p>
+      <label class="field" for="q"><span data-en="Line (e.g. RER B, TER, Paris - Lyon)">Ligne (ex. RER B, TER, Paris - Lyon)</span><input id="q" type="search" autocomplete="off"></label>
+      <div class="opts" id="opts"></div>
+      <div id="riskOut" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-labelledby="tM">
+      <h2 id="tM" data-en="Method">Méthode</h2>
+      <p data-en="Source: real-time feeds (GTFS-RT) of SNCF Voyageurs and Île-de-France Mobilités (PRIM), recorded every 2 to 5 minutes since 22 November 2026. For each train we keep its last known delay at the final stop. A line enters the ranking with at least 50 trains over the period; replacement coaches are excluded. Today is excluded (day not over).">Source : flux temps réel (GTFS-RT) de SNCF Voyageurs et d'Île-de-France Mobilités (PRIM), enregistrés toutes les 2 à 5 minutes depuis le 22 novembre 2026. Pour chaque train, on garde son dernier retard connu au terminus. Une ligne entre dans le classement à partir de 50 trains sur la période ; les cars de remplacement sont exclus. Aujourd'hui est exclu (journée pas terminée).</p>
+      <p data-en="Limits: a train cancelled before running may be missing from the feed; cancellations on Île-de-France lines were not counted before 28 November. The official SNCF statistics (regularity at 5 min for TGV) use a different method: the figures are not directly comparable.">Limites : un train supprimé avant son départ peut manquer dans le flux ; les suppressions sur les lignes d'Île-de-France n'étaient pas comptées avant le 28 novembre. Les statistiques officielles de la SNCF (régularité à 5 min pour les TGV) suivent une autre méthode : les chiffres ne sont pas directement comparables.</p>
+      <p data-en="The forecast mixes the line's history (the same weekday counts double) with the network average, so that a small sample never shows 0 % or 100 %.">La prévision mélange l'historique de la ligne (le même jour de la semaine compte double) avec la moyenne du réseau, pour qu'un petit échantillon n'affiche jamais 0 % ou 100 %.</p>
+    </section>
+  </main>
+
+  <footer>
+    <span>© 2026 LateProof · <span data-en="data under Licence Ouverte (SNCF, IDFM).">données sous Licence Ouverte (SNCF, IDFM).</span></span>
+    <span><a href="confidentialite.html" data-en="Privacy">Confidentialité</a> · <a href="conditions.html" data-en="Terms and legal notice">Conditions et mentions légales</a> · <a href="api.html" data-en="API">API</a></span>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script src="lp-i18n.js"></script>
+<script src="lp-ui.js"></script>
+<script src="lp-core.js"></script>
+<script src="lp-story.js"></script>
+<script>
+"use strict";
+const {L, locale} = LPI, {rpc, esc} = LP, $ = id => document.getElementById(id);
+const MODES = {OUI: "TGV INOUI", OGO: "OUIGO", IC: "Intercités", ICN: L("Intercités de nuit", "Night Intercités"), LYR: "Lyria", ICE: "ICE", TT: "Tram-train", TER: "TER", ES: "Eurostar",
+  RER: "RER", TRANSILIEN: "Transilien", METRO: L("Métro", "Metro"), TRAM: "Tram", NAV: L("Navette", "Shuttle")};
+const lineName = x => {
+  const m = MODES[x.mode] || x.mode || "Train";
+  if (x.net === "idf") return /^(RER|Transilien)/i.test(x.name || "") ? x.name : `${m} ${x.name || ""}`.trim();
+  return m;
+};
+const lineSub = x => (x.net === "idf" ? (x.long && x.long !== x.name && !(x.name || "").endsWith(" " + x.long) ? x.long : "Île-de-France") : (x.long || x.name || "")).replace(/\s+-\s+/g, " – ").replace(/\s{2,}/g, " ");
+const pct = v => `${Number(v).toLocaleString(locale, {maximumFractionDigits: 1})} %`;
+const dmy = d => d ? `${d.slice(6, 8)}/${d.slice(4, 6)}/${d.slice(0, 4)}` : "";
+function toast(t) { const el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 2600); }
+let R = null, SPAN = null;
+
+function warnText(span) {
+  const n = span ? span.days : 0;
+  return `<b>${L("Expérimental.", "Experimental.")}</b> ${L(`Ces chiffres reposent sur <b>${n} jours</b> de relevés seulement (depuis le ${dmy(span && span.first)}). Ils sont indicatifs, pas une statistique officielle, et deviendront plus fiables semaine après semaine.`,
+    `These figures rest on only <b>${n} days</b> of records (since ${dmy(span && span.first)}). They are indicative, not an official statistic, and will get more reliable week after week.`)}`;
+}
+const row = x => `<li><span class="nm">${esc(lineName(x))}</span><span class="pc">${pct(x.pct15)}<small>${L("à +15 min", "at +15 min")}</small></span>
+  <span class="sub">${esc(lineSub(x))} · ${x.n.toLocaleString(locale)} ${L("trains", "trains")} · ${L("retard moyen", "avg delay")} ${Number(x.avg_min).toLocaleString(locale)} min${x.cancelled ? ` · ${x.cancelled} ${L("supprimés", "cancelled")}` : ""}</span></li>`;
+
+(async () => {
+  try {
+    [R, SPAN] = await Promise.all([rpc("public_worst_lines", {p_days: 7}), rpc("public_data_span", {})]);
+  } catch (e) { $("figs").innerHTML = `<span>${L("Classement indisponible pour le moment.", "Ranking unavailable right now.")}</span>`; return; }
+  $("warn").innerHTML = warnText(SPAN);
+  $("riskWarn").innerHTML = warnText(SPAN);
+  $("figs").innerHTML = `<span><b>${R.n_lines}</b>${L("lignes classées", "lines ranked")}</span><span><b>${Number(R.n_trains).toLocaleString(locale)}</b>${L("trains observés", "trains observed")}</span>
+    <span><b>${pct(R.national_pct15)}</b>${L("des trains à +15 min, en moyenne", "of trains at +15 min, on average")}</span><span><b>${dmy(R.since)} → ${dmy(R.until)}</b></span>`;
+  const max = Math.max(...R.worst.map(x => x.pct15), 1);
+  $("worst").innerHTML = R.worst.map(x => row(x).replace("</li>", `<span class="bar" aria-hidden="true"><i style="width:${(100 * x.pct15 / max).toFixed(1)}%"></i></span></li>`)).join("");
+  $("best").innerHTML = R.best.map(row).join("");
+  $("cite").textContent = L(`Source : LateProof, relevés temps réel SNCF et Île-de-France Mobilités du ${dmy(R.since)} au ${dmy(R.until)} (${Number(R.n_trains).toLocaleString(locale)} trains, ${SPAN.days} jours d'historique). Part des trains arrivés avec 15 min de retard ou plus. https://adrienboulay.github.io/lateproof/classement.html`,
+    `Source: LateProof, SNCF and Île-de-France Mobilités real-time records from ${dmy(R.since)} to ${dmy(R.until)} (${Number(R.n_trains).toLocaleString(locale)} trains, ${SPAN.days} days of history). Share of trains arriving 15 min late or more. https://adrienboulay.github.io/lateproof/classement.html`);
+})();
+
+$("copyCite").onclick = () => navigator.clipboard.writeText($("cite").textContent).then(() => toast(L("Source copiée", "Source copied")), () => toast(L("Copie impossible", "Copy failed")));
+$("csv").onclick = () => {
+  if (!R) return;
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [["rang", "reseau", "ligne", "trajet", "mode", "jours", "trains", "retard_15min", "part_15min_pct", "part_5min_pct", "supprimes", "retard_moyen_min", "du", "au"].join(",")]
+    .concat(R.worst.map((x, i) => [i + 1, x.net, q(lineName(x)), q(lineSub(x)), x.mode, x.days, x.n, x.late15, x.pct15, x.pct5, x.cancelled, x.avg_min, R.since, R.until].join(",")));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], {type: "text/csv;charset=utf-8"}));
+  a.download = `lateproof-lignes-en-retard-${R.until}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$("story").onclick = async () => {
+  if (!R) return; const b = $("story"); b.disabled = true;
+  try {
+    const blob = await LPStory.draw({kicker: L("Classement de la semaine", "This week's ranking"), title: L("Les lignes les plus en retard", "The most delayed train lines"),
+      rankColors: true, valueW: 190,
+      rows: R.worst.slice(0, 5).map((x, i) => ({value: pct(Math.round(x.pct15)), label: `${i + 1}. ${lineName(x)}`, sub: lineSub(x), color: i < 3 ? "#FF8A5C" : "#D4FF3A"})),
+      note: L(`Part des trains à +15 min, du ${dmy(R.since)} au ${dmy(R.until)}. Basé sur ${SPAN.days} jours de relevés seulement : indicatif.`, `Share of trains at +15 min, ${dmy(R.since)} to ${dmy(R.until)}. Based on only ${SPAN.days} days of records: indicative.`)});
+    const r = await LPStory.share(blob, `lateproof-classement-${R.until}.png`, L("Les lignes les plus en retard cette semaine, d'après LateProof", "This week's most delayed train lines, by LateProof"));
+    if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded"));
+  } finally { b.disabled = false; }
+};
+
+// ---- Prévision : recherche d'une ligne puis risque du jour
+let LINES = null, t = null;
+$("q").addEventListener("input", () => {
+  clearTimeout(t); t = setTimeout(async () => {
+    const q = $("q").value.trim().toLowerCase(); if (q.length < 2) { $("opts").innerHTML = ""; return; }
+    if (!LINES) { try { LINES = (await rpc("public_lines", {})).filter(x => x.n > 0 && !/METRO|TRAM|BUS/i.test(x.mode || "")); } catch (e) { LINES = []; } }
+    const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const hits = LINES.filter(x => norm(`${lineName(x)} ${x.name} ${x.long}`).includes(norm(q))).sort((a, b) => b.n - a.n).slice(0, 12);
+    $("opts").innerHTML = hits.length ? hits.map((x, i) => `<button type="button" data-i="${LINES.indexOf(x)}"><span>${esc(lineName(x))} <span class="muted">· ${esc(lineSub(x))}</span></span><span class="x">${x.n} ${L("trains auj.", "trains today")}</span></button>`).join("")
+      : `<p class="muted small">${L("Aucune ligne qui roule aujourd'hui ne correspond.", "No line running today matches.")}</p>`;
+    $("opts").querySelectorAll("[data-i]").forEach(b => b.onclick = () => showRisk(LINES[+b.dataset.i]));
+  }, 200);
+});
+async function showRisk(x) {
+  $("opts").innerHTML = ""; $("q").value = lineName(x) + " · " + lineSub(x);
+  $("riskOut").innerHTML = `<span class="spin" aria-hidden="true"></span>`;
+  try {
+    const r = await rpc("public_line_risk", {p_net: x.net, p_ids: [x.id]}), l = r.lines[0];
+    if (!l) { $("riskOut").innerHTML = `<p class="muted">${L("Pas encore assez d'historique sur cette ligne.", "Not enough history on this line yet.")}</p>`; return; }
+    const weak = l.days < 14;
+    $("riskOut").innerHTML = `<div class="risk"><div><b>${l.p5} %</b><span>${L("de risque d'arriver avec +5 min", "risk of arriving 5+ min late")}</span></div>
+      <div><b>${l.p15} %</b><span>${L("de risque d'arriver avec +15 min", "risk of arriving 15+ min late")}</span></div>
+      <div><b>${Number(l.px).toLocaleString(locale)} %</b><span>${L("de risque de suppression", "risk of cancellation")}</span></div></div>
+      <p class="small muted" style="margin:10px 0 0">${L(`Calculé sur ${l.n.toLocaleString(locale)} trains observés en ${l.days} jours`, `Computed from ${l.n.toLocaleString(locale)} trains observed over ${l.days} days`)}${weak ? ` · <b style="color:var(--orange)">${L("peu fiable (moins de 14 jours)", "low reliability (under 14 days)")}</b>` : ""}.
+      ${l.today_n ? L(`Aujourd'hui pour l'instant : ${l.today_late15} train(s) à +15 min sur ${l.today_n}.`, `So far today: ${l.today_late15} train(s) 15+ min late out of ${l.today_n}.`) : ""}</p>
+      ${(r.strikes || []).length ? `<p class="small" style="margin:8px 0 0;color:var(--orange)">${L("Grève annoncée", "Strike announced")} : ${r.strikes.map(s => esc(s.title)).join(" · ")} ${L("(non comptée dans le pourcentage)", "(not counted in the percentage)")}</p>` : ""}`;
+  } catch (e) { $("riskOut").innerHTML = `<p class="muted">${L("Prévision indisponible pour le moment.", "Forecast unavailable right now.")}</p>`; }
+}
+</script>
+</body>
+</html>

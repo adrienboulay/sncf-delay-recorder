@@ -15,6 +15,7 @@ Data comes from SNCF open data and Île-de-France Mobilités, recorded every 2 m
 ## API for agents (x402)
 
 - [API documentation](https://adrienboulay.github.io/lateproof/api.html)
+- [Press ranking of the least punctual train lines (open data, CSV)](https://adrienboulay.github.io/lateproof/classement.html)
 - `GET https://tqyteozexakkuhqhckkp.supabase.co/functions/v1/advice?de=<station>&vers=<station>`: live trip advice, 0.01 USDC per call
 - `GET https://tqyteozexakkuhqhckkp.supabase.co/functions/v1/reseau?ligne=<line>|gare=<station>`: network status (delays, strikes, works), 0.005 USDC per call
 - Without payment the API answers HTTP 402 with a `PAYMENT-REQUIRED` header (x402 v2, exact scheme, Solana devnet). Pay with any x402 client, e.g. `@x402/fetch` + `@x402/svm`.

@@ -177,6 +177,25 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
   .gus-intro{max-width:760px}
 }
 
+/* Démo pour les juges */
+.demo-card{border:1px solid color-mix(in srgb,var(--lime) 35%,transparent)!important;background:color-mix(in srgb,var(--lime) 6%,var(--surface))!important}
+.demo-tag{justify-self:start;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:var(--lime);color:#121417;font:800 .72rem var(--display);letter-spacing:.06em;text-transform:uppercase}
+.dsteps{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:d}
+.dsteps li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;font-size:.92rem}
+.dsteps li::before{counter-increment:d;content:counter(d);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--surface3);color:var(--lime);font:800 .8rem var(--head)}
+.dsteps li.done::before{content:"✓";background:var(--lime);color:#121417}
+.risk-note{margin:0;font-size:.8rem;color:var(--muted)}
+.risk-note b{color:var(--orange)}
+.rk{font:700 .74rem var(--display);color:var(--muted)}
+.rk b{color:var(--fg)}
+/* Mon mois */
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mgrid div{padding:14px;border-radius:16px;background:var(--surface2);display:grid;gap:2px}
+.mgrid b{font:700 1.7rem/1.1 var(--head)}
+.mgrid span{font-size:.8rem;color:var(--muted)}
+.story-prev{width:min(260px,70%);justify-self:center;border-radius:18px;box-shadow:0 18px 40px rgb(0 0 0/.45)}
+.monthnav{display:flex;gap:8px;align-items:center}
+
 /* Aide à la réclamation */
 .claim .claimtop{display:grid;gap:4px;padding:14px;border-radius:14px;background:var(--surface2)}
 .claim .pct{font:700 1.5rem/1.15 var(--head);color:var(--lime)}
@@ -210,6 +229,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 <script src="lp-ui.js"></script>
 <script src="lp-core.js"></script>
 <script src="gus.js"></script>
+<script src="lp-story.js"></script>
 <script>Gus.fab({bottom: "92px"});</script>
 <script>
 "use strict";
@@ -299,10 +319,10 @@ route(/^\/bienvenue$/, () => {
     if (step === 0) view.innerHTML = dots + gusIntro + L(`<h1>Bienvenue sur LateProof</h1>
       <div class="card"><p><b>Ton copilote quand le train déraille.</b> Le retard de ton trajet en direct, un plan B, et quand tu arrives en retard, un <b>justificatif infalsifiable</b> que ton employeur ou ton prof vérifie en 3 secondes, sans rien installer.</p>
       <p class="muted small">Tes trajets, tes justificatifs et ta clé restent sur ce téléphone. Tu décides seul de ce que tu montres, et à qui.</p></div>
-      <button class="btn primary big" id="next">Commencer</button><button class="btn ghost" id="skip">Passer</button>`, `<h1>Welcome to LateProof</h1>
+      <button class="btn primary big" id="next">Commencer</button><a class="btn" href="#/demo">Essayer la démo en 30 s</a><button class="btn ghost" id="skip">Passer</button>`, `<h1>Welcome to LateProof</h1>
       <div class="card"><p><b>Your copilot when the train goes off the rails.</b> Your trip's delay live, a plan B, and when you arrive late, a <b>tamper-proof certificate</b> your employer or teacher checks in 3 seconds, with nothing to install.</p>
       <p class="muted small">Your trips, your certificates and your key stay on this phone. You alone decide what you show, and to whom.</p></div>
-      <button class="btn primary big" id="next">Get started</button><button class="btn ghost" id="skip">Skip</button>`);
+      <button class="btn primary big" id="next">Get started</button><a class="btn" href="#/demo">Try the 30-second demo</a><button class="btn ghost" id="skip">Skip</button>`);
     if (step === 1) view.innerHTML = dots + gusIntro + `<h1>${L("Ton trajet habituel", "Your usual trip")}</h1><p class="sub">${L("Pour te prévenir dès qu'il y a un problème. Tu pourras le changer plus tard.", "So I can warn you as soon as there's a problem. You can change it later.")}</p>
       <div class="card">${stationField("oa", L("Départ", "From"), tmp.a && tmp.a.name, s => tmp.a = s)}${stationField("ob", L("Arrivée", "To"), tmp.b && tmp.b.name, s => tmp.b = s)}</div>
       <button class="btn primary big" id="next">${L("Continuer", "Continue")}</button><button class="btn ghost" id="skip">${L("Plus tard", "Later")}</button>`;
@@ -324,6 +344,47 @@ route(/^\/bienvenue$/, () => {
   draw();
 }, "home");
 
+// ================================================================= Démo pour les juges
+// De vrais trains en retard d'hier (relevés SNCF, déjà scellés sur Solana quand c'est possible), ajoutés comme voyages
+// « démo » : on peut tout essayer (retard, réclamation, justificatif, vérification, bilan du mois) sans prendre le train.
+// Les voyages démo sont marqués et « Quitter la démo » n'efface qu'eux.
+const PRICE_DEMO = {OUI: 59, OGO: 25, IC: 32, ICN: 45, LYR: 79};
+function clearDemo() {
+  const ids = new Set(db.voyages().filter(v => v.demo).map(v => v.id));
+  db.saveVoyages(db.voyages().filter(v => !v.demo));
+  db.saveCerts(db.certs().filter(c => !ids.has(c.voyage)));
+  store.set("lpa-demo", null);
+}
+function quitDemo() { if (!confirm(L("Quitter la démo ? Les voyages et justificatifs de démo sont effacés de ce téléphone. Tes vrais voyages ne bougent pas.", "Leave the demo? Demo trips and certificates are erased from this phone. Your real trips stay."))) return; clearDemo(); toast(L("Démo terminée", "Demo ended")); location.hash = "#/"; }
+route(/^\/demo$/, async () => {
+  view.innerHTML = `<span class="demo-tag">${L("Démo", "Demo")}</span><h1>${L("On prépare la démo", "Setting up the demo")}</h1>${spinner(L("On cherche un vrai train en retard d'hier…", "Finding a real train that was late yesterday…"))}`;
+  let list = [];
+  try { list = await rpc("public_demo_trips", {}); } catch (e) {}
+  if (!list || !list.length) { view.innerHTML = `<h1>${L("Démo indisponible", "Demo unavailable")}</h1><p class="muted">${L("Aucun train en retard trouvé dans nos relevés d'hier. Réessaie dans quelques minutes.", "No late train found in yesterday's records. Try again in a few minutes.")}</p><a class="btn" href="#/">${L("Retour", "Back")}</a>`; return; }
+  clearDemo();
+  const vs = list.map(x => ({id: uid(), demo: true, day: x.day, net: "sncf", num: x.num, mode: x.mode, line: x.line, dest: x.to.name, sched: x.sched,
+    from: {name: x.from.name, id: x.from.id, net: "sncf", lat: +x.from.lat, lon: +x.from.lon}, checkin: x.sched - 240, geo: null,
+    to: {stop: x.to.stop, name: x.to.name}, result: {delay: x.delay, cancelled: false, sched_arr: x.sched_arr, rec: null},
+    price: PRICE_DEMO[x.mode] || null, sealed: !!x.sealed}));
+  db.saveVoyages(db.voyages().concat(vs.reverse()).slice(-200));
+  store.set("lpa-demo", true); store.set("lpa-onboarded", true);
+  location.replace("#/voyage/" + vs[vs.length - 1].id);
+}, "voyages");
+function demoGuide(v, trip) {
+  const cert = db.certs().find(c => c.voyage === v.id);
+  const P = claimPlan([v], trip);
+  return `<section class="card demo-card"><span class="demo-tag">${L("Démo · 30 secondes", "Demo · 30 seconds")}</span>
+    <p style="margin:0">${L(`Un <b>vrai train d'hier</b>, d'après les relevés officiels SNCF : <b>+${fmt.min(trip.delay)} min</b> à l'arrivée${v.sealed ? ", et ce jour est déjà <b>scellé sur Solana</b>" : ""}. Personne n'était à bord : le justificatif le dira.`,
+      `A <b>real train from yesterday</b>, from official SNCF records: <b>+${fmt.min(trip.delay)} min</b> on arrival${v.sealed ? ", and that day is already <b>sealed on Solana</b>" : ""}. Nobody was on board: the certificate will say so.`)}</p>
+    <ol class="dsteps">
+      <li class="done">${L("Le retard officiel, gare par gare (ci-dessous)", "The official delay, stop by stop (below)")}</li>
+      <li>${P.pct ? L(`La compensation : <b>${P.pct} %</b> du billet avec ${esc(P.name)}`, `The compensation: <b>${P.pct}%</b> of the ticket with ${esc(P.name)}`) : L("Tes droits à compensation", "Your compensation rights")} · <a href="#claimCard">${L("voir", "see")}</a></li>
+      <li class="${cert ? "done" : ""}">${cert ? `<a href="${esc(cert.url)}" target="_blank" rel="noopener">${L("Vérifier le justificatif et le sceau Solana", "Check the certificate and the Solana seal")} ↗</a>` : `<a href="#/nouveau/${v.id}">${L("Créer le justificatif signé par ce téléphone", "Create the certificate signed by this phone")}</a>`}</li>
+      <li><a href="#/mois">${L("Le bilan du mois en story, avec le résumé vocal", "The monthly summary as a story, with the voice summary")}</a></li>
+    </ol>
+    <button class="btn ghost" id="quitDemo">${L("Quitter la démo", "Leave the demo")}</button></section>`;
+}
+
 // ================================================================= Cle du telephone
 async function ensureKey() {
   if (passkey.get()) return passkey.get();
@@ -344,12 +405,15 @@ route(/^\/$/, async () => {
       <div class="between"><b>${esc(modeName(running.mode, running.line))} · ${esc(running.num)}</b><span id="runSt">${spinnerInline()}</span></div>
       <span class="muted small">${L("Depuis", "From")} ${esc(running.from.name)}${running.dest ? ` ${L("vers", "to")} ${esc(running.dest)}` : ""}</span></a>` : ""}
     <a class="btn primary big" href="#/checkin">${L("Je suis à bord", "I'm on board")}</a>
+    ${store.get("lpa-demo") ? `<div class="row"><span class="demo-tag">${L("Démo active", "Demo on")}</span><a class="btn" href="#/voyages">${L("Voir les voyages de démo", "See the demo trips")}</a><button class="btn ghost" id="quitDemo">${L("Quitter la démo", "Leave the demo")}</button></div>`
+      : !db.voyages().length ? `<a class="btn" href="#/demo">${L("Essayer la démo en 30 s (un vrai train en retard d'hier)", "Try the 30-second demo (a real late train from yesterday)")}</a>` : ""}
     <section class="card" aria-labelledby="hT"><div class="between"><h2 id="hT">${L("Mon trajet", "My trip")}</h2>${home ? `<a class="small" href="carte.html#trajet=${encodeURIComponent(home.a.net + "|" + home.a.id + ">" + home.b.net + "|" + home.b.id)}">${L("Sur la carte", "On the map")}</a>` : ""}</div>
       ${home ? `<p class="muted small" style="margin:0">${esc(home.a.name)} → ${esc(home.b.name)}</p><div id="opts">${spinner(L("Prochains départs…", "Next departures…"))}</div>`
         : `<p class="muted" style="margin:0">${L("Indique ton trajet habituel pour voir son état chaque matin.", "Set your usual trip to see its status every morning.")}</p><a class="btn" href="#/profil">${L("Choisir mon trajet", "Choose my trip")}</a>`}
     </section>
     <section class="card" aria-labelledby="pT" id="disrCard" hidden><h2 id="pT">${L("Perturbations sur mon trajet", "Disruptions on my trip")}</h2><div id="disr"></div></section>
-    <div class="row"><a class="btn" href="assistant.html">${L("Demander au copilote", "Ask the copilot")}</a><a class="btn" href="carte.html">${L("Carte des retards", "Delay map")}</a></div>`;
+    <div class="row"><a class="btn" href="assistant.html">${L("Demander au copilote", "Ask the copilot")}</a><a class="btn" href="carte.html">${L("Carte des retards", "Delay map")}</a><a class="btn" href="#/mois">${L("Mon mois", "My month")}</a><a class="btn" href="classement.html">${L("Classement des lignes", "Line ranking")}</a></div>`;
+  if ($("quitDemo")) $("quitDemo").onclick = quitDemo;
   if (running) refreshRunning(running);
   if (!home) return;
   try {
@@ -358,8 +422,9 @@ route(/^\/$/, async () => {
     $("opts").innerHTML = js.length ? `<div class="list">${js.map(j => {
       const f = j.legs[0], l = j.legs[j.legs.length - 1];
       return `<div class="item" style="cursor:default"><span class="t">${fmt.time(f.dep)} → ${fmt.time(l.arr)}</span><span class="r">${badge(l.arr_delay, false)}</span>
-        <span class="s">${j.legs.map(x => esc(modeName(x.info && x.info.mode, x.info && x.info.line))).join(" › ")}${j.legs.length > 1 ? ` · ${L("correspondance à", "change at")} ${esc(j.legs[1].from[0])}` : " · direct"}</span></div>`; }).join("")}</div>`
+        <span class="s">${j.legs.map(x => esc(modeName(x.info && x.info.mode, x.info && x.info.line))).join(" › ")}${j.legs.length > 1 ? ` · ${L("correspondance à", "change at")} ${esc(j.legs[1].from[0])}` : " · direct"}</span><span class="s rk" data-risk="${esc(JSON.stringify(j.legs.map(x => [x.net, x.info && x.info.line_id]).filter(x => x[1])))}"></span></div>`; }).join("")}</div>`
       : `<p class="muted" style="margin:0">${L("Aucun train trouvé dans les 3 prochaines heures (trains, RER, Transilien).", "No train found in the next 3 hours (trains, RER, Transilien).")}</p>`;
+    showRisk();
     const ids = new Set(js.flatMap(j => j.legs.map(x => x.info && x.info.line_id)).filter(Boolean));
     const d = await rpc("public_disruptions", {days: 1});
     const mine = (d.items || []).filter(x => (x.line_ids || []).some(id => ids.has(id))).slice(0, 4);
@@ -367,6 +432,20 @@ route(/^\/$/, async () => {
   } catch (e) { $("opts").innerHTML = `<p class="muted">${L("Données indisponibles pour le moment.", "Data unavailable right now.")}</p>`; }
 }, "home");
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+// Prévision expérimentale : part des trains de la ligne arrivés à +15 min dans notre historique (quelques jours seulement)
+async function showRisk() {
+  const els = [...view.querySelectorAll("[data-risk]")]; if (!els.length) return;
+  const want = {}; els.forEach(e => JSON.parse(e.dataset.risk).forEach(([n, id]) => (want[n] = want[n] || new Set()).add(id)));
+  const res = {}; let span = null;
+  await Promise.all(Object.entries(want).map(([n, ids]) => rpc("public_line_risk", {p_net: n, p_ids: [...ids]}).then(r => { span = r.span; r.lines.forEach(l => res[n + "|" + l.id] = l); }).catch(() => {})));
+  let any = false;
+  els.forEach(e => {
+    const ls = JSON.parse(e.dataset.risk).map(([n, id]) => res[n + "|" + id]).filter(Boolean); if (!ls.length) return;
+    const p = Math.round(100 * (1 - ls.reduce((a, l) => a * (1 - l.p15 / 100), 1))); any = true;
+    e.innerHTML = `${L("Risque de retard de +15 min", "Risk of a 15+ min delay")} : <b>${p} %</b> · ${L("sur", "from")} ${Math.min(...ls.map(l => l.n)).toLocaleString(locale)} ${L("trains observés", "trains observed")}`;
+  });
+  const box = $("opts"); if (any && box && span) box.insertAdjacentHTML("afterbegin", `<p class="risk-note"><b>${L("Prévision expérimentale", "Experimental forecast")}</b> · ${L(`basée sur ${span.days} jours de relevés seulement : indicative`, `based on only ${span.days} days of records: indicative`)} · <a href="classement.html#risk">${L("méthode", "method")}</a></p>`);
+}
 const spinnerInline = () => `<span class="spin" aria-label="${L("Chargement", "Loading")}"></span>`;
 function best(js) {   // partir plus tard ET arriver plus tot : on ne garde que les meilleures options
   const rt = (t, d) => t + Math.max(d || 0, 0), dep = j => rt(j.legs[0].dep, j.legs[0].dep_delay), arr = j => rt(j.arr, j.arr_delay);
@@ -447,6 +526,7 @@ route(/^\/checkin$/, () => {
 
 // Niveau de presence, dit honnetement
 function presenceLevel(v) {
+  if (v.demo) return {k: "bronze", name: L("Démo", "Demo"), txt: L("démonstration : un vrai train, mais personne n'y a fait de check-in", "demo: a real train, but nobody checked in on it")};
   if (v.geo && v.geo.dist != null && v.geo.dist <= 500 && Math.abs(v.geo.at - v.checkin) < 900) return {k: "argent", name: "Argent", txt: L(`position du téléphone à ${v.geo.dist} m de la gare au check-in`, `phone was ${v.geo.dist} m from the station at check-in`)};
   return {k: "bronze", name: "Bronze", txt: L("check-in déclaré dans le train", "check-in declared on the train")};
 }
@@ -465,8 +545,9 @@ route(/^\/voyages$/, () => {
   const all = db.voyages().slice().reverse();
   const byDay = {}; all.forEach(v => (byDay[v.day] = byDay[v.day] || []).push(v));
   view.innerHTML = `<h1>${L("Mes voyages", "My trips")}</h1><p class="sub">${L("Chaque check-in, avec le retard relevé. Gardés sur ce téléphone.", "Every check-in, with the recorded delay. Kept on this phone.")}</p>` +
+    (all.length ? `<div class="row">${store.get("lpa-demo") ? `<span class="demo-tag">${L("Démo", "Demo")}</span>` : ""}<a class="btn" href="#/mois">${L("Mon mois en story", "My month as a story")}</a></div>` : "") +
     (all.length ? Object.entries(byDay).map(([d, vs]) => `<section class="stack"><h2 class="kicker">${esc(dayLabel(d))}</h2><div class="list">${vs.map(v =>
-      `<a class="item" href="#/voyage/${v.id}"><span class="t">${fmt.time(v.sched)} · ${esc(modeName(v.mode, v.line))} n° ${esc(v.num)}</span><span class="r">${v.result ? badge(v.result.delay, v.result.cancelled) : ""}</span>
+      `<a class="item" href="#/voyage/${v.id}"><span class="t">${fmt.time(v.sched)} · ${esc(modeName(v.mode, v.line))} n° ${esc(v.num)}${v.demo ? ` <span class="d d-ok">${L("démo", "demo")}</span>` : ""}</span><span class="r">${v.result ? badge(v.result.delay, v.result.cancelled) : ""}</span>
         <span class="s">${esc(v.from.name)} → ${esc(v.to ? v.to.name : v.dest || "?")}${v.group ? L(" · correspondance", " · connection") : ""}</span></a>`).join("")}</div></section>`).join("")
       : L(`<div class="empty">Pas encore de voyage. Le jour où tu prends le train, touche <b>Je suis à bord</b>.<br><br><a class="btn primary" href="#/checkin">Je suis à bord</a></div>`, `<div class="empty">No trips yet. The day you take the train, tap <b>I'm on board</b>.<br><br><a class="btn primary" href="#/checkin">I'm on board</a></div>`));
 }, "voyages");
@@ -491,7 +572,7 @@ route(/^\/voyage\/(\w+)$/, async id => {
   const legs = legsOf(voyageById(v.id));
   const trip = tripTotal(legs);
   await compReady;
-  $("vbody").innerHTML = `
+  $("vbody").innerHTML = `${v.demo ? demoGuide(v, trip) : ""}
     <section class="card hero"><span class="kicker">${legs.length > 1 ? L(`Trajet en ${legs.length} étapes`, `${legs.length}-leg trip`) : L("Arrivée à ", "Arriving at ") + esc(to ? to.name : "?")}</span>
       <div class="big-num"><b class="${trip.delay < 60 && !trip.cancelled ? "ok" : ""}">${trip.cancelled ? L("Supprimé", "Cancelled") : trip.delay < 60 ? L("À l'heure", "On time") : "+" + fmt.min(trip.delay)}</b>${trip.delay >= 60 && !trip.cancelled ? `<span>min ${legs.length > 1 ? L("au total", "in total") : L("de retard", "late")}</span>` : ""}</div>
       ${trip.planned ? `<span>${L("Arrivée prévue", "Scheduled arrival")} <b>${fmt.time(trip.planned)}</b>${trip.real ? `, ${L("réelle", "actual")} <b>${fmt.time(trip.real)}</b>` : ""}${trip.declared ? ` <span class="muted small">${L("(heure prévue déclarée)", "(declared scheduled time)")}</span>` : ""}</span>` : ""}
@@ -514,6 +595,8 @@ route(/^\/voyage\/(\w+)$/, async id => {
   $("addLeg").onclick = () => { const g = v.group || v.id; legs.forEach(x => updateVoyage(x.id, {group: g})); store.set("lpa-pending-group", g); };
   const pl = $("planned"); if (pl) pl.onchange = () => { const [h, m] = pl.value.split(":").map(Number); legs.forEach(x => updateVoyage(x.id, {plannedHM: pl.value ? [h, m] : null})); render(); };
   $("del").onclick = () => delVoyage(v);
+  if ($("quitDemo")) $("quitDemo").onclick = quitDemo;
+  view.querySelectorAll('a[href="#claimCard"]').forEach(a => a.onclick = e => { e.preventDefault(); const c = view.querySelector(".claim"); if (c) c.scrollIntoView({behavior: "smooth", block: "start"}); });
 }, "voyages");
 // Horaires du train + gare d'arrivee (choisie, ou trajet habituel s'il est sur la ligne, ou terminus) -> retard a l'arrivee
 async function resolveLeg(v) {
@@ -639,7 +722,7 @@ function claimHtml(v, legs, trip) {
     const done = $("cdone"); if (done) done.onchange = () => { legs.forEach(l => updateVoyage(l.id, {claimed: done.checked ? Math.floor(Date.now() / 1000) : null})); toast(done.checked ? L("Noté : demande envoyée", "Noted: claim sent") : L("Demande non envoyée", "Claim not sent")); };
   });
   const work = min >= 5 || trip.cancelled ? `<p class="small" style="margin:0">${L("<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.", "<b>At work or school</b>: your LateProof certificate proves the delay and that you were on the train. A justified transport delay should not be sanctioned.")}</p>` : "";
-  const head = `<section class="card claim"><h2>${L("Réclamer une compensation", "Claim compensation")}</h2>`;
+  const head = `<section class="card claim" id="claimCard"><h2>${L("Réclamer une compensation", "Claim compensation")}</h2>`;
   const verified = COMP ? `${L("Vérifié le", "Checked on")} ${new Date(COMP.verified + "T12:00:00").toLocaleDateString(locale)}` : "";
   const srcs = (P.sources || []).length ? ` · ${L("sources", "sources")} : ${P.sources.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${i + 1}</a>`).join(" ")}` : "";
   if ((P.k === "ter" || P.k === "idf") && P.R && !(P.pct > 0)) {
@@ -766,6 +849,84 @@ route(/^\/justificatif\/(\w+)$/, id => {
   $("del").onclick = () => { if (!confirm(L("Supprimer ce justificatif de ce téléphone ? Le lien déjà envoyé restera vérifiable.", "Delete this certificate from this phone? A link already sent stays verifiable."))) return; db.saveCerts(db.certs().filter(x => x.id !== c.id)); location.hash = "#/justificatifs"; };
 }, "certs");
 
+// ================================================================= Mon mois : bilan, story à partager, résumé vocal
+const MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const hm = m => m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`;
+function monthStats(ym) {
+  const vs = db.voyages().filter(v => v.day && v.day.startsWith(ym));
+  const groups = {}; vs.forEach(v => (groups[v.group || v.id] = groups[v.group || v.id] || []).push(v));
+  const trips = Object.values(groups).map(g => g.sort((a, b) => a.sched - b.sched)).filter(g => g[g.length - 1].result);
+  let late = 0, minutes = 0, worst = 0, worstTrip = null, claims = 0, euros = 0, priced = 0, demo = false;
+  trips.forEach(g => {
+    const t = tripTotal(g), m = fmt.min(t.delay); if (g.some(v => v.demo)) demo = true;
+    if (m >= 5 || t.cancelled) late++;
+    minutes += m; if (m > worst) { worst = m; worstTrip = g; }
+    const P = claimPlan(g, t);
+    if ((P.pct > 0 || t.cancelled) && !g[0].claimed) { claims++; if (g[0].price && P.pct) { euros += g[0].price * P.pct / 100; priced++; } }
+  });
+  const certs = db.certs().filter(c => c.day && c.day.startsWith(ym)).length;
+  return {n: trips.length, late, minutes, worst, worstTrip, claims, euros: Math.round(euros * 100) / 100, priced, certs, demo};
+}
+route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
+  await compReady;
+  const nowYm = fmt.ymd(now()).slice(0, 6); ym = ym || nowYm;
+  const y = +ym.slice(0, 4), mo = +ym.slice(4, 6), mName = L(MONTHS_FR[mo - 1], MONTHS_EN[mo - 1]);
+  const shift = d => { const t = new Date(Date.UTC(y, mo - 1 + d, 15)); return `${t.getUTCFullYear()}${String(t.getUTCMonth() + 1).padStart(2, "0")}`; };
+  const S = monthStats(ym);
+  const worstLbl = S.worstTrip ? `${modeName(S.worstTrip[0].mode, S.worstTrip[0].line)} · ${S.worstTrip[0].from.name} → ${(S.worstTrip[S.worstTrip.length - 1].to || {}).name || "?"}` : "";
+  const money = S.euros ? S.euros.toLocaleString(locale, {style: "currency", currency: "EUR"}) : null;
+  view.innerHTML = `<div class="between"><h1>${L("Mon mois", "My month")}</h1><div class="monthnav"><a class="btn ghost" href="#/mois/${shift(-1)}" aria-label="${L("Mois précédent", "Previous month")}">←</a>${ym < nowYm ? `<a class="btn ghost" href="#/mois/${shift(1)}" aria-label="${L("Mois suivant", "Next month")}">→</a>` : ""}</div></div>
+    <p class="sub">${cap(mName)} ${y}${S.demo ? ` · <span class="demo-tag">${L("avec des voyages de démo", "with demo trips")}</span>` : ""}</p>
+    ${S.n ? `<section class="card hero"><span class="kicker">${L("Temps perdu sur les rails", "Time lost on the tracks")}</span><div class="big-num"><b>${hm(S.minutes)}</b></div>
+        <span class="muted small">${L(`${S.n} trajet(s), dont ${S.late} en retard (5 min ou plus)`, `${S.n} trip(s), ${S.late} of them late (5 min or more)`)}</span></section>
+      <div class="mgrid"><div><b>+${S.worst} min</b><span>${L("mon pire retard", "my worst delay")}${worstLbl ? ` · ${esc(worstLbl)}` : ""}</span></div>
+        <div><b>${money || S.claims}</b><span>${money ? L(`à récupérer (${S.priced} billet(s) au prix connu)`, `to claim back (${S.priced} ticket(s) with a known price)`) : L("trajet(s) ouvrant droit à compensation", "trip(s) eligible for compensation")}</span></div>
+        <div><b>${S.certs}</b><span>${L("justificatif(s) créé(s)", "certificate(s) created")}</span></div>
+        <div><b>${S.n ? Math.round(100 * (S.n - S.late) / S.n) : 0} %</b><span>${L("de trajets à l'heure", "of trips on time")}</span></div></div>
+      <section class="card"><h2>${L("Partager mon mois", "Share my month")}</h2>
+        <p class="muted small" style="margin:0">${L("Une image au format story (Instagram, WhatsApp, TikTok). Elle est dessinée sur ce téléphone : rien n'est envoyé.", "A story-format image (Instagram, WhatsApp, TikTok). It's drawn on this phone: nothing is sent.")}</p>
+        <img id="sprev" class="story-prev" alt="" hidden>
+        <div class="row"><button class="btn primary" id="mkStory">${L("Créer ma story", "Create my story")}</button></div></section>
+      <section class="card"><h2>${L("Mon résumé vocal", "My voice summary")}</h2>
+        <p class="muted small" style="margin:0">${L("Lu par une voix ElevenLabs. Seuls les chiffres du mois sont envoyés (nombre de trajets, minutes, montant), jamais tes gares ni tes trains.", "Read by an ElevenLabs voice. Only the month's numbers are sent (trip count, minutes, amount), never your stations or trains.")}</p>
+        <div class="row"><button class="btn primary" id="voice">${L("Écouter mon mois", "Listen to my month")}</button><a class="btn" id="voiceDl" hidden download="lateproof-mon-mois.mp3">${L("Télécharger l'audio", "Download the audio")}</a></div>
+        <audio id="aud" controls hidden style="width:100%"></audio><p class="muted small" id="vtext" style="margin:0"></p></section>`
+    : `<div class="empty">${L("Aucun trajet enregistré ce mois-ci.", "No trips recorded this month.")}<br><br><a class="btn primary" href="#/demo">${L("Essayer avec la démo", "Try with the demo")}</a></div>`}
+    <a class="btn" href="classement.html">${L("Et les lignes les plus en retard de la semaine ? Voir le classement", "And the week's latest lines? See the ranking")}</a>`;
+  if (!S.n) return;
+  $("mkStory").onclick = async () => {
+    const b = $("mkStory"); b.disabled = true;
+    try {
+      const blob = await LPStory.draw({kicker: L(`Mon mois de ${mName}`, `My ${mName}`), title: L(`${S.n} trains, ${S.late} en retard`, `${S.n} trains, ${S.late} late`),
+        hero: {value: hm(S.minutes), label: L("perdues sur les rails ce mois-ci", "lost on the tracks this month"), color: "#D4FF3A"}, valueW: 230,
+        rows: [{value: `+${S.worst}`, label: L("min : mon pire retard", "min: my worst delay"), sub: worstLbl, color: "#FF8A5C"},
+          money ? {value: money, label: L("à récupérer", "to claim back"), sub: L("compensations des opérateurs", "operator compensation")} : {value: String(S.claims), label: L("trajet(s) à faire rembourser", "trip(s) to get refunded"), sub: L("garanties G30, OUIGO, TER…", "G30, OUIGO, TER guarantees…")},
+          {value: String(S.certs), label: L("justificatif(s) vérifiable(s)", "verifiable certificate(s)"), sub: L("scellés sur Solana", "sealed on Solana")}],
+        note: S.demo ? L("Exemple de démo : de vrais trains en retard, relevés par LateProof.", "Demo example: real late trains, recorded by LateProof.") : L("Mes retards prouvés avec LateProof.", "My delays, proven with LateProof.")});
+      $("sprev").src = URL.createObjectURL(blob); $("sprev").hidden = false; $("sprev").alt = L("Aperçu de la story du mois", "Preview of the month's story");
+      const r = await LPStory.share(blob, `lateproof-${ym}.png`, L(`Mon mois de ${mName} avec LateProof`, `My ${mName} with LateProof`));
+      if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded"));
+    } finally { b.disabled = false; }
+  };
+  $("voice").onclick = async () => {
+    const b = $("voice"); b.disabled = true; b.innerHTML = `<span class="spin" aria-hidden="true"></span> ${L("Gus prépare ta voix…", "Gus is preparing the voice…")}`;
+    const body = {lang: LPI.lang, month: mo, trips: S.n, late: S.late, minutes: S.minutes, worst: S.worst, claims: S.claims, euros: S.euros || null, demo: S.demo};
+    const speakLocal = txt => { try { const u = new SpeechSynthesisUtterance(txt); u.lang = LPI.lang === "en" ? "en-GB" : "fr-FR"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {} };
+    try {
+      const r = await fetch(`${LP.CFG.url}/functions/v1/voice`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body), signal: AbortSignal.timeout(30000)});
+      if (r.ok && (r.headers.get("content-type") || "").includes("audio")) {
+        const txt = decodeURIComponent(r.headers.get("x-text") || ""), url = URL.createObjectURL(await r.blob());
+        $("aud").src = url; $("aud").hidden = false; $("voiceDl").href = url; $("voiceDl").hidden = false; $("vtext").textContent = txt; $("aud").play().catch(() => {});
+      } else {
+        const j = await r.json().catch(() => ({})); $("vtext").textContent = (j.text || "") + (j.text ? ` (${L("voix du navigateur : la voix ElevenLabs est indisponible pour le moment", "browser voice: the ElevenLabs voice is unavailable right now")})` : "");
+        if (j.text) speakLocal(j.text); else toast(L("Résumé vocal indisponible", "Voice summary unavailable"));
+      }
+    } catch (e) { toast(L("Résumé vocal indisponible", "Voice summary unavailable")); }
+    b.disabled = false; b.textContent = L("Réécouter", "Listen again");
+  };
+}, "voyages");
+
 // ================================================================= Réglages : toutes les préférences au même endroit
 // (langue, trajet habituel, position, favoris, carte, Gus et micro, e-mail, clé, données). Tout reste sur ce téléphone.
 // Formats : la carte garde lp-profile / lp-region / lp-base / lp-pos / lp-favs en texte brut ; Gus garde lp-speak, lp-handsfree,
@@ -853,7 +1014,7 @@ route(/^\/profil$/, async () => {
   };
   $("wipe").onclick = async () => {
     if (!confirm(L("Effacer tous tes voyages, justificatifs, réglages, favoris et ta clé de ce téléphone ? Les liens déjà envoyés resteront vérifiables.", "Erase all your trips, certificates, settings, favourites and key from this phone? Links already sent stay verifiable."))) return;
-    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group",
+    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group", "lpa-demo",
      "lp-profile", "lp-region", "lp-base", "lp-pos", "lp-favs", "lp-recent", "lp-trajet", "lp-speak", "lp-handsfree", "lp-stt", "lp-chat"].forEach(k => raw.set(k, null));
     try { await LP.idb.del("browser-key"); } catch (e) {}
     location.hash = "#/bienvenue";
