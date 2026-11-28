@@ -21,10 +21,15 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
        AND m.hour_ts + 3600 <= EXTRACT(EPOCH FROM now())),                       -- heures terminées seulement
   j AS (SELECT r.*, p.n_trips, 7200.0 / p.n_trips AS iv FROM r
           JOIN idfm_planned_frequency p ON p.line_id = r.line_id AND p.service_date = r.d AND p.hour = r.hr WHERE p.n_trips >= 2),
+  -- Lignes à branches (7, 13…) : sur une branche, une rame sur deux seulement passe. On ne garde que le TRONC COMMUN,
+  -- c'est-à-dire les arrêts vus par presque toutes les rames (au moins 75 % du 8e décile de l'heure).
+  t AS (SELECT j.line_id, j.hour_ts, percentile_cont(0.8) WITHIN GROUP (ORDER BY j.n_passages) AS p80 FROM j GROUP BY j.line_id, j.hour_ts),
   h AS (SELECT j.line_id, j.d, j.hour_ts, MAX(j.n_trips) AS n_plan, COUNT(*) AS n_sd,
-               2 * AVG(j.n_passages) AS n_obs,
+               2 * MAX(t.p80) AS n_obs,
                COALESCE(SUM(GREATEST(0, j.sum_gap_s::numeric / NULLIF(j.n_gaps, 0) - j.iv) * j.n_gaps) / NULLIF(SUM(j.n_gaps), 0), 0) AS ex
-          FROM j GROUP BY j.line_id, j.d, j.hour_ts HAVING COUNT(*) >= 3),
+          FROM j JOIN t ON t.line_id = j.line_id AND t.hour_ts = j.hour_ts
+         WHERE j.n_passages >= 0.75 * t.p80
+         GROUP BY j.line_id, j.d, j.hour_ts HAVING COUNT(*) >= 3),
   a AS (SELECT h.line_id, h.hour_ts, bool_or(x.category = 'interruption') AS cut, bool_or(x.category = 'incident') AS slow
           FROM h JOIN idfm_disruption_lines dl ON dl.line_id = h.line_id
           JOIN idfm_disruptions x ON x.disruption_id = dl.disruption_id
