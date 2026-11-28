@@ -287,6 +287,7 @@ const db = {
   saveCerts: v => store.set("lpa-certs", v),
 };
 const voyageById = id => db.voyages().find(v => v.id === id);
+function updateCert(id, patch) { const all = db.certs(); const i = all.findIndex(x => x.id === id); if (i >= 0) { all[i] = {...all[i], ...patch}; db.saveCerts(all); } }
 
 // ================================================================= Trajets favoris
 // Une seule liste, partagée avec la carte (lp-favs, type « trip » : ⭐ sur un trajet de la carte l'ajoute ici) ;
@@ -913,12 +914,44 @@ route(/^\/nouveau\/(\w+)$/, id => {
       const all = db.certs(); all.unshift({id: uid(), voyage: v.id, code, url, created: cert.at, delay: trip.delay, day: first.day, label: fields[4].v, to: last.to ? last.to.name : ""});
       db.saveCerts(all.slice(0, 100));
       location.hash = "#/justificatif/" + all[0].id;
+      const r = recipient();
+      if (r && r.email && r.auto !== false) { const m = mailOf(all[0]); updateCert(all[0].id, {mailed: Math.floor(Date.now() / 1000)}); setTimeout(() => { location.href = m.href; }, 400); }
     } catch (e) {
       $("sign").disabled = false; $("sign").textContent = L("Signer avec mon téléphone", "Sign with my phone");
       toast(e && e.name === "NotAllowedError" ? L("Signature annulée", "Signing cancelled") : L("Signature impossible : ", "Signing failed: ") + (e.message || e));
     }
   };
 }, "voyages");
+
+// ================================================================= E-mail du justificatif
+// Le destinataire (manager, école…) est gardé sur ce téléphone. L'e-mail part de la messagerie de la personne
+// (lien mailto:) : LateProof n'envoie rien et ne voit pas l'adresse.
+const recipient = () => store.get("lpa-recipient") || null;   // {name, email, sign, auto}
+const validMail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || "").trim());
+function mailOf(c) {
+  const r = recipient() || {}, d = `${c.day.slice(6, 8)}/${c.day.slice(4, 6)}/${c.day.slice(0, 4)}`;
+  const subject = L(`Justificatif de retard de train du ${d} (+${fmt.min(c.delay)} min)`, `Train delay certificate, ${d} (+${fmt.min(c.delay)} min)`);
+  const body = L(`Bonjour${r.name ? " " + r.name : ""},\n\nMon train du ${d} est arrivé avec ${fmt.min(c.delay)} minutes de retard (${c.label}${c.to ? ", arrivée à " + c.to : ""}).\n\n` +
+      `Voici le justificatif. Il se vérifie en quelques secondes, sans compte ni appli, à partir des relevés officiels SNCF scellés sur la blockchain Solana :\n${c.url}\n\n` +
+      `Code du justificatif : ${c.code}\n\nBonne journée,\n${r.sign || ""}`,
+    `Hello${r.name ? " " + r.name : ""},\n\nMy train on ${d} arrived ${fmt.min(c.delay)} minutes late (${c.label}${c.to ? ", arriving at " + c.to : ""}).\n\n` +
+      `Here is the certificate. It can be checked in seconds, with no account or app, against the official SNCF records sealed on the Solana blockchain:\n${c.url}\n\n` +
+      `Certificate code: ${c.code}\n\nBest regards,\n${r.sign || ""}`);
+  const href = `mailto:${encodeURIComponent((r.email || "").trim()).replace(/%40/g, "@")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.trim().replace(/\n/g, "\r\n"))}`;
+  return {subject, body, href, to: r.email || ""};
+}
+function recipientForm(idp) {
+  const r = recipient() || {};
+  return `<label class="field" for="${idp}Em">${L("E-mail de la personne à prévenir (manager, école…)", "E-mail of the person to notify (manager, school…)")}<input id="${idp}Em" type="email" autocomplete="off" inputmode="email" value="${esc(r.email || "")}" placeholder="prenom.nom@entreprise.fr"></label>
+    <label class="field" for="${idp}Nm">${L("Son prénom (pour « Bonjour … »)", "Their first name (for “Hello …”)")}<input id="${idp}Nm" autocomplete="off" value="${esc(r.name || "")}"></label>
+    <label class="field" for="${idp}Sg">${L("Ta signature", "Your signature")}<input id="${idp}Sg" autocomplete="name" value="${esc(r.sign || "")}" placeholder="${L("Prénom Nom", "First Last")}"></label>`;
+}
+function readRecipient(idp) {
+  const email = $(idp + "Em").value.trim();
+  if (email && !validMail(email)) { toast(L("Adresse e-mail invalide", "Invalid e-mail address")); return null; }
+  const r = {...(recipient() || {auto: true}), email, name: $(idp + "Nm").value.trim(), sign: $(idp + "Sg").value.trim()};
+  store.set("lpa-recipient", email ? r : null); return r;
+}
 
 // ================================================================= Justificatifs
 route(/^\/justificatifs$/, () => {
@@ -930,6 +963,7 @@ route(/^\/justificatifs$/, () => {
 }, "certs");
 route(/^\/justificatif\/(\w+)$/, id => {
   const c = db.certs().find(x => x.id === id); if (!c) { location.replace("#/justificatifs"); return; }
+  const rc = recipient();
   const text = L(`Bonjour, mon trajet du ${c.day.slice(6, 8)}/${c.day.slice(4, 6)} a eu ${fmt.min(c.delay)} min de retard (${c.label}). Justificatif vérifiable : ${c.url}`, `Hello, my trip on ${c.day.slice(6, 8)}/${c.day.slice(4, 6)} was ${fmt.min(c.delay)} min late (${c.label}). Verifiable certificate: ${c.url}`);
   view.innerHTML = `<button class="btn ghost" onclick="location.hash='#/justificatifs'">${L("← Mes justificatifs", "← My certificates")}</button>
     <h1>${L("Justificatif prêt", "Certificate ready")}</h1>
@@ -937,12 +971,21 @@ route(/^\/justificatif\/(\w+)$/, id => {
       <span class="lp-perf" aria-hidden="true"></span>
       <div class="big-num"><b>+${fmt.min(c.delay)}</b><span>${L("min de retard", "min late")}</span></div>
       <span class="muted small">${esc(dayLabel(c.day))} · ${esc(c.label)}</span></section>
-    <section class="card"><h2>${L("Le message à envoyer", "The message to send")}</h2><div class="msg">${esc(text)}</div>
-      <div class="row"><button class="btn primary" id="share">${L("Envoyer", "Send")}</button><button class="btn" id="copy">${L("Copier le message", "Copy the message")}</button><button class="btn" id="copyUrl">${L("Copier le lien", "Copy the link")}</button></div></section>
+    <section class="card" id="mailCard"><h2>${L("Envoyer par e-mail", "Send by e-mail")}</h2>
+      ${rc && rc.email ? `<p class="muted small" style="margin:0">${L("Un e-mail tout prêt s'ouvre dans ta messagerie : il ne reste qu'à appuyer sur Envoyer.", "A ready-made e-mail opens in your mail app: just press Send.")}</p>
+        <a class="btn primary big" id="mailGo" href="${esc(mailOf(c).href)}">${L("Envoyer à", "Send to")} ${esc(rc.name || rc.email)}</a>
+        <button class="btn ghost" id="mailEdit">${L("Changer le destinataire", "Change the recipient")}</button>`
+      : `<p class="muted small" style="margin:0">${L("Indique une fois à qui envoyer tes justificatifs : l'e-mail sera prêt à chaque retard. L'adresse reste sur ce téléphone.", "Say once who to send your certificates to: the e-mail will be ready after every delay. The address stays on this phone.")}</p>
+        ${recipientForm("rc")}<button class="btn primary" id="rcSave">${L("Préparer l'e-mail", "Prepare the e-mail")}</button>`}</section>
+    <section class="card"><h2>${L("Ou par message", "Or by message")}</h2><div class="msg">${esc(text)}</div>
+      <div class="row"><button class="btn" id="share">${L("Partager", "Share")}</button><button class="btn" id="copy">${L("Copier le message", "Copy the message")}</button><button class="btn" id="copyUrl">${L("Copier le lien", "Copy the link")}</button></div></section>
     <a class="btn big" href="${esc(c.url)}" target="_blank" rel="noopener">${L("Voir ce que verra la personne", "See what they will see")}</a>
     <p class="muted small">${L("Le lien contient tout le justificatif : rien n'est stocké sur un serveur. Il reste vérifiable même si tu supprimes l'appli.", "The link contains the whole certificate: nothing is stored on a server. It stays verifiable even if you delete the app.")}</p>
     <button class="btn danger" id="del">${L("Supprimer de ce téléphone", "Delete from this phone")}</button>`;
   $("share").onclick = async () => { try { if (navigator.share) { await navigator.share({title: L("Justificatif de retard", "Delay certificate"), text}); return; } } catch (e) { return; } $("copy").click(); };
+  if ($("rcSave")) $("rcSave").onclick = () => { const r = readRecipient("rc"); if (r && r.email) { toast(L("Destinataire enregistré", "Recipient saved")); render(); } else if (r) toast(L("Indique une adresse e-mail", "Enter an e-mail address")); };
+  if ($("mailEdit")) $("mailEdit").onclick = () => { store.set("lpa-recipient", {...rc, email: ""}); render(); };
+  if ($("mailGo")) $("mailGo").onclick = () => updateCert(c.id, {mailed: Math.floor(Date.now() / 1000)});
   $("copy").onclick = () => navigator.clipboard.writeText(text).then(() => toast(L("Message copié", "Message copied")), () => toast(L("Copie impossible", "Copy failed")));
   $("copyUrl").onclick = () => navigator.clipboard.writeText(c.url).then(() => toast(L("Lien copié", "Link copied")), () => toast(L("Copie impossible", "Copy failed")));
   $("del").onclick = () => { if (!confirm(L("Supprimer ce justificatif de ce téléphone ? Le lien déjà envoyé restera vérifiable.", "Delete this certificate from this phone? A link already sent stays verifiable."))) return; db.saveCerts(db.certs().filter(x => x.id !== c.id)); location.hash = "#/justificatifs"; };
@@ -1123,6 +1166,10 @@ route(/^\/profil(?:\/(\w+))?$/, async anchor => {
       ${sw("srv", jget("lp-stt") === "server", L("Dictée par enregistrement", "Dictation by recording"), L("Si la dictée du navigateur ne marche pas : le son est envoyé pour être transcrit, puis effacé.", "If the browser's dictation doesn't work: the audio is sent to be transcribed, then deleted."))}</div>
       <p style="margin:0">${L("Micro", "Microphone")} : <b>${micTxt}</b></p>
       <div class="row">${mic !== "granted" && mic !== "denied" ? `<button class="btn" id="micAsk">${L("Autoriser le micro", "Allow the microphone")}</button>` : ""}<button class="btn ghost" id="chatClear">${L("Effacer la conversation avec Gus", "Clear the conversation with Gus")}</button></div></section>
+    <section class="card" id="sec-mail"><h2>${L("Envoi des justificatifs par e-mail", "Sending certificates by e-mail")}</h2>
+      ${recipientForm("st")}
+      ${sw("stAuto", (recipient() || {auto: true}).auto !== false, L("Ouvrir l'e-mail dès que le justificatif est signé", "Open the e-mail as soon as the certificate is signed"), L("Ta messagerie s'ouvre avec l'e-mail prêt : tu n'as plus qu'à appuyer sur Envoyer. Rien ne part sans toi.", "Your mail app opens with the e-mail ready: just press Send. Nothing goes out without you."))}
+      <button class="btn" id="stSave">${L("Enregistrer", "Save")}</button></section>
     <section class="card"><h2>${L("Mon e-mail (facultatif)", "My e-mail (optional)")}</h2>
       <label class="field" for="em">${L("Affiché masqué sur tes justificatifs, si tu le choisis (ex. p•••@entreprise.fr)", "Shown masked on your certificates, if you choose (e.g. p•••@company.com)")}<input id="em" type="email" autocomplete="email" value="${esc(db.email())}"></label></section>
     <section class="card"><h2>${L("Clé de signature", "Signing key")}</h2>
@@ -1159,6 +1206,8 @@ route(/^\/profil(?:\/(\w+))?$/, async anchor => {
     render();
   };
   $("chatClear").onclick = () => { store.set("lp-chat", null); toast(L("Conversation effacée", "Conversation cleared")); };
+  $("stSave").onclick = () => { const r = readRecipient("st"); if (!r) return; if (r.email) { store.set("lpa-recipient", {...r, auto: $("stAuto").checked}); toast(L("Destinataire enregistré", "Recipient saved")); } else toast(L("Destinataire effacé", "Recipient removed")); };
+  $("stAuto").onchange = () => { const r = recipient(); if (r) store.set("lpa-recipient", {...r, auto: $("stAuto").checked}); };
   $("em").onchange = () => { store.set("lpa-email", $("em").value.trim()); toast(L("E-mail enregistré", "E-mail saved")); };
   if ($("mkKey")) $("mkKey").onclick = async () => { if (await ensureKey()) render(); };
   if ($("resetKey")) $("resetKey").onclick = async () => { if (!confirm(L("Créer une nouvelle clé ? L'ancienne ne servira plus pour les prochains justificatifs.", "Create a new key? The old one will no longer be used for future certificates."))) return; store.set("lp-passkey", null); if (await ensureKey()) render(); };
@@ -1170,7 +1219,7 @@ route(/^\/profil(?:\/(\w+))?$/, async anchor => {
   };
   $("wipe").onclick = async () => {
     if (!confirm(L("Effacer tous tes voyages, justificatifs, réglages, favoris et ta clé de ce téléphone ? Les liens déjà envoyés resteront vérifiables.", "Erase all your trips, certificates, settings, favourites and key from this phone? Links already sent stay verifiable."))) return;
-    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group", "lpa-demo", "lpa-main",
+    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group", "lpa-demo", "lpa-main", "lpa-recipient",
      "lp-profile", "lp-region", "lp-base", "lp-pos", "lp-favs", "lp-recent", "lp-trajet", "lp-speak", "lp-handsfree", "lp-stt", "lp-chat"].forEach(k => raw.set(k, null));
     try { await LP.idb.del("browser-key"); } catch (e) {}
     location.hash = "#/bienvenue";
