@@ -123,7 +123,7 @@ section[id]{scroll-margin-top:90px}
   --elev-0:inset 0 1px 0 var(--edge-hi),inset 0 -1px 0 var(--edge-lo),inset 0 0 0 1px rgb(255 255 255/.025);
   --elev-1:var(--elev-0),0 1px 2px rgb(0 0 0/.35),0 14px 30px -16px rgb(0 0 0/.7);
   --elev-2:var(--elev-0),0 2px 4px rgb(0 0 0/.4),0 26px 50px -18px rgb(0 0 0/.85);
-  --btn-relief:inset 0 1px 0 rgb(255 255 255/.55),inset 0 -2px 0 rgb(40 60 0/.3),0 1px 2px rgb(0 0 0/.5),0 10px 22px -10px rgb(212 255 58/.5);
+  --btn-relief:inset 0 1px 0 rgb(255 255 255/.55),inset 0 -2px 0 rgb(40 60 0/.3),0 1px 2px rgb(0 0 0/.5),0 10px 20px -10px rgb(0 0 0/.75);
   --btn-press:inset 0 2px 4px rgb(40 60 0/.35),0 1px 1px rgb(0 0 0/.4);
   /* Grain (bruit fractal, ~2,5 %) pour casser les aplats */
   --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
@@ -191,17 +191,17 @@ body{background-image:var(--grain)}
 .tl .rail::before{left:6px;width:4px;border-radius:2px;background:#3B4149}
 .tl .rail::after{left:1px;top:4px;width:14px;height:14px;border:3px solid #59606A;background:var(--bg)}
 .tl li:last-child .rail::before{bottom:auto;height:10px}
-.tl li.late .rail::before,.tl li:has(+ li.late) .rail::before{background:var(--chartreuse);box-shadow:0 0 12px rgb(141 240 59/.35)}
+.tl li.late .rail::before,.tl li:has(+ li.late) .rail::before{background:var(--chartreuse)}
 .tl li.late .rail::after{border-color:var(--chartreuse)}
-.tl li.me .rail::after{border-color:var(--acid);background:var(--acid);box-shadow:0 0 0 5px rgb(212 255 58/.16)}
+.tl li.me .rail::after{border-color:var(--acid);background:var(--acid)}
 .tl li.dest .rail::after{border-color:var(--acid)}
 .tl .nm{font-size:.95rem;font-weight:600}
 .tl li.skip .rail::after{border-style:dashed}
 /* (carte : guidage « En route ») */
 .gd .trk{height:40px}
 .gd .trk .rl,.gd .trk .fl{top:16px;height:6px;border-radius:3px}
-.gd .trk .fl{background:var(--acid);box-shadow:0 0 12px rgb(212 255 58/.3)}
-.gd .trk .lt{position:absolute;top:16px;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--chartreuse) 0 10px,color-mix(in srgb,var(--chartreuse) 45%,transparent) 10px 14px);box-shadow:0 0 12px rgb(141 240 59/.35)}
+.gd .trk .fl{background:var(--acid)}
+.gd .trk .lt{position:absolute;top:16px;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--chartreuse) 0 10px,color-mix(in srgb,var(--chartreuse) 45%,transparent) 10px 14px)}
 .gd .trk .st{top:11px;width:16px;height:16px;margin-left:-8px;border-color:#59606A}
 .gd .trk .st.on{border-color:var(--acid)}
 .gd .names{font:600 .74rem var(--display);color:var(--fg)}
