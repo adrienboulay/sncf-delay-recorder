@@ -34,7 +34,7 @@ jobs:
           if [ -z "$BASE" ] || [ -z "$KEY" ]; then BASE=""; KEY=""; echo "::warning::SUPABASE_URL ou SUPABASE_PUBLISHABLE_KEY invalide : la page s'affiche sans donnees"; else echo "config ok"; fi
           printf 'window.LP_CONFIG = {url: "%s", key: "%s"};\n' "$BASE" "$KEY" > public/config.js
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site/public
   deploy:
