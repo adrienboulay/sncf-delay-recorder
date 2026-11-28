@@ -29,7 +29,7 @@ jobs:
       - run: deno check supabase/functions/assistant/index.ts
       - run: deno test supabase/functions/assistant/
       - run: deno check supabase/functions/voice/index.ts
-      - run: deno test supabase/functions/voice/
+      - run: deno test --allow-env supabase/functions/voice/
       - name: Outils sur les vraies donnees (lecture seule, informatif, une base lente ne bloque pas le deploiement)
         if: env.SUPABASE_URL != ''
         continue-on-error: true
