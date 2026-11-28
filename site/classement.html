@@ -120,7 +120,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
         <h2 id="tW" data-en="Top 15 late lines">Les 15 lignes les plus en retard</h2>
         <ol class="rank" id="worst"></ol>
         <div class="btns">
-          <button class="btn" id="story" type="button" data-en="Story image (1080×1920)">Image story (1080×1920)</button>
+          <button class="btn" id="story" type="button" data-en="Story image (1080×1920)">Image story (1080×1920)</button><button class="btn" id="storyShare" type="button" hidden data-en="Share or save the image">Partager ou enregistrer l'image</button>
           <button class="btn line" id="csv" type="button" data-en="Download CSV">Télécharger le CSV</button>
         </div>
       </section>
@@ -221,8 +221,8 @@ $("story").onclick = async () => {
       rankColors: true, valueW: 190,
       rows: R.worst.slice(0, 5).map((x, i) => ({value: pct(Math.round(x.pct15)), label: `${i + 1}. ${lineName(x)}`, sub: lineSub(x), color: i < 3 ? "#FF8A5C" : "#D4FF3A"})),
       note: L(`Part des trains à +15 min, du ${dmy(R.since)} au ${dmy(R.until)}. Basé sur ${SPAN.days} jours de relevés seulement : indicatif.`, `Share of trains at +15 min, ${dmy(R.since)} to ${dmy(R.until)}. Based on only ${SPAN.days} days of records: indicative.`)});
-    const r = await LPStory.share(blob, `lateproof-classement-${R.until}.png`, L("Les lignes les plus en retard cette semaine, d'après LateProof", "This week's most delayed train lines, by LateProof"));
-    if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded"));
+    $("story").hidden = true; $("storyShare").hidden = false;
+    $("storyShare").onclick = async () => { const r = await LPStory.share(blob, `lateproof-classement-${R.until}.png`, L("Les lignes les plus en retard cette semaine, d'après LateProof", "This week's most delayed train lines, by LateProof")); if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded")); };
   } finally { b.disabled = false; }
 };
 

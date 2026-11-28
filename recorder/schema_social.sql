@@ -96,8 +96,9 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
                     to_char(now() AT TIME ZONE 'Europe/Paris' - interval '1 day', 'YYYYMMDD') AS yday),
   g AS (SELECT DISTINCT ON (uic) uic, name, lat, lon FROM ref_stops WHERE location_type = 1 AND uic IS NOT NULL ORDER BY uic, stop_id),
   c AS (SELECT t.*, (r.day IS NOT NULL) AS sealed,
-               CASE WHEN t.mode IN ('OUI', 'IC', 'ICN') THEN 0 WHEN t.mode = 'TER' THEN 1 ELSE 2 END AS pref
+               CASE WHEN t.mode IN ('OUI', 'IC') THEN 0 WHEN t.mode = 'TER' THEN 1 ELSE 2 END AS pref
           FROM p, trains t LEFT JOIN delay_roots r ON r.day = t.service_date AND r.tx_signature IS NOT NULL
+                                    AND t.last_seen < r.built_at   -- dernier relevé du train AVANT le calcul de l'empreinte : son retard est bien dans la liste scellée
          WHERE t.service_date IN (p.yday, p.today) AND t.status NOT IN ('CANCELED', 'CANCELLED')
            AND t.arrival_delay_s BETWEEN 1500 AND 10800 AND t.sched_departure_ts IS NOT NULL AND t.sched_arrival_ts IS NOT NULL
            AND t.origin_uic IS NOT NULL AND t.dest_uic IS NOT NULL AND t.sched_arrival_ts + t.arrival_delay_s < EXTRACT(EPOCH FROM now()))

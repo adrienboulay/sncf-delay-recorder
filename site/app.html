@@ -722,7 +722,7 @@ function claimHtml(v, legs, trip) {
     };
     const done = $("cdone"); if (done) done.onchange = () => { legs.forEach(l => updateVoyage(l.id, {claimed: done.checked ? Math.floor(Date.now() / 1000) : null})); toast(done.checked ? L("Noté : demande envoyée", "Noted: claim sent") : L("Demande non envoyée", "Claim not sent")); };
   });
-  const work = min >= 5 || trip.cancelled ? `<p class="small" style="margin:0">${L("<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.", "<b>At work or school</b>: your LateProof certificate proves the delay and that you were on the train. A justified transport delay should not be sanctioned.")}</p>` : "";
+  const work = (min >= 5 || trip.cancelled) && !first.demo ? `<p class="small" style="margin:0">${L("<b>Au travail ou en cours</b> : ton justificatif LateProof prouve le retard et ta présence dans le train. Un retard justifié dû aux transports ne devrait pas être sanctionné.", "<b>At work or school</b>: your LateProof certificate proves the delay and that you were on the train. A justified transport delay should not be sanctioned.")}</p>` : "";
   const head = `<section class="card claim" id="claimCard"><h2>${L("Réclamer une compensation", "Claim compensation")}</h2>`;
   const verified = COMP ? `${L("Vérifié le", "Checked on")} ${new Date(COMP.verified + "T12:00:00").toLocaleDateString(locale)}` : "";
   const srcs = (P.sources || []).length ? ` · ${L("sources", "sources")} : ${P.sources.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${i + 1}</a>`).join(" ")}` : "";
@@ -749,7 +749,7 @@ function claimHtml(v, legs, trip) {
   return head + `<div class="claimtop"><span class="kicker">${esc(P.name)}</span>
       <b class="pct">${trip.cancelled && !P.pct ? L("Train supprimé", "Train cancelled") : `${P.pct} % ${L("du prix du billet", "of the ticket price")}`}</b>
       <span class="muted small">${trip.cancelled && !P.pct ? L("Si tu n'as pas voyagé, le billet est remboursable en totalité.", "If you didn't travel, the ticket is fully refundable.") : `${form} · ${L("retard", "delay")} ${min} min`}</span></div>
-    ${P.pct ? `<label class="field" for="tprice">${L("Prix de ton billet (facultatif, pour estimer)", "Your ticket price (optional, to estimate)")}<span class="row" style="flex-wrap:nowrap"><input id="tprice" inputmode="decimal" placeholder="49,90" value="${esc(price)}" style="max-width:140px"> € <b id="tamount" class="ok">${amount}</b></span></label>` : ""}
+    ${P.pct ? `<label class="field" for="tprice">${L("Prix de ton billet (facultatif, pour estimer)", "Your ticket price (optional, to estimate)")}<span class="row" style="flex-wrap:nowrap"><input id="tprice" inputmode="decimal" placeholder="49,90" value="${esc(price)}" style="max-width:140px"> € <b id="tamount" class="ok">${amount}</b></span>${first.demo ? `<small class="muted">${L("Prix d'exemple pour la démo.", "Example price for the demo.")}</small>` : ""}</label>` : ""}
     ${P.auto ? `<p style="margin:0">${L(`Rien à faire : OUIGO t'écrit et verse la compensation dans les jours qui suivent. <b>Sans nouvelles le ${deadline}</b>, contacte le service client avec ton justificatif.`, `Nothing to do: OUIGO emails you and pays the compensation within days. <b>If you hear nothing by ${deadline}</b>, contact customer service with your certificate.`)}</p>
       <a class="btn" href="${esc(P.url)}" target="_blank" rel="noopener">${L("Page OUIGO en cas de retard", "OUIGO delay page")} ↗</a>`
     : `<ol class="csteps">
@@ -882,13 +882,13 @@ route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
     ${S.n ? `<section class="card hero"><span class="kicker">${L("Temps perdu sur les rails", "Time lost on the tracks")}</span><div class="big-num"><b>${hm(S.minutes)}</b></div>
         <span class="muted small">${L(`${S.n} trajet(s), dont ${S.late} en retard (5 min ou plus)`, `${S.n} trip(s), ${S.late} of them late (5 min or more)`)}</span></section>
       <div class="mgrid"><div><b>+${S.worst} min</b><span>${L("mon pire retard", "my worst delay")}${worstLbl ? ` · ${esc(worstLbl)}` : ""}</span></div>
-        <div><b>${money || S.claims}</b><span>${money ? L(`à récupérer (${S.priced} billet(s) au prix connu)`, `to claim back (${S.priced} ticket(s) with a known price)`) : L("trajet(s) ouvrant droit à compensation", "trip(s) eligible for compensation")}</span></div>
+        <div><b>${money || S.claims}</b><span>${money ? (S.demo ? L(`à récupérer (prix de billets d'exemple pour la démo)`, `to claim back (example ticket prices for the demo)`) : L(`à récupérer (${S.priced} billet(s) au prix connu)`, `to claim back (${S.priced} ticket(s) with a known price)`)) : L("trajet(s) ouvrant droit à compensation", "trip(s) eligible for compensation")}</span></div>
         <div><b>${S.certs}</b><span>${L("justificatif(s) créé(s)", "certificate(s) created")}</span></div>
         <div><b>${S.n ? Math.round(100 * (S.n - S.late) / S.n) : 0} %</b><span>${L("de trajets à l'heure", "of trips on time")}</span></div></div>
       <section class="card"><h2>${L("Partager mon mois", "Share my month")}</h2>
         <p class="muted small" style="margin:0">${L("Une image au format story (Instagram, WhatsApp, TikTok). Elle est dessinée sur ce téléphone : rien n'est envoyé.", "A story-format image (Instagram, WhatsApp, TikTok). It's drawn on this phone: nothing is sent.")}</p>
         <img id="sprev" class="story-prev" alt="" hidden>
-        <div class="row"><button class="btn primary" id="mkStory">${L("Créer ma story", "Create my story")}</button></div></section>
+        <div class="row"><button class="btn primary" id="mkStory">${L("Créer ma story", "Create my story")}</button><button class="btn primary" id="shStory" hidden>${L("Partager ou enregistrer", "Share or save")}</button></div></section>
       <section class="card"><h2>${L("Mon résumé vocal", "My voice summary")}</h2>
         <p class="muted small" style="margin:0">${L("Lu par une voix ElevenLabs. Seuls les chiffres du mois sont envoyés (nombre de trajets, minutes, montant), jamais tes gares ni tes trains.", "Read by an ElevenLabs voice. Only the month's numbers are sent (trip count, minutes, amount), never your stations or trains.")}</p>
         <div class="row"><button class="btn primary" id="voice">${L("Écouter mon mois", "Listen to my month")}</button><a class="btn" id="voiceDl" hidden download="lateproof-mon-mois.mp3">${L("Télécharger l'audio", "Download the audio")}</a></div>
@@ -906,8 +906,8 @@ route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
           {value: String(S.certs), label: L("justificatif(s) vérifiable(s)", "verifiable certificate(s)"), sub: L("scellés sur Solana", "sealed on Solana")}],
         note: S.demo ? L("Exemple de démo : de vrais trains en retard, relevés par LateProof.", "Demo example: real late trains, recorded by LateProof.") : L("Mes retards prouvés avec LateProof.", "My delays, proven with LateProof.")});
       $("sprev").src = URL.createObjectURL(blob); $("sprev").hidden = false; $("sprev").alt = L("Aperçu de la story du mois", "Preview of the month's story");
-      const r = await LPStory.share(blob, `lateproof-${ym}.png`, L(`Mon mois de ${mName} avec LateProof`, `My ${mName} with LateProof`));
-      if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded"));
+      b.hidden = true; $("shStory").hidden = false;
+      $("shStory").onclick = async () => { const r = await LPStory.share(blob, `lateproof-${ym}.png`, L(`Mon mois de ${mName} avec LateProof`, `My ${mName} with LateProof`)); if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded")); };
     } finally { b.disabled = false; }
   };
   $("voice").onclick = async () => {
