@@ -112,11 +112,11 @@ section[id]{scroll-margin-top:90px}
 /* ================================================================ Révision G : matière
    Profondeur physique et codes ferroviaires, par-dessus les styles de chaque page (ce fichier est chargé en dernier).
    Équilibre des couleurs : ~65 % neutres (fonds, surfaces), ~25 % --acid (logo, appel à l'action, tout ce qui touche au
-   trajet), ~10 % --chartreuse (les retards). --alert (orange) reste réservé aux trains supprimés et aux interruptions. */
+   trajet), ~10 % --orange #FF8A5C, l'orange-ocre d'origine (les retards et les suppressions). */
 :root{
   --bg:#0F1114;--surface:#171A1E;--surface2:#1E2227;--surface3:#282D34;--line:#262B31;
-  --acid:#D4FF3A;--acid-ink:#121417;--chartreuse:#8DF03B;--alert:#FF7A4D;
-  --lime:var(--acid);--orange:var(--chartreuse);--amber:var(--chartreuse);
+  --acid:#D4FF3A;--acid-ink:#121417;--orange:#FF8A5C;--alert:var(--orange);
+  --lime:var(--acid);--amber:var(--orange);
   --edge-hi:rgb(255 255 255/.12);--edge-lo:rgb(255 255 255/.02);
   --mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
   /* Arêtes directionnelles (1 px lumineux en haut, presque invisible en bas) + élévation */
@@ -165,12 +165,12 @@ body{background-image:var(--grain)}
 .kicker,.demo-tag,.kick,.pill3 .tag,.gd .now .k{letter-spacing:.06em!important}
 .big-num b{letter-spacing:-.05em!important;font-weight:700}
 
-/* ---- Statuts : « à l'heure » neutre, retard en chartreuse, suppression en orange */
-.d-ok{background:rgb(255 255 255/.07);color:var(--fg)}
-.d-mid,.d-bad{background:color-mix(in srgb,var(--chartreuse) 15%,transparent);color:var(--chartreuse)}
+/* ---- Statuts : « à l'heure » en vert, retard et suppression en orange-ocre (code couleur d'origine) */
+.d-ok{background:rgb(212 255 58/.12);color:var(--lime)}
+.d-mid,.d-bad{background:color-mix(in srgb,var(--orange) 15%,transparent);color:var(--orange)}
 .d-x{background:color-mix(in srgb,var(--alert) 16%,transparent)!important;color:var(--alert)!important}
-.big-num b{color:var(--chartreuse)}.big-num b.ok,#phDelay.ph-ok{color:var(--fg)}
-.chip.o{background:color-mix(in srgb,var(--chartreuse) 15%,transparent);color:var(--chartreuse)}
+.big-num b{color:var(--orange)}.big-num b.ok,#phDelay.ph-ok{color:var(--lime)}
+.chip.o{background:color-mix(in srgb,var(--orange) 15%,transparent);color:var(--orange)}
 
 /* ---- Billet de train : perforation pointillée avec encoches latérales */
 .lp-ticket{position:relative}
@@ -183,16 +183,16 @@ body{background-image:var(--grain)}
 
 /* ---- Superposition : éléments clés décalés et plus élevés (propriétés rotate/translate : n'écrasent pas les animations) */
 .lp-lift{position:relative;z-index:2;box-shadow:var(--elev-2)!important;rotate:-.6deg}
-.lp-alert{margin-top:-30px!important;margin-inline:14px;rotate:.8deg;box-shadow:inset 3px 0 0 var(--chartreuse),var(--elev-2)!important}
+.lp-alert{margin-top:-30px!important;margin-inline:14px;rotate:.8deg;box-shadow:inset 3px 0 0 var(--orange),var(--elev-2)!important}
 @media (prefers-reduced-motion:reduce){.lp-lift,.lp-alert{rotate:none}}
 
-/* ---- Ligne de trajet (appli : arrêts d'un train) : rail épais, gares lisibles, tronçon en retard en chartreuse */
+/* ---- Ligne de trajet (appli : arrêts d'un train) : rail épais, gares lisibles, tronçon en retard en orange-ocre */
 .tl li{grid-template-columns:58px 18px minmax(0,1fr) auto}
 .tl .rail::before{left:6px;width:4px;border-radius:2px;background:#3B4149}
 .tl .rail::after{left:1px;top:4px;width:14px;height:14px;border:3px solid #59606A;background:var(--bg)}
 .tl li:last-child .rail::before{bottom:auto;height:10px}
-.tl li.late .rail::before,.tl li:has(+ li.late) .rail::before{background:var(--chartreuse)}
-.tl li.late .rail::after{border-color:var(--chartreuse)}
+.tl li.late .rail::before,.tl li:has(+ li.late) .rail::before{background:var(--orange)}
+.tl li.late .rail::after{border-color:var(--orange)}
 .tl li.me .rail::after{border-color:var(--acid);background:var(--acid)}
 .tl li.dest .rail::after{border-color:var(--acid)}
 .tl .nm{font-size:.95rem;font-weight:600}
@@ -201,7 +201,7 @@ body{background-image:var(--grain)}
 .gd .trk{height:40px}
 .gd .trk .rl,.gd .trk .fl{top:16px;height:6px;border-radius:3px}
 .gd .trk .fl{background:var(--acid)}
-.gd .trk .lt{position:absolute;top:16px;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--chartreuse) 0 10px,color-mix(in srgb,var(--chartreuse) 45%,transparent) 10px 14px)}
+.gd .trk .lt{position:absolute;top:16px;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--orange) 0 10px,color-mix(in srgb,var(--orange) 45%,transparent) 10px 14px)}
 .gd .trk .st{top:11px;width:16px;height:16px;margin-left:-8px;border-color:#59606A}
 .gd .trk .st.on{border-color:var(--acid)}
 .gd .names{font:600 .74rem var(--display);color:var(--fg)}
