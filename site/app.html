@@ -196,6 +196,14 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 .mgrid span{font-size:.8rem;color:var(--muted)}
 .story-prev{width:min(260px,70%);justify-self:center;border-radius:18px;box-shadow:0 18px 40px rgb(0 0 0/.45)}
 .monthnav{display:flex;gap:8px;align-items:center}
+.lrows{display:grid;gap:8px}
+.lrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--surface2)}
+.lrow .lb{grid-row:1/3}
+.lrow b{min-width:0;overflow-wrap:anywhere}
+.lrow .s{grid-column:2;font-size:.8rem;color:var(--muted)}
+.lrow .v{grid-row:1/3;grid-column:3;text-align:right;font:700 1.15rem var(--head);color:var(--orange)}
+.lrow .v.ok{color:var(--lime)}
+.lrow .v small{display:block;font:600 .68rem var(--display);color:var(--muted)}
 
 /* Aide à la réclamation */
 .claim .claimtop{display:grid;gap:4px;padding:14px;border-radius:14px;background:var(--surface2)}
@@ -231,6 +239,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 <script src="lp-core.js"></script>
 <script src="gus.js"></script>
 <script src="lp-story.js"></script>
+<script src="lp-lines.js"></script>
 <script>Gus.fab({bottom: "92px"});</script>
 <script>
 "use strict";
@@ -885,6 +894,7 @@ route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
         <div><b>${money || S.claims}</b><span>${money ? (S.demo ? L(`à récupérer (prix de billets d'exemple pour la démo)`, `to claim back (example ticket prices for the demo)`) : L(`à récupérer (${S.priced} billet(s) au prix connu)`, `to claim back (${S.priced} ticket(s) with a known price)`)) : L("trajet(s) ouvrant droit à compensation", "trip(s) eligible for compensation")}</span></div>
         <div><b>${S.certs}</b><span>${L("justificatif(s) créé(s)", "certificate(s) created")}</span></div>
         <div><b>${S.n ? Math.round(100 * (S.n - S.late) / S.n) : 0} %</b><span>${L("de trajets à l'heure", "of trips on time")}</span></div></div>
+      <section class="card" id="myLines">${spinner(L("Mes lignes…", "My lines…"))}</section>
       <section class="card"><h2>${L("Partager mon mois", "Share my month")}</h2>
         <p class="muted small" style="margin:0">${L("Une image au format story (Instagram, WhatsApp, TikTok). Elle est dessinée sur ce téléphone : rien n'est envoyé.", "A story-format image (Instagram, WhatsApp, TikTok). It's drawn on this phone: nothing is sent.")}</p>
         <img id="sprev" class="story-prev" alt="" hidden>
@@ -896,6 +906,7 @@ route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
     : `<div class="empty">${L("Aucun trajet enregistré ce mois-ci.", "No trips recorded this month.")}<br><br><a class="btn primary" href="#/demo">${L("Essayer avec la démo", "Try with the demo")}</a></div>`}
     <a class="btn" href="classement.html">${L("Et les lignes les plus en retard de la semaine ? Voir le classement", "And the week's latest lines? See the ranking")}</a>`;
   if (!S.n) return;
+  drawMyLines(ym, mName);
   $("mkStory").onclick = async () => {
     const b = $("mkStory"); b.disabled = true;
     try {
@@ -927,6 +938,53 @@ route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
     b.disabled = false; b.textContent = L("Réécouter", "Listen again");
   };
 }, "voyages");
+
+// Mes lignes du mois (vignettes) + les lignes les plus en retard de la semaine, et leur story
+let WORST = null;
+async function drawMyLines(ym, mName) {
+  const box = $("myLines"); if (!box) return;
+  await LPLines.ready;
+  const map = {};
+  db.voyages().filter(v => v.day && v.day.startsWith(ym) && v.result).forEach(v => {
+    const l = {net: v.net, mode: v.mode, name: v.line || ""}, i = LPLines.info(l), k = v.net + "|" + i.label;
+    const m = map[k] = map[k] || {l, i, n: 0, late: 0, min: 0, demo: false, routes: []};
+    const rt = `${v.from.name} → ${v.to ? v.to.name : v.dest || "?"}`; if (!m.routes.includes(rt)) m.routes.push(rt);
+    m.n++; const d = fmt.min(v.result.delay); if (d >= 5 || v.result.cancelled) m.late++; m.min += d; if (v.demo) m.demo = true;
+  });
+  const mine = Object.values(map).sort((a, b) => b.late - a.late || b.min - a.min || b.n - a.n);
+  let span = null;
+  try { if (!WORST) [WORST, span] = await Promise.all([rpc("public_worst_lines", {p_days: 7}), rpc("public_data_span", {})]); else span = await rpc("public_data_span", {}); } catch (e) {}
+  const W = WORST || {worst: [], metro: []};
+  const rankOf = m => { const idx = W.worst.findIndex(x => (x.net === "idf" ? x.id === m.i.id : x.name === m.l.name && x.net === m.l.net)); return idx >= 0 ? idx + 1 : 0; };
+  const top = [...W.worst.slice(0, 5), ...(W.metro || []).slice(0, 3)];
+  const title = m => m.l.net === "idf" ? m.i.label : m.routes[0] + (m.routes.length > 1 ? ` +${m.routes.length - 1}` : "");
+  box.innerHTML = `<h2>${L("Mes lignes ce mois-ci", "My lines this month")}</h2>
+    <div class="lrows">${mine.map(m => { const r = rankOf(m), avg = Math.round(m.min / m.n);
+      return `<div class="lrow"><span class="lb">${LPLines.badge(m.l, true)}</span><b>${esc(title(m))}</b>
+        <span class="v${m.late ? "" : " ok"}">${m.late}/${m.n}<small>${L("en retard", "late")}</small></span>
+        <span class="s">${L(`${m.n} trajet(s) · +${avg} min en moyenne`, `${m.n} trip(s) · +${avg} min on average`)}${r ? ` · <b style="color:var(--orange)">${L(`n° ${r} des plus en retard cette semaine`, `#${r} most delayed this week`)}</b>` : ""}</span></div>`; }).join("")}</div>
+    ${top.length ? `<h2 style="margin-top:6px">${L("Les plus en retard cette semaine", "Most delayed this week")}</h2>
+    <p class="risk-note"><b>${L("Expérimental", "Experimental")}</b> · ${L(`basé sur ${span ? span.days : "quelques"} jours de relevés seulement`, `based on only ${span ? span.days : "a few"} days of records`)} · <a href="classement.html">${L("classement complet", "full ranking")}</a></p>
+    <div class="lrows">${top.map(x => `<div class="lrow"><span class="lb">${LPLines.badge(x, true)}</span><b>${esc(x.net === "sncf" ? (x.long || "").replace(/\s+-\s+/g, " – ") : LPLines.info(x).label)}</b>
+      <span class="v">${Math.round(x.pct15)} %<small>${L("à +15 min", "at +15 min")}</small></span><span class="s">${esc(x.net === "idf" && /METRO|TRAM/.test(x.mode) ? L("métro / tram · mesuré par l'intervalle entre rames", "metro / tram · measured by the interval between trains") : `${x.n} ${L("trains en 7 jours", "trains in 7 days")}`)}</span></div>`).join("")}</div>` : ""}
+    <div class="row"><button class="btn primary" id="mkLines">${L("Story de mes lignes", "Story of my lines")}</button><button class="btn primary" id="shLines" hidden>${L("Partager ou enregistrer", "Share or save")}</button></div>
+    <img id="lprev" class="story-prev" alt="" hidden>`;
+  $("mkLines").onclick = async () => {
+    const b = $("mkLines"); b.disabled = true;
+    try {
+      const rows = [{section: L("Mes lignes", "My lines")}];
+      for (const m of mine.slice(0, 3)) rows.push({value: `${m.late}/${m.n}`, label: title(m), sub: L(`en retard · +${Math.round(m.min / m.n)} min en moyenne`, `late · +${Math.round(m.min / m.n)} min on average`), color: m.late ? "#FF8A5C" : "#D4FF3A", badge: await LPLines.forStory(m.l)});
+      const tops = [...W.worst.slice(0, 2), ...(W.metro || []).slice(0, 1)];
+      if (tops.length) { rows.push({section: L("Les pires de la semaine en France", "France's worst this week")});
+        for (const x of tops) rows.push({value: `${Math.round(x.pct15)} %`, label: x.net === "sncf" ? (x.long || "").replace(/\s+-\s+/g, " – ") : LPLines.info(x).label, sub: L("des trains à +15 min", "of trains at +15 min"), color: "#FF8A5C", badge: await LPLines.forStory(x)}); }
+      const blob = await LPStory.draw({kicker: L(`Mes lignes de ${mName}`, `My lines in ${mName}`), title: L("Mes lignes, et les pires de la semaine", "My lines, and the week's worst"), rows,
+        note: (mine.some(m => m.demo) ? L("Exemple de démo. ", "Demo example. ") : "") + L(`Classement basé sur ${span ? span.days : "quelques"} jours de relevés seulement : indicatif.`, `Ranking based on only ${span ? span.days : "a few"} days of records: indicative.`)});
+      $("lprev").src = URL.createObjectURL(blob); $("lprev").hidden = false; $("lprev").alt = L("Aperçu de la story de mes lignes", "Preview of my lines story");
+      b.hidden = true; $("shLines").hidden = false;
+      $("shLines").onclick = async () => { const r = await LPStory.share(blob, `lateproof-lignes-${ym}.png`, L("Mes lignes avec LateProof", "My lines with LateProof")); if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded")); };
+    } finally { b.disabled = false; }
+  };
+}
 
 // ================================================================= Réglages : toutes les préférences au même endroit
 // (langue, trajet habituel, position, favoris, carte, Gus et micro, e-mail, clé, données). Tout reste sur ce téléphone.

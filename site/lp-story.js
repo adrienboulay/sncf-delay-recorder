@@ -11,6 +11,14 @@
     for (const w of words) { const t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
     if (cur) lines.push(cur); return lines;
   }
+  // Texte sur une ligne : on réduit la police jusqu'à ce qu'il tienne, puis « … » en dernier recours
+  function fit(ctx, text, maxW, big, small, weight, x, y) {
+    let sz = big; text = String(text || "");
+    for (; sz > small; sz -= 2) { ctx.font = `${weight} ${sz}px ${BODY}`; if (ctx.measureText(text).width <= maxW) break; }
+    ctx.font = `${weight} ${sz}px ${BODY}`;
+    while (text.length > 1 && ctx.measureText(text).width > maxW) text = text.slice(0, -2) + "…";
+    ctx.fillText(text, x, y);
+  }
   function round(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
   function logo(ctx, x, y, s) {
     ctx.save(); ctx.translate(x, y); ctx.scale(s / 64, s / 64);
@@ -44,15 +52,27 @@
       g.fillStyle = FG; g.font = `600 48px ${BODY}`; for (const l of wrap(g, o.hero.label || "", CW).slice(0, 2)) { y += 58; g.fillText(l, X, y); }
       y += 70;
     }
-    const rows = (o.rows || []).slice(0, 6), rh = rows.length > 4 ? 150 : 190, vf = `700 ${rows.length > 4 ? 64 : 78}px ${HEAD}`;
+    // Lignes : {value, label, sub, color, badge: {img} | {text, color, fg}} ; intertitre : {section: "texte"}
+    const all = (o.rows || []).slice(0, 9), rows = all.filter(r => !r.section), dense = rows.length > 4;
+    const rh = dense ? 142 : 190, vf = `700 ${dense ? 60 : 78}px ${HEAD}`;
     g.font = vf; const vw = Math.max(0, ...rows.map(r => g.measureText(r.value).width));
-    rows.forEach((r, i) => {
+    all.forEach((r, i) => {
+      if (r.section) { g.fillStyle = LIME; g.font = `800 30px ${BODY}`; g.fillText(String(r.section).toUpperCase(), X, y + 44); y += 66; return; }
       g.fillStyle = SURF; round(g, X, y, CW, rh - 20, 36); g.fill();
-      g.fillStyle = r.color || (i === 0 && o.rankColors ? ORANGE : LIME); g.font = vf; g.fillText(r.value, X + 40, y + (rh - 20) / 2 + 26);
-      const vx = X + 40 + vw + 36;
-      g.fillStyle = FG; g.font = `700 40px ${BODY}`;
-      g.fillText(wrap(g, r.label, CW - (vx - X) - 30)[0] || "", vx, y + (r.sub ? (rh - 20) / 2 - 6 : (rh - 20) / 2 + 14));
-      if (r.sub) { g.fillStyle = MUTED; g.font = `600 31px ${BODY}`; g.fillText(wrap(g, r.sub, CW - (vx - X) - 30)[0] || "", vx, y + (rh - 20) / 2 + 40); }
+      g.fillStyle = r.color || (i === 0 && o.rankColors ? ORANGE : LIME); g.font = vf; g.fillText(r.value, X + 40, y + (rh - 20) / 2 + (dense ? 22 : 26));
+      let vx = X + 40 + vw + 36;
+      if (r.badge) {
+        const cy = y + (rh - 20) / 2, bs = dense ? 64 : 76;
+        if (r.badge.img) { if (r.badge.light) { g.fillStyle = "#fff"; round(g, vx - 6, cy - bs / 2 - 6, bs + 12, bs + 12, 14); g.fill(); } g.drawImage(r.badge.img, vx, cy - bs / 2, bs, bs); vx += bs + 22 + (r.badge.light ? 6 : 0); }
+        else {
+          g.font = `800 ${dense ? 28 : 32}px ${BODY}`; const tw = g.measureText(r.badge.text).width, bw = Math.max(bs, tw + 32);
+          g.fillStyle = r.badge.color || "#5B6470"; round(g, vx, cy - bs / 2, bw, bs, 14); g.fill();
+          g.fillStyle = r.badge.fg || "#fff"; g.textAlign = "center"; g.fillText(r.badge.text, vx + bw / 2, cy + (dense ? 10 : 11)); g.textAlign = "left"; vx += bw + 22;
+        }
+      }
+      const mw = CW - (vx - X) - 30;
+      g.fillStyle = FG; fit(g, r.label, mw, 40, 26, "700", vx, y + (r.sub ? (rh - 20) / 2 - 6 : (rh - 20) / 2 + 14));
+      if (r.sub) { g.fillStyle = MUTED; fit(g, r.sub, mw, 31, 24, "600", vx, y + (rh - 20) / 2 + 40); }
       y += rh;
     });
     if (o.note) { g.fillStyle = MUTED; g.font = `600 32px ${BODY}`; y += 16; for (const l of wrap(g, o.note, CW).slice(0, 3)) { y += 44; g.fillText(l, X, y); } }

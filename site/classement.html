@@ -57,7 +57,7 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em;line-hei
 .rank li{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:4px 14px;align-items:center;padding:12px 16px;border-radius:18px;background:var(--surface2)}
 .rank li::before{counter-increment:r;content:counter(r);display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--surface3);color:var(--lime);font:800 .95rem var(--head);grid-row:1/3}
 .rank li:nth-child(-n+3)::before{background:var(--orange);color:#121417}
-.rank .nm{font-weight:800;min-width:0;overflow-wrap:anywhere}
+.rank .nm{font-weight:800;min-width:0;overflow-wrap:anywhere;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .rank .sub{grid-column:2;font-size:.84rem;color:var(--muted)}
 .rank .pc{grid-row:1/3;grid-column:3;text-align:right;font:700 1.45rem var(--head);color:var(--orange)}
 .rank .pc small{display:block;font:600 .72rem var(--display);color:var(--muted)}
@@ -130,6 +130,11 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
           <p class="small" data-en="Lines with at least 150 trains over the period.">Lignes d'au moins 150 trains sur la période.</p>
           <ol class="rank best" id="best"></ol>
         </section>
+        <section class="card" aria-labelledby="tMe">
+          <h2 id="tMe" data-en="Metro and tram: the most disrupted">Métro et tram : les plus perturbés</h2>
+          <p class="small" data-en="No real-time timetable here: we compare the real interval between trains, stop by stop, with the planned interval of the timetable, hour by hour, and cross-check with the announced incidents.">Pas d'horaire en temps réel ici : on compare l'intervalle réel entre deux rames, arrêt par arrêt, à l'intervalle prévu par les horaires, heure par heure, et on recoupe avec les incidents annoncés.</p>
+          <ol class="rank" id="metro"></ol>
+        </section>
         <section class="card" aria-labelledby="tC">
           <h2 id="tC" data-en="Quote these figures">Citer ces chiffres</h2>
           <div class="cite" id="cite"></div>
@@ -151,6 +156,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
       <h2 id="tM" data-en="Method">Méthode</h2>
       <p data-en="Source: real-time feeds (GTFS-RT) of SNCF Voyageurs and Île-de-France Mobilités (PRIM), recorded every 2 to 5 minutes since 22 November 2026. For each train we keep its last known delay at the final stop. A line enters the ranking with at least 50 trains over the period; replacement coaches are excluded. Today is excluded (day not over).">Source : flux temps réel (GTFS-RT) de SNCF Voyageurs et d'Île-de-France Mobilités (PRIM), enregistrés toutes les 2 à 5 minutes depuis le 22 novembre 2026. Pour chaque train, on garde son dernier retard connu au terminus. Une ligne entre dans le classement à partir de 50 trains sur la période ; les cars de remplacement sont exclus. Aujourd'hui est exclu (journée pas terminée).</p>
       <p data-en="Limits: a train cancelled before running may be missing from the feed; cancellations on Île-de-France lines were not counted before 28 November. The official SNCF statistics (regularity at 5 min for TGV) use a different method: the figures are not directly comparable.">Limites : un train supprimé avant son départ peut manquer dans le flux ; les suppressions sur les lignes d'Île-de-France n'étaient pas comptées avant le 28 novembre. Les statistiques officielles de la SNCF (régularité à 5 min pour les TGV) suivent une autre méthode : les chiffres ne sont pas directement comparables.</p>
+      <p data-en="Metro and tram (no real-time timetable): for each line and each hour, the planned interval between two trains comes from the timetable, the real interval from the passages we reconstruct stop by stop and direction by direction. A train's delay is the time it arrives on top of the planned interval. An hour counts as “+5 min” or “+15 min” for all its planned trains; missing trains (under 80 % of the planned passages) count as cancelled; announced incidents and interruptions count when the measurement confirms them.">Métro et tram (pas d'horaire en temps réel) : pour chaque ligne et chaque heure, l'intervalle prévu entre deux rames vient des horaires théoriques, l'intervalle réel des passages que l'on reconstitue arrêt par arrêt et sens par sens. Le retard d'une rame, c'est ce qu'elle arrive en plus de l'intervalle prévu. Une heure compte « +5 min » ou « +15 min » pour toutes ses rames prévues ; les rames manquantes (moins de 80 % des passages prévus) comptent comme supprimées ; les incidents et interruptions annoncés comptent quand la mesure les confirme.</p>
       <p data-en="The forecast mixes the line's history (the same weekday counts double) with the network average, so that a small sample never shows 0 % or 100 %.">La prévision mélange l'historique de la ligne (le même jour de la semaine compte double) avec la moyenne du réseau, pour qu'un petit échantillon n'affiche jamais 0 % ou 100 %.</p>
     </section>
   </main>
@@ -166,6 +172,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
 <script src="lp-ui.js"></script>
 <script src="lp-core.js"></script>
 <script src="lp-story.js"></script>
+<script src="lp-lines.js"></script>
 <script>
 "use strict";
 const {L, locale} = LPI, {rpc, esc} = LP, $ = id => document.getElementById(id);
@@ -187,13 +194,14 @@ function warnText(span) {
   return `<b>${L("Expérimental.", "Experimental.")}</b> ${L(`Ces chiffres reposent sur <b>${n} jours</b> de relevés seulement (depuis le ${dmy(span && span.first)}). Ils sont indicatifs, pas une statistique officielle, et deviendront plus fiables semaine après semaine.`,
     `These figures rest on only <b>${n} days</b> of records (since ${dmy(span && span.first)}). They are indicative, not an official statistic, and will get more reliable week after week.`)}`;
 }
-const row = x => `<li><span class="nm">${esc(lineName(x))}</span><span class="pc">${pct(x.pct15)}<small>${L("à +15 min", "at +15 min")}</small></span>
-  <span class="sub">${esc(lineSub(x))} · ${x.n.toLocaleString(locale)} ${L("trains", "trains")} · ${L("retard moyen", "avg delay")} ${Number(x.avg_min).toLocaleString(locale)} min${x.cancelled ? ` · ${x.cancelled} ${L("supprimés", "cancelled")}` : ""}</span></li>`;
+const row = x => `<li><span class="nm">${LPLines.badge(x)}${esc(x.net === "sncf" ? lineSub(x) : lineName(x))}</span><span class="pc">${pct(x.pct15)}<small>${L("à +15 min", "at +15 min")}</small></span>
+  <span class="sub">${x.net === "sncf" ? "" : esc(lineSub(x)) + " · "}${x.n.toLocaleString(locale)} ${L("trains", "trains")} · ${L("retard moyen", "avg delay")} ${Number(x.avg_min).toLocaleString(locale)} min${x.cancelled ? ` · ${x.cancelled} ${L("supprimés", "cancelled")}` : ""}</span></li>`;
 
 (async () => {
   try {
     [R, SPAN] = await Promise.all([rpc("public_worst_lines", {p_days: 7}), rpc("public_data_span", {})]);
   } catch (e) { $("figs").innerHTML = `<span>${L("Classement indisponible pour le moment.", "Ranking unavailable right now.")}</span>`; return; }
+  await LPLines.ready;
   $("warn").innerHTML = warnText(SPAN);
   $("riskWarn").innerHTML = warnText(SPAN);
   $("figs").innerHTML = `<span><b>${R.n_lines}</b>${L("lignes classées", "lines ranked")}</span><span><b>${Number(R.n_trains).toLocaleString(locale)}</b>${L("trains observés", "trains observed")}</span>
@@ -201,6 +209,9 @@ const row = x => `<li><span class="nm">${esc(lineName(x))}</span><span class="pc
   const max = Math.max(...R.worst.map(x => x.pct15), 1);
   $("worst").innerHTML = R.worst.map(x => row(x).replace("</li>", `<span class="bar" aria-hidden="true"><i style="width:${(100 * x.pct15 / max).toFixed(1)}%"></i></span></li>`)).join("");
   $("best").innerHTML = R.best.map(row).join("");
+  $("metro").innerHTML = (R.metro || []).length ? R.metro.map(x => row(x).replace(`${L("à +15 min", "at +15 min")}`, `${L("des rames à +15 min", "of trains at +15 min")}`)
+      .replace(`${L("retard moyen", "avg delay")} `, `${L("attente en plus", "extra wait")} `).replace(` ${L("trains", "trains")} ·`, ` ${L("rames prévues", "planned trains")} ·`)).join("")
+    : `<p class="muted small">${L("Pas encore assez de relevés.", "Not enough records yet.")}</p>`;
   $("cite").textContent = L(`Source : LateProof, relevés temps réel SNCF et Île-de-France Mobilités du ${dmy(R.since)} au ${dmy(R.until)} (${Number(R.n_trains).toLocaleString(locale)} trains, ${SPAN.days} jours d'historique). Part des trains arrivés avec 15 min de retard ou plus. https://adrienboulay.github.io/lateproof/classement.html`,
     `Source: LateProof, SNCF and Île-de-France Mobilités real-time records from ${dmy(R.since)} to ${dmy(R.until)} (${Number(R.n_trains).toLocaleString(locale)} trains, ${SPAN.days} days of history). Share of trains arriving 15 min late or more. https://adrienboulay.github.io/lateproof/classement.html`);
 })();
@@ -210,7 +221,7 @@ $("csv").onclick = () => {
   if (!R) return;
   const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lines = [["rang", "reseau", "ligne", "trajet", "mode", "jours", "trains", "retard_15min", "part_15min_pct", "part_5min_pct", "supprimes", "retard_moyen_min", "du", "au"].join(",")]
-    .concat(R.worst.map((x, i) => [i + 1, x.net, q(lineName(x)), q(lineSub(x)), x.mode, x.days, x.n, x.late15, x.pct15, x.pct5, x.cancelled, x.avg_min, R.since, R.until].join(",")));
+    .concat([...R.worst, ...(R.metro || [])].map((x, i) => [i < R.worst.length ? i + 1 : "metro_tram", x.net, q(lineName(x)), q(lineSub(x)), x.mode, x.days, x.n, x.late15, x.pct15, x.pct5, x.cancelled, x.avg_min, R.since, R.until].join(",")));
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], {type: "text/csv;charset=utf-8"}));
   a.download = `lateproof-lignes-en-retard-${R.until}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 };
@@ -219,7 +230,8 @@ $("story").onclick = async () => {
   try {
     const blob = await LPStory.draw({kicker: L("Classement de la semaine", "This week's ranking"), title: L("Les lignes les plus en retard", "The most delayed train lines"),
       rankColors: true, valueW: 190,
-      rows: R.worst.slice(0, 5).map((x, i) => ({value: pct(Math.round(x.pct15)), label: `${i + 1}. ${lineName(x)}`, sub: lineSub(x), color: i < 3 ? "#FF8A5C" : "#D4FF3A"})),
+      rows: [...await Promise.all(R.worst.slice(0, 5).map(async (x, i) => ({value: pct(Math.round(x.pct15)), label: lineName(x), sub: lineSub(x), color: i < 3 ? "#FF8A5C" : "#D4FF3A", badge: await LPLines.forStory(x)}))),
+        ...((R.metro || []).length ? [{section: L("Métro et tram", "Metro and tram")}, ...await Promise.all(R.metro.slice(0, 2).map(async x => ({value: pct(Math.round(x.pct15)), label: lineName(x), sub: L("rames à +15 min", "trains at +15 min"), color: "#FF8A5C", badge: await LPLines.forStory(x)})))] : [])],
       note: L(`Part des trains à +15 min, du ${dmy(R.since)} au ${dmy(R.until)}. Basé sur ${SPAN.days} jours de relevés seulement : indicatif.`, `Share of trains at +15 min, ${dmy(R.since)} to ${dmy(R.until)}. Based on only ${SPAN.days} days of records: indicative.`)});
     $("story").hidden = true; $("storyShare").hidden = false;
     $("storyShare").onclick = async () => { const r = await LPStory.share(blob, `lateproof-classement-${R.until}.png`, L("Les lignes les plus en retard cette semaine, d'après LateProof", "This week's most delayed train lines, by LateProof")); if (r === "downloaded") toast(L("Image téléchargée", "Image downloaded")); };
@@ -231,7 +243,7 @@ let LINES = null, t = null;
 $("q").addEventListener("input", () => {
   clearTimeout(t); t = setTimeout(async () => {
     const q = $("q").value.trim().toLowerCase(); if (q.length < 2) { $("opts").innerHTML = ""; return; }
-    if (!LINES) { try { LINES = (await rpc("public_lines", {})).filter(x => x.n > 0 && !/METRO|TRAM|BUS/i.test(x.mode || "")); } catch (e) { LINES = []; } }
+    if (!LINES) { try { LINES = (await rpc("public_lines", {})).filter(x => x.n > 0 && !/BUS/i.test(x.mode || "")); } catch (e) { LINES = []; } }
     const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
     const hits = LINES.filter(x => norm(`${lineName(x)} ${x.name} ${x.long}`).includes(norm(q))).sort((a, b) => b.n - a.n).slice(0, 12);
     $("opts").innerHTML = hits.length ? hits.map((x, i) => `<button type="button" data-i="${LINES.indexOf(x)}"><span>${esc(lineName(x))} <span class="muted">· ${esc(lineSub(x))}</span></span><span class="x">${x.n} ${L("trains auj.", "trains today")}</span></button>`).join("")

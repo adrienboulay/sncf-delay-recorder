@@ -26,7 +26,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          mkdir -p public && cp -r index.html carte.html assistant.html app.html verif.html avis.html api.html classement.html admin.html confidentialite.html conditions.html merci.html 404.html robots.txt sitemap.xml llms.txt legal.css lp-core.js lp-i18n.js lp-ui.js lp-ui.css lp-story.js gus.js gus-local.js data pictos img fonts public/
+          mkdir -p public && cp -r index.html carte.html assistant.html app.html verif.html avis.html api.html classement.html admin.html confidentialite.html conditions.html merci.html 404.html robots.txt sitemap.xml llms.txt legal.css lp-core.js lp-i18n.js lp-ui.js lp-ui.css lp-story.js lp-lines.js gus.js gus-local.js data pictos img fonts public/
           BASE=$(printf '%s' "$SUPABASE_URL" | sed -nE 's#^(https://[a-z0-9-]+\.supabase\.co)(/.*)?$#\1#p')
           KEY=$(printf '%s' "$SUPABASE_PUBLISHABLE_KEY" | grep -E '^sb_publishable_[A-Za-z0-9_-]+$' || true)
           # Garde-fou : on ne publie QUE une adresse https://xxx.supabase.co et une cle sb_publishable_.
