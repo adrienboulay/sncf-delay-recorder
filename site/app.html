@@ -181,7 +181,8 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
 .demo-card{border:1px solid color-mix(in srgb,var(--lime) 35%,transparent)!important;background:color-mix(in srgb,var(--lime) 6%,var(--surface))!important}
 .demo-tag{justify-self:start;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:var(--lime);color:#121417;font:800 .72rem var(--display);letter-spacing:.06em;text-transform:uppercase}
 .dsteps{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:d}
-.dsteps li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;font-size:.92rem}
+.dsteps li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;font-size:.92rem}
+.dsteps li>span{min-width:0;overflow-wrap:anywhere}
 .dsteps li::before{counter-increment:d;content:counter(d);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--surface3);color:var(--lime);font:800 .8rem var(--head)}
 .dsteps li.done::before{content:"✓";background:var(--lime);color:#121417}
 .risk-note{margin:0;font-size:.8rem;color:var(--muted)}
@@ -377,10 +378,10 @@ function demoGuide(v, trip) {
     <p style="margin:0">${L(`Un <b>vrai train d'hier</b>, d'après les relevés officiels SNCF : <b>+${fmt.min(trip.delay)} min</b> à l'arrivée${v.sealed ? ", et ce jour est déjà <b>scellé sur Solana</b>" : ""}. Personne n'était à bord : le justificatif le dira.`,
       `A <b>real train from yesterday</b>, from official SNCF records: <b>+${fmt.min(trip.delay)} min</b> on arrival${v.sealed ? ", and that day is already <b>sealed on Solana</b>" : ""}. Nobody was on board: the certificate will say so.`)}</p>
     <ol class="dsteps">
-      <li class="done">${L("Le retard officiel, gare par gare (ci-dessous)", "The official delay, stop by stop (below)")}</li>
-      <li>${P.pct ? L(`La compensation : <b>${P.pct} %</b> du billet avec ${esc(P.name)}`, `The compensation: <b>${P.pct}%</b> of the ticket with ${esc(P.name)}`) : L("Tes droits à compensation", "Your compensation rights")} · <a href="#claimCard">${L("voir", "see")}</a></li>
-      <li class="${cert ? "done" : ""}">${cert ? `<a href="${esc(cert.url)}" target="_blank" rel="noopener">${L("Vérifier le justificatif et le sceau Solana", "Check the certificate and the Solana seal")} ↗</a>` : `<a href="#/nouveau/${v.id}">${L("Créer le justificatif signé par ce téléphone", "Create the certificate signed by this phone")}</a>`}</li>
-      <li><a href="#/mois">${L("Le bilan du mois en story, avec le résumé vocal", "The monthly summary as a story, with the voice summary")}</a></li>
+      <li class="done"><span>${L("Le retard officiel, gare par gare (ci-dessous)", "The official delay, stop by stop (below)")}</span></li>
+      <li><span>${P.pct ? L(`La compensation : <b>${P.pct} %</b> du billet avec ${esc(P.name)}`, `The compensation: <b>${P.pct}%</b> of the ticket with ${esc(P.name)}`) : L("Tes droits à compensation", "Your compensation rights")} · <a href="#claimCard">${L("voir", "see")}</a></span></li>
+      <li class="${cert ? "done" : ""}"><span>${cert ? `<a href="${esc(cert.url)}" target="_blank" rel="noopener">${L("Vérifier le justificatif et le sceau Solana", "Check the certificate and the Solana seal")} ↗</a>` : `<a href="#/nouveau/${v.id}">${L("Créer le justificatif signé par ce téléphone", "Create the certificate signed by this phone")}</a>`}</span></li>
+      <li><span><a href="#/mois">${L("Le bilan du mois en story, avec le résumé vocal", "The monthly summary as a story, with the voice summary")}</a></span></li>
     </ol>
     <button class="btn ghost" id="quitDemo">${L("Quitter la démo", "Leave the demo")}</button></section>`;
 }
