@@ -50,7 +50,7 @@ PURGE_ORDER = ["idfm_stop_updates", "idfm_observations", "idfm_trains", "stop_up
 STATS_SQL = """
 INSERT INTO daily_line_stats
 SELECT service_date, 'sncf', COALESCE(route_id, '?'), MAX(mode), COUNT(*),
-       SUM((status = 'CANCELED')::int), SUM((COALESCE(arrival_delay_s,0) >= 300)::int), SUM((COALESCE(arrival_delay_s,0) >= 900)::int),
+       SUM((status IN ('CANCELED', 'CANCELLED'))::int), SUM((COALESCE(arrival_delay_s,0) >= 300)::int), SUM((COALESCE(arrival_delay_s,0) >= 900)::int),
        SUM((COALESCE(arrival_delay_s,0) >= 1800)::int), SUM((COALESCE(arrival_delay_s,0) >= 3600)::int),
        SUM(GREATEST(COALESCE(arrival_delay_s,0), 0)), MAX(max_delay_s)
 FROM trains WHERE service_date = %(d)s GROUP BY service_date, COALESCE(route_id, '?')
@@ -59,7 +59,7 @@ ON CONFLICT (service_date, source, line_id) DO UPDATE SET n_trains = EXCLUDED.n_
   sum_delay_s = EXCLUDED.sum_delay_s, max_delay_s = EXCLUDED.max_delay_s;
 INSERT INTO daily_line_stats
 SELECT service_date, 'idfm', line_id, MAX(mode), COUNT(*),
-       SUM((status = 'CANCELED')::int), SUM((COALESCE(arrival_delay_s,0) >= 300)::int), SUM((COALESCE(arrival_delay_s,0) >= 900)::int),
+       SUM((status IN ('CANCELED', 'CANCELLED'))::int), SUM((COALESCE(arrival_delay_s,0) >= 300)::int), SUM((COALESCE(arrival_delay_s,0) >= 900)::int),
        SUM((COALESCE(arrival_delay_s,0) >= 1800)::int), SUM((COALESCE(arrival_delay_s,0) >= 3600)::int),
        SUM(GREATEST(COALESCE(arrival_delay_s,0), 0)), MAX(max_delay_s)
 FROM idfm_trains WHERE service_date = %(d)s GROUP BY service_date, line_id
