@@ -3,6 +3,8 @@
 **When your train is late, LateProof tells you what to do, and proves your delay to your boss in 3 seconds.**
 
 - **Live app:** https://adrienboulay.github.io/lateproof/
+- **30-second demo for judges (no train needed):** https://adrienboulay.github.io/lateproof/app.html#/demo loads a real late train from yesterday, already sealed on Solana: delay, compensation claim, signed certificate, verification, monthly story.
+- **Press ranking of the least punctual lines:** https://adrienboulay.github.io/lateproof/classement.html
 - **Solana program (devnet):** `8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu` ([explorer](https://explorer.solana.com/address/8RKxwUR3X1vUG2HD2ruHYaPFa9ahExbMsCzg1L44aJeu?cluster=devnet))
 - Built for the Dev3pack Global Hackathon (27–29 November 2026), solo.
 
@@ -13,6 +15,7 @@ French trains run late often: about one TGV in seven arrives more than 15 minute
 1. **Before the trip:** live delays for every SNCF train in France (TGV, Intercités, TER) and, in Île-de-France, RER, Transilien, metro and tram, refreshed every 2 minutes. Strikes and planned works are flagged on your route.
 2. **During the trip:** **Gus**, a small robot conductor, answers by text or voice, straight from our live data with built-in rules: no AI account needed and no invented times. He handles line status, next departures at a station, a train by number, strikes and works, your usual trip and passenger rights. An optional LLM on the server handles any other phrasing. Examples: "is the RER B on time?", "I want to go to Massy". It reads our live data through tools, and opens the journey planner (one connection, walking included) on the right trip.
 3. **After the trip:** a **delay certificate** signed on your phone (passkey: Face ID or fingerprint), shared as a link. Your manager opens it and checks it in their own browser, with no account: the signature, the selective-disclosure proof (you choose which fields to reveal), and the train's real delay against our recorded data. Every day of records is sealed on Solana the following night.
+4. **Share and anticipate:** a monthly summary as a 1080×1920 story image, read aloud by an **ElevenLabs** voice (only the month's numbers are sent); a public ranking of the least punctual lines for the press (CSV, method, source to quote); and an **experimental delay forecast** per line. All of these rest on our own records, which started on 22 November 2026: the pages say so up front and flag anything under 14 days as low reliability.
 
 ## How Solana is used
 Program: [`program/`](program/) (Rust, Anchor). It stores **fingerprints only**: no names, e-mails or locations.
