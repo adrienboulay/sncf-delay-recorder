@@ -2070,7 +2070,10 @@ function boot() {
   if (h.get("ligne")) { const [net, id] = h.get("ligne").split("|"); const l = lines.find(x => x.net === net && x.id === id); if (l) return openLine(l); }
   if (h.get("gare")) { const s = findSt(h.get("gare")); if (s) { map.setView([s.lat, s.lon], 14); return openStation(s); } }
   if (h.get("vers")) { openSpoken(h.get("de") || "ma position", h.get("vers")); history.replaceState(null, "", location.pathname + location.search); return; }
-  if (h.get("trajet")) { const [ka, kb] = h.get("trajet").split(">"); const a = findSt(ka), b = findSt(kb); if (a && b) return openTrip(a, b); }
+  if (h.get("trajet")) { const [ka, kb] = h.get("trajet").split(">"); const a = findSt(ka), b = findSt(kb);
+    // « go=1 » (raccourci « Lancer » de l'accueil) : on lance tout de suite le guidage sur le meilleur trajet proposé
+    if (a && b) { const go = h.get("go") === "1"; if (go) history.replaceState(null, "", location.pathname + location.search + "#trajet=" + encodeURIComponent(h.get("trajet")));
+      return openTrip(a, b).then(() => { if (go && ctx && ctx.type === "trip" && ctx.data && ctx.data.journeys && ctx.data.journeys[0]) startGuide(ctx.data.journeys[0]); }); } }
   const saved = savedTrips()[0];
   if (saved && profile !== "grandes_lignes") { const a = findSt(saved.a), b = findSt(saved.b); if (a && b) return openTrip(a, b); }
   const typed = store.get("lp-line");   // trajet tape a l'inscription, ex. « Lyon → Grenoble »

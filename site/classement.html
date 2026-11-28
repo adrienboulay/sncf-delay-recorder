@@ -41,7 +41,9 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em;line-hei
 .brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:700 1.25rem var(--head);letter-spacing:-.02em}
 .nav{display:flex;align-items:center;gap:18px}
 .lp-aurora.page{height:min(800px,100vh);bottom:auto}
-.intro{max-width:48rem;padding-block:40px 24px}
+.back{display:inline-flex;align-items:center;min-height:44px;margin-top:8px;padding:0 16px;border-radius:999px;background:var(--surface2);color:var(--fg);font:700 .9rem var(--display);text-decoration:none}
+.back:hover{background:var(--surface3)}
+.intro{max-width:48rem;padding-block:28px 24px}
 .kick{font:800 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
 .intro h1{margin-top:12px;font-size:clamp(2rem,5vw,3.4rem)}
 .intro p{margin:16px 0 0;font-size:1.1rem;color:#C9CCD3}
@@ -104,6 +106,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding-block:26px 40px;
   </header>
 
   <main>
+    <a class="back" id="backApp" href="app.html#/" data-en="← Back to the app">← Retour à l'appli</a>
     <div class="intro">
       <span class="kick" data-en="Press ranking · open data">Classement presse · données ouvertes</span>
       <h1 data-en="The least punctual train lines this week.">Les lignes de train les moins ponctuelles de la semaine.</h1>
@@ -188,6 +191,9 @@ const pct = v => `${Number(v).toLocaleString(locale, {maximumFractionDigits: 1})
 const dmy = d => d ? `${d.slice(6, 8)}/${d.slice(4, 6)}/${d.slice(0, 4)}` : "";
 function toast(t) { const el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 2600); }
 let R = null, SPAN = null;
+// Retour : à la page précédente si on vient de l'appli ou de la carte, sinon à l'écran Aujourd'hui
+(() => { try { const r = new URL(document.referrer); if (r.origin === location.origin && /\/(app|carte|assistant)\.html$/.test(r.pathname)) {
+  $("backApp").href = r.href; } } catch (e) {} })();
 
 function warnText(span) {
   const n = span ? span.days : 0;

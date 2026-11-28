@@ -177,6 +177,21 @@ h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.015em}
   .gus-intro{max-width:760px}
 }
 
+/* Accueil : trajets favoris et tuiles */
+.tchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tchip{flex:none;border:0;border-radius:999px;padding:8px 14px;background:var(--surface2);color:var(--muted);font:700 .84rem var(--display);cursor:pointer;white-space:nowrap}
+.tchip[aria-pressed="true"]{background:var(--surface3);color:var(--lime)}
+.btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{display:grid;gap:3px;align-content:start;padding:16px;border-radius:20px;background:var(--surface);color:var(--fg);text-decoration:none;box-shadow:inset 0 1px 0 rgb(255 255 255/.06);min-height:112px}
+.tile:hover{background:var(--surface2)}
+.tile svg{width:26px;height:26px;fill:none;stroke:var(--lime);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-bottom:6px}
+.tile b{font:700 1.02rem var(--head)}
+.tile span{font-size:.8rem;color:var(--muted);line-height:1.3}
+@media (min-width:1024px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ttrip{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;padding:8px 10px;border-radius:12px;background:var(--surface2)}
+.ttrip b{min-width:0;overflow-wrap:anywhere;font-size:.92rem}
+
 /* Démo pour les juges */
 .demo-card{border:1px solid color-mix(in srgb,var(--lime) 35%,transparent)!important;background:color-mix(in srgb,var(--lime) 6%,var(--surface))!important}
 .demo-tag{justify-self:start;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:var(--lime);color:#121417;font:800 .72rem var(--display);letter-spacing:.06em;text-transform:uppercase}
@@ -264,7 +279,7 @@ const spinner = txt => `<p class="muted"><span class="spin" aria-hidden="true"><
 
 // ================================================================= Donnees locales (restent sur l'appareil)
 const db = {
-  home: () => store.get("lpa-home"),                     // {a, b} : trajet habituel (gares)
+  home: () => trips()[0] || null,                        // trajet principal (le premier des favoris)
   voyages: () => store.get("lpa-voyages", []),           // check-ins
   certs: () => store.get("lpa-certs", []),               // justificatifs crees
   email: () => store.get("lpa-email", ""),
@@ -272,6 +287,49 @@ const db = {
   saveCerts: v => store.set("lpa-certs", v),
 };
 const voyageById = id => db.voyages().find(v => v.id === id);
+
+// ================================================================= Trajets favoris
+// Une seule liste, partagée avec la carte (lp-favs, type « trip » : ⭐ sur un trajet de la carte l'ajoute ici) ;
+// le trajet principal est noté à part (lpa-main) et sert à Gus (lp-trajet), à l'accueil et au check-in.
+const rawLS = {get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+               set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }};
+const tkey = t => `${t.a.net}|${t.a.id}>${t.b.net}|${t.b.id}`;
+const endName = e => (e && ((e.place && e.place.label) || e.name)) || "?";
+const tripName = t => `${endName(t.a)} → ${endName(t.b)}`;
+const isTrip = f => f && f.t === "trip" && f.a && f.b && f.a.id && f.b.id;
+function favAll() { try { return JSON.parse(rawLS.get("lp-favs") || "[]"); } catch (e) { return []; } }
+function trips() {
+  const l = favAll().filter(isTrip), main = store.get("lpa-main"), i = l.findIndex(t => tkey(t) === main);
+  if (i > 0) l.unshift(l.splice(i, 1)[0]);
+  return l;
+}
+function saveTrips(list) {
+  const others = favAll().filter(f => !isTrip(f));
+  rawLS.set("lp-favs", JSON.stringify([...list, ...others].slice(0, 40)));
+  store.set("lpa-main", list[0] ? tkey(list[0]) : null);
+  store.set("lp-trajet", list[0] ? tripName(list[0]) : null);
+}
+function addTrip(a, b, main) {
+  const t = {t: "trip", a, b, name: `${endName(a)} → ${endName(b)}`};
+  const l = trips().filter(x => tkey(x) !== tkey(t));
+  if (main || !l.length) l.unshift(t); else l.push(t);
+  saveTrips(l); return t;
+}
+const tripHash = (t, go) => `carte.html#trajet=${encodeURIComponent(t.a.net + "|" + t.a.id + ">" + t.b.net + "|" + t.b.id)}${go ? "&go=1" : ""}`;
+// Ancien format (un seul trajet, lpa-home) : repris une fois dans les favoris
+(() => { const h = store.get("lpa-home"); if (h && h.a && h.b && h.a.id && h.b.id) { addTrip(h.a, h.b, true); store.set("lpa-home", null); } })();
+// Trajet tapé dans Gus (texte « Lyon → Grenoble ») sans favori : on retrouve les gares une fois
+async function tripFromGus() {
+  if (trips().length) return false;
+  const txt = store.get("lp-trajet"); if (!txt || typeof txt !== "string") return false;
+  const parts = txt.split(/\s*(?:→|->|>|–|—| - )\s*/).filter(Boolean); if (parts.length !== 2) return false;
+  try {
+    const [ra, rb] = await Promise.all(parts.map(q => rpc("public_find_stop", {p_q: q})));
+    const a = ra && ra[0], b = rb && rb[0]; if (!a || !b) return false;
+    addTrip({net: a.net, id: a.id, name: a.name, lat: +a.lat, lon: +a.lon}, {net: b.net, id: b.id, name: b.name, lat: +b.lat, lon: +b.lon}, true);
+    return true;
+  } catch (e) { return false; }
+}
 function updateVoyage(id, patch) { const all = db.voyages(); const i = all.findIndex(v => v.id === id); if (i >= 0) { all[i] = {...all[i], ...patch}; db.saveVoyages(all); return all[i]; } }
 const uid = () => LP.hex(crypto.getRandomValues(new Uint8Array(6)));
 
@@ -303,7 +361,11 @@ const routes = [];
 const route = (re, fn, tab) => routes.push({re, fn, tab});
 async function render() {
   const h = location.hash.replace(/^#/, "") || "/";
-  if (!store.get("lpa-onboarded") && h === "/") { location.replace("#/bienvenue"); return; }
+  if (!store.get("lpa-onboarded") && h === "/") {
+    // Déjà utilisé ailleurs (trajet favori sur la carte, trajet dit à Gus, voyages) : pas de tutoriel
+    if (trips().length || store.get("lp-trajet") || db.voyages().length || db.certs().length) store.set("lpa-onboarded", true);
+    else { location.replace("#/bienvenue"); return; }
+  }
   for (const r of routes) {
     const m = h.match(r.re);
     if (m) {
@@ -344,7 +406,7 @@ route(/^\/bienvenue$/, () => {
       <p class="muted small">The key never leaves your phone. You can also create it when you make your first certificate.</p></div>
       <button class="btn primary big" id="next">Create my key</button><button class="btn ghost" id="skip">Later</button>`);
     $("next").onclick = async () => {
-      if (step === 1 && tmp.a && tmp.b) store.set("lpa-home", tmp);
+      if (step === 1 && tmp.a && tmp.b) addTrip(tmp.a, tmp.b, true);
       if (step === 2) { if (await ensureKey()) finish(); return; }
       step++; draw();
     };
@@ -407,22 +469,43 @@ async function ensureKey() {
 }
 
 // ================================================================= Aujourd'hui
+let selTrip = 0;
+const ICO = {
+  month: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  rank: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  risk: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>',
+  demo: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  go: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg>',
+};
 route(/^\/$/, async () => {
-  const home = db.home(), today = fmt.ymd(now());
+  if (!trips().length && await tripFromGus()) selTrip = 0;
+  const list = trips(), today = fmt.ymd(now());
+  if (selTrip >= list.length) selTrip = 0;
+  const home = list[selTrip] || null;
   const running = db.voyages().filter(v => v.day === today && now() - v.checkin < 5 * 3600).slice(-1)[0];
+  const tile = (href, ico, t, sub) => `<a class="tile" href="${href}">${ico}<b>${t}</b><span>${sub}</span></a>`;
   view.innerHTML = `<h1>${esc(cap(fmt.day(now())))}</h1>
     ${running ? `<a class="card hero" href="#/voyage/${running.id}" style="text-decoration:none;color:inherit"><span class="kicker">${L("En cours", "Now")}</span>
       <div class="between"><b>${esc(modeName(running.mode, running.line))} · ${esc(running.num)}</b><span id="runSt">${spinnerInline()}</span></div>
       <span class="muted small">${L("Depuis", "From")} ${esc(running.from.name)}${running.dest ? ` ${L("vers", "to")} ${esc(running.dest)}` : ""}</span></a>` : ""}
     <a class="btn primary big" href="#/checkin">${L("Je suis à bord", "I'm on board")}</a>
-    ${store.get("lpa-demo") ? `<div class="row"><span class="demo-tag">${L("Démo active", "Demo on")}</span><a class="btn" href="#/voyages">${L("Voir les voyages de démo", "See the demo trips")}</a><button class="btn ghost" id="quitDemo">${L("Quitter la démo", "Leave the demo")}</button></div>`
-      : !db.voyages().length ? `<a class="btn" href="#/demo">${L("Essayer la démo en 30 s (un vrai train en retard d'hier)", "Try the 30-second demo (a real late train from yesterday)")}</a>` : ""}
-    <section class="card" aria-labelledby="hT"><div class="between"><h2 id="hT">${L("Mon trajet", "My trip")}</h2>${home ? `<a class="small" href="carte.html#trajet=${encodeURIComponent(home.a.net + "|" + home.a.id + ">" + home.b.net + "|" + home.b.id)}">${L("Sur la carte", "On the map")}</a>` : ""}</div>
-      ${home ? `<p class="muted small" style="margin:0">${esc(home.a.name)} → ${esc(home.b.name)}</p><div id="opts">${spinner(L("Prochains départs…", "Next departures…"))}</div>`
-        : `<p class="muted" style="margin:0">${L("Indique ton trajet habituel pour voir son état chaque matin.", "Set your usual trip to see its status every morning.")}</p><a class="btn" href="#/profil">${L("Choisir mon trajet", "Choose my trip")}</a>`}
+    ${store.get("lpa-demo") ? `<div class="row"><span class="demo-tag">${L("Démo active", "Demo on")}</span><a class="btn" href="#/voyages">${L("Voir les voyages de démo", "See the demo trips")}</a><button class="btn ghost" id="quitDemo">${L("Quitter la démo", "Leave the demo")}</button></div>` : ""}
+    <section class="card" aria-labelledby="hT"><div class="between"><h2 id="hT">${list.length > 1 ? L("Mes trajets", "My trips") : L("Mon trajet", "My trip")}</h2><a class="small" href="#/profil/trajets">${list.length ? L("Gérer", "Manage") : ""}</a></div>
+      ${home ? `${list.length > 1 ? `<div class="tchips" role="group" aria-label="${L("Mes trajets favoris", "My favourite trips")}">${list.map((t, i) => `<button class="tchip" data-ti="${i}" aria-pressed="${i === selTrip}">${i === 0 ? "★ " : ""}${esc(tripName(t))}</button>`).join("")}</div>` : `<p class="muted small" style="margin:0">${esc(tripName(home))}</p>`}
+        <div class="row"><a class="btn primary" href="${tripHash(home, true)}">${ICO.go} ${L("Lancer avec le meilleur trajet", "Start with the best route")}</a><a class="btn" href="${tripHash(home)}">${L("Voir les options", "See the options")}</a></div>
+        <div id="opts">${spinner(L("Prochains départs…", "Next departures…"))}</div>`
+        : `<p class="muted" style="margin:0">${L("Ajoute ton trajet favori pour voir son état chaque matin et le lancer en un geste. Tu peux aussi toucher ☆ sur un trajet de la carte.", "Add your favourite trip to see its status every morning and start it in one tap. You can also tap ☆ on a trip on the map.")}</p><a class="btn primary" href="#/profil/trajets">${L("Ajouter un trajet", "Add a trip")}</a>`}
     </section>
     <section class="card" aria-labelledby="pT" id="disrCard" hidden><h2 id="pT">${L("Perturbations sur mon trajet", "Disruptions on my trip")}</h2><div id="disr"></div></section>
-    <div class="row"><a class="btn" href="assistant.html">${L("Demander au copilote", "Ask the copilot")}</a><a class="btn" href="carte.html">${L("Carte des retards", "Delay map")}</a><a class="btn" href="#/mois">${L("Mon mois", "My month")}</a><a class="btn" href="classement.html">${L("Classement des lignes", "Line ranking")}</a></div>`;
+    <div class="tiles">
+      ${tile("#/mois", ICO.month, L("Mon mois", "My month"), L("Bilan, story et résumé vocal", "Summary, story and voice"))}
+      ${tile("classement.html", ICO.rank, L("Classement", "Ranking"), L("Les lignes les plus en retard", "The most delayed lines"))}
+      ${tile("classement.html#risk", ICO.risk, L("Prévision", "Forecast"), L("Le risque de retard sur une ligne", "The delay risk on a line"))}
+      ${!db.voyages().length && !store.get("lpa-demo") ? tile("#/demo", ICO.demo, L("Démo en 30 s", "30-second demo"), L("Un vrai train en retard d'hier", "A real late train from yesterday"))
+        : tile("#/profil/trajets", ICO.plus, L("Ajouter un trajet", "Add a trip"), L("Plusieurs trajets favoris", "Several favourite trips"))}
+    </div>`;
+  view.querySelectorAll("[data-ti]").forEach(b => b.onclick = () => { selTrip = +b.dataset.ti; render(); });
   if ($("quitDemo")) $("quitDemo").onclick = quitDemo;
   if (running) refreshRunning(running);
   if (!home) return;
@@ -481,7 +564,7 @@ route(/^\/checkin$/, () => {
       <button class="btn primary big" id="geo">${L("Me localiser", "Locate me")}</button>
       <div id="near"></div>
       <div class="card">${stationField("cs", L("Ou cherche ta gare", "Or search for your station"), "", s => step2(s))}
-        ${home ? `<div class="row"><span class="muted small">${L("Raccourcis :", "Shortcuts:")}</span><button class="btn" data-h="a">${esc(home.a.name)}</button><button class="btn" data-h="b">${esc(home.b.name)}</button></div>` : ""}</div>
+        ${home ? `<div class="row"><span class="muted small">${L("Raccourcis :", "Shortcuts:")}</span><button class="btn" data-h="a">${esc(endName(home.a))}</button><button class="btn" data-h="b">${esc(endName(home.b))}</button></div>` : ""}</div>
       <p class="muted small">${L("Ta position sert uniquement à trouver ta gare et à noter que tu y étais au moment du check-in. Elle n'est envoyée à personne.", "Your location is only used to find your station and to note that you were there at check-in. It is sent to no one.")}</p>`;
     view.querySelectorAll("[data-h]").forEach(b => b.onclick = () => step2(home[b.dataset.h]));
     $("geo").onclick = () => {
@@ -886,7 +969,7 @@ route(/^\/mois(?:\/(\d{6}))?$/, async ym => {
   const S = monthStats(ym);
   const worstLbl = S.worstTrip ? `${modeName(S.worstTrip[0].mode, S.worstTrip[0].line)} · ${S.worstTrip[0].from.name} → ${(S.worstTrip[S.worstTrip.length - 1].to || {}).name || "?"}` : "";
   const money = S.euros ? S.euros.toLocaleString(locale, {style: "currency", currency: "EUR"}) : null;
-  view.innerHTML = `<div class="between"><h1>${L("Mon mois", "My month")}</h1><div class="monthnav"><a class="btn ghost" href="#/mois/${shift(-1)}" aria-label="${L("Mois précédent", "Previous month")}">←</a>${ym < nowYm ? `<a class="btn ghost" href="#/mois/${shift(1)}" aria-label="${L("Mois suivant", "Next month")}">→</a>` : ""}</div></div>
+  view.innerHTML = `<a class="btn ghost" href="#/">${L("← Aujourd'hui", "← Today")}</a><div class="between"><h1>${L("Mon mois", "My month")}</h1><div class="monthnav"><a class="btn ghost" href="#/mois/${shift(-1)}" aria-label="${L("Mois précédent", "Previous month")}">←</a>${ym < nowYm ? `<a class="btn ghost" href="#/mois/${shift(1)}" aria-label="${L("Mois suivant", "Next month")}">→</a>` : ""}</div></div>
     <p class="sub">${cap(mName)} ${y}${S.demo ? ` · <span class="demo-tag">${L("avec des voyages de démo", "with demo trips")}</span>` : ""}</p>
     ${S.n ? `<section class="card hero"><span class="kicker">${L("Temps perdu sur les rails", "Time lost on the tracks")}</span><div class="big-num"><b>${hm(S.minutes)}</b></div>
         <span class="muted small">${L(`${S.n} trajet(s), dont ${S.late} en retard (5 min ou plus)`, `${S.n} trip(s), ${S.late} of them late (5 min or more)`)}</span></section>
@@ -997,8 +1080,8 @@ const REGIONS = [["", L("Toute la France", "All of France")], ["idf", "Île-de-F
   ["occ", "Occitanie"], ["pac", "Provence-Alpes-Côte d'Azur"], ["cor", "Corse"]];
 const sel = (id, opts, cur) => `<select id="${id}">${opts.map(([v, t]) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
 const sw = (id, on, title, sub) => `<label class="toggle" for="${id}"><span class="lbl">${title}${sub ? `<small>${sub}</small>` : ""}</span><span class="switch"><input type="checkbox" id="${id}"${on ? " checked" : ""}><span></span></span></label>`;
-route(/^\/profil$/, async () => {
-  const home = db.home() || {}, pk = passkey.get(), tmp = {...home};
+route(/^\/profil(?:\/(\w+))?$/, async anchor => {
+  const pk = passkey.get(), tmp = {a: null, b: null}, tl = trips();
   let pos = null; try { pos = JSON.parse(raw.get("lp-pos")); } catch (e) {}
   let favs = []; try { favs = JSON.parse(raw.get("lp-favs") || "[]"); } catch (e) {}
   const jget = k => { try { return JSON.parse(raw.get(k)); } catch (e) { return null; } };
@@ -1008,10 +1091,15 @@ route(/^\/profil$/, async () => {
   view.innerHTML = `<h1>${L("Réglages", "Settings")}</h1><p class="sub">${L("Toutes tes préférences, au même endroit. Elles restent sur ce téléphone.", "All your preferences in one place. They stay on this phone.")}</p>
     <section class="card"><h2>${L("Langue", "Language")}</h2>
       <div class="row"><button class="btn${LPI.lang === "fr" ? " primary" : ""}" data-lang="fr">Français</button><button class="btn${LPI.lang === "en" ? " primary" : ""}" data-lang="en">English</button></div></section>
-    <section class="card"><h2>${L("Mon trajet habituel", "My usual trip")}</h2>
-      ${stationField("pa", L("Départ", "From"), home.a && home.a.name, s => { tmp.a = s; saveHome(); })}
-      ${stationField("pb", L("Arrivée", "To"), home.b && home.b.name, s => { tmp.b = s; saveHome(); })}
-      <p class="muted small" style="margin:0">${L("Utilisé par l'écran Aujourd'hui et par Gus.", "Used by the Today screen and by Gus.")}</p></section>
+    <section class="card" id="sec-trajets"><h2>${L("Mes trajets favoris", "My favourite trips")}</h2>
+      ${tl.length ? `<div class="list">${tl.map((t, i) => `<div class="ttrip"><b>${i === 0 ? "★ " : ""}${esc(tripName(t))}${i === 0 ? ` <span class="muted small">(${L("principal", "main")})</span>` : ""}</b>
+        ${i ? `<button class="btn ghost" data-tmain="${i}" title="${L("En faire le trajet principal", "Make it the main trip")}" aria-label="${L("En faire le trajet principal", "Make it the main trip")}">★</button>` : "<span></span>"}
+        <button class="btn ghost" data-tdel="${i}" aria-label="${L("Retirer", "Remove")} ${esc(tripName(t))}">✕</button></div>`).join("")}</div>`
+        : `<p class="muted small" style="margin:0">${L("Aucun trajet pour l'instant.", "No trip yet.")}</p>`}
+      ${stationField("pa", L("Départ", "From"), "", s => { tmp.a = s; })}
+      ${stationField("pb", L("Arrivée", "To"), "", s => { tmp.b = s; })}
+      <button class="btn primary" id="tAdd">${L("Ajouter ce trajet", "Add this trip")}</button>
+      <p class="muted small" style="margin:0">${L("Le trajet ★ principal sert à l'écran Aujourd'hui, au check-in et à Gus. Les trajets marqués ☆ sur la carte apparaissent aussi ici.", "The ★ main trip is used by the Today screen, check-in and Gus. Trips starred ☆ on the map show up here too.")}</p></section>
     <section class="card"><h2>${L("Ma position", "My location")}</h2>
       <p style="margin:0">${pos ? esc(pos.label || L("Position enregistrée", "Saved location")) : `<span class="muted">${L("Pas encore définie.", "Not set yet.")}</span>`}</p>
       <div class="row"><button class="btn" id="posGeo">${L("Me localiser", "Locate me")}</button><a class="btn" href="carte.html">${L("Choisir sur la carte", "Pick on the map")}</a>${pos ? `<button class="btn ghost" id="posClear">${L("Effacer", "Clear")}</button>` : ""}</div>
@@ -1040,7 +1128,10 @@ route(/^\/profil$/, async () => {
       <div class="row"><a class="btn" href="confidentialite.html">${L("Confidentialité", "Privacy")}</a><a class="btn" href="conditions.html">${L("Conditions et mentions légales", "Terms and legal notice")}</a></div></section>
     <section class="card"><h2>${L("Mes données", "My data")}</h2><p class="muted small" style="margin:0">${L("Tout est gardé sur ce téléphone :", "Everything is kept on this phone:")} ${db.voyages().length} ${L("voyage(s)", "trip(s)")}, ${db.certs().length} ${L("justificatif(s)", "certificate(s)")}, ${favs.length} ${L("favori(s)", "favourite(s)")}.</p>
       <div class="row"><button class="btn" id="exp">${L("Exporter (fichier)", "Export (file)")}</button><button class="btn danger" id="wipe">${L("Tout effacer", "Erase everything")}</button></div></section>`;
-  function saveHome() { if (tmp.a && tmp.b) { store.set("lpa-home", {a: tmp.a, b: tmp.b}); store.set("lp-trajet", `${tmp.a.name} → ${tmp.b.name}`); toast(L("Trajet habituel enregistré", "Usual trip saved")); } }
+  $("tAdd").onclick = () => { if (!tmp.a || !tmp.b) { toast(L("Choisis une gare de départ et d'arrivée dans la liste", "Pick a departure and an arrival station from the list")); return; } addTrip(tmp.a, tmp.b, !tl.length); toast(L("Trajet ajouté", "Trip added")); render(); };
+  view.querySelectorAll("[data-tmain]").forEach(b => b.onclick = () => { const l = trips(); l.unshift(l.splice(+b.dataset.tmain, 1)[0]); saveTrips(l); selTrip = 0; toast(L("Trajet principal changé", "Main trip changed")); render(); });
+  view.querySelectorAll("[data-tdel]").forEach(b => b.onclick = () => { const l = trips(); l.splice(+b.dataset.tdel, 1); saveTrips(l); render(); });
+  if (anchor === "trajets") setTimeout(() => { const el = $("sec-trajets"); if (el) el.scrollIntoView({block: "start"}); }, 0);
   view.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => { if (b.dataset.lang !== LPI.lang) LPI.setLang(b.dataset.lang); });
   $("posGeo").onclick = () => {
     if (!navigator.geolocation) { toast(L("Localisation indisponible", "Location unavailable")); return; }
@@ -1067,13 +1158,13 @@ route(/^\/profil$/, async () => {
   if ($("resetKey")) $("resetKey").onclick = async () => { if (!confirm(L("Créer une nouvelle clé ? L'ancienne ne servira plus pour les prochains justificatifs.", "Create a new key? The old one will no longer be used for future certificates."))) return; store.set("lp-passkey", null); if (await ensureKey()) render(); };
   $("exp").onclick = () => {
     const prefs = {}; ["lp-lang", "lp-profile", "lp-region", "lp-base", "lp-pos", "lp-favs", "lp-trajet", "lp-speak", "lp-handsfree", "lp-stt"].forEach(k => { const v = raw.get(k); if (v != null) prefs[k] = v; });
-    const data = {exported: new Date().toISOString(), home: db.home(), voyages: db.voyages(), certs: db.certs(), email: db.email(), prefs};
+    const data = {exported: new Date().toISOString(), trips: trips(), voyages: db.voyages(), certs: db.certs(), email: db.email(), prefs};
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
     a.download = "lateproof-mes-donnees.json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
   $("wipe").onclick = async () => {
     if (!confirm(L("Effacer tous tes voyages, justificatifs, réglages, favoris et ta clé de ce téléphone ? Les liens déjà envoyés resteront vérifiables.", "Erase all your trips, certificates, settings, favourites and key from this phone? Links already sent stay verifiable."))) return;
-    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group", "lpa-demo",
+    ["lpa-home", "lpa-voyages", "lpa-certs", "lpa-email", "lpa-hidden", "lpa-onboarded", "lp-passkey", "lpa-pending-group", "lpa-demo", "lpa-main",
      "lp-profile", "lp-region", "lp-base", "lp-pos", "lp-favs", "lp-recent", "lp-trajet", "lp-speak", "lp-handsfree", "lp-stt", "lp-chat"].forEach(k => raw.set(k, null));
     try { await LP.idb.del("browser-key"); } catch (e) {}
     location.hash = "#/bienvenue";
